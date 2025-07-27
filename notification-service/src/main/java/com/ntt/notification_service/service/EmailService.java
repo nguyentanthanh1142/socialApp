@@ -19,7 +19,7 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class EmailService {
     EmailClient emailClient;
-    String apiKey = "REDACTED_BREVO_KEY";
+    String apiKey = "";
     public EmailResponse sendEmail(SendEmailRequest request){
         EmailRequest emailRequest = new EmailRequest().builder()
                 .sender(Sender.builder()
