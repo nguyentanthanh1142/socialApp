@@ -1,0 +1,23 @@
+package com.ntt.chat_service.entity;
+
+import lombok.*;
+import lombok.experimental.FieldDefaults;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.MongoId;
+
+import java.time.Instant;
+
+@Setter
+@Getter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Document(collection = "web_socket_session")
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class WebSocketSession {
+    @MongoId
+    String id;
+    String userId;
+    String socketSessionId;
+    Instant createdAt;
+}
