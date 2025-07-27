@@ -27,7 +27,7 @@ outbound:
 
 
 jwt:
-  signerKey: "K25adN3cmQsGmXDPQCpIbluXGC5cTdXwOU1TSOkm/h9Cj6FBuMExdcvkkxTzIRsM"
+  signerKey: ${SIGNER_KEY}
   valid-duration: 3600 #seconds
   refresh-duration: 36000  #seconds
 

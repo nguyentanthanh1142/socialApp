@@ -3,7 +3,6 @@ package com.ntt.post_service.dto;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import org.springframework.util.CollectionUtils;
 
 import java.util.Collections;
 import java.util.List;

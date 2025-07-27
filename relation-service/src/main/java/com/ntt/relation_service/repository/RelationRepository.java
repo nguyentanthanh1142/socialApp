@@ -1,6 +1,5 @@
 package com.ntt.relation_service.repository;
 
-import com.ntt.relation_service.dto.response.RelationReponse;
 import com.ntt.relation_service.entity.Relation;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;

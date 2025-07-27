@@ -3,7 +3,6 @@ package com.ntt.post_service.dto.request;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.time.Instant;
 
 @Data
 @Builder

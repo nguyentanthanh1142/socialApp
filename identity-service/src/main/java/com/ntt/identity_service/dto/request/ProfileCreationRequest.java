@@ -1,7 +1,5 @@
  package com.ntt.identity_service.dto.request;
 
-import com.ntt.identity_service.validator.DobConstraint;
-import jakarta.validation.constraints.Size;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
