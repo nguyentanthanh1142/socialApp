@@ -89,12 +89,8 @@
 			<groupId>com.ntt</groupId>
 			<artifactId>common-lib</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
-			<scope>compile</scope>
 		</dependency>
-
 	</dependencies>
-
-
 	<build>
 		<plugins>
 			<plugin>
@@ -102,6 +98,7 @@
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<version>${spring.boot.version}</version>
 				<configuration>
+					<mainClass>com.ntt.identity_service.IdentityServiceApplication</mainClass>
 					<excludes>
 						<exclude>
 							<groupId>org.projectlombok</groupId>
@@ -184,7 +181,6 @@
 						</indent>
 						<palantirJavaFormat/>
 						<importOrder>
-							<!-- Specify either order or file, but not both -->
 							<order>java,jakarta,org,com,com.diffplug,</order>
 						</importOrder>
 					</java>

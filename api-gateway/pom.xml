@@ -60,7 +60,11 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<version>${spring.boot.version}</version>
+				<configuration>
+					<mainClass>com.ntt.api_gateway.ApiGatewayApplication</mainClass>
+				</configuration>
 			</plugin>
+
 		</plugins>
 	</build>
 
