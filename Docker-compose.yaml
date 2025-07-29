@@ -1,0 +1,38 @@
+version: "3.8"
+
+services:
+  identity-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: identity-service
+    container_name: identity-service
+    environment:
+      DBMS_CONNECTION: ${DBMS_CONNECTION}
+      MYSQL_USERNAME: ${MYSQL_USERNAME}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      CLIENT_ID: ${CLIENT_ID}
+      SECRET_KEY: ${SECRET_KEY}
+
+    ports:
+      - "8080:8080"
+    networks:
+          - app-network
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: api-gateway
+    container_name: api-gateway
+    ports:
+      - "8888:8080"
+    depends_on:
+      - identity-service
+    networks:
+      - app-network
+networks:
+  app-network:
+    external: true

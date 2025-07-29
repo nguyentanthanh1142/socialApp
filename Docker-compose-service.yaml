@@ -1,0 +1,16 @@
+services:
+  identity-service:
+    image: nonono000/identity-service:1.0
+    environment:
+      DBMS_CONNECTION: jdbc:mysql://mysql-app:3306/identity_service
+      MYSQL_USERNAME: root
+      MYSQL_PASSWORD: 123
+      CLIENT_ID: ${CLIENT_ID}
+      SECRET_KEY: ${SECRET_KEY}
+    ports:
+      - "8080:8080"
+    networks:
+      - app-network
+networks:
+  app-network:
+    external: true

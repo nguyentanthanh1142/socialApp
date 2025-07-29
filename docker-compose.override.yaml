@@ -1,0 +1,18 @@
+version: "3.8"
+
+services:
+  identity-service:
+    networks:
+      - app-network
+
+  api-gateway:
+    networks:
+      - app-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - identity-service
+
+networks:
+  app-network:
+    external: true
