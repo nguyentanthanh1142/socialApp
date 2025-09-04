@@ -1,0 +1,183 @@
+version: "3.8"
+
+services:
+  nginx-frontend:
+    build:
+      context: ./web-app
+      dockerfile: Dockerfile
+      args:
+        REACT_APP_API_GATEWAY: ${REACT_APP_API_GATEWAY}
+        REACT_APP_CLIENT_ID: ${REACT_APP_CLIENT_ID}
+        REACT_APP_AUTH_REDIRECT_URL: ${REACT_APP_AUTH_REDIRECT_URL}
+    container_name: nginx-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - api-gateway
+    networks:
+      - app-network
+
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+      args:
+        MODULE: api-gateway
+    container_name: api-gateway
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DBMS_CONNECTION: ${DBMS_CONNECTION}
+      MYSQL_USERNAME: ${MYSQL_USERNAME}
+      SERVER_PORT: 8080
+    ports:
+      - "8888:8080"
+    depends_on:
+      - identity-service
+      - profile-service
+      - file-service
+      - chat-service
+      - post-service
+    networks:
+      - app-network
+
+
+  identity-service:
+    build:
+      context: .
+      dockerfile: identity-service/Dockerfile
+      args:
+        MODULE: identity-service
+    container_name: identity-service
+    environment:
+      DBMS_CONNECTION: ${DBMS_CONNECTION}
+      MYSQL_USERNAME: ${MYSQL_USERNAME}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      PROFILE_SERVICE_URL: ${PROFILE_SERVICE_URL}
+      AUTH_REDIRECT_URL: ${AUTH_REDIRECT_URL}
+      CLIENT_ID: ${CLIENT_ID}
+      SECRET_KEY: ${SECRET_KEY}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    ports:
+      - "8082:8080"
+    networks:
+      - app-network
+      - kafka-net
+    depends_on:
+      - kafka
+  post-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: post-service
+    container_name: post-service
+    environment:
+      MONGO_URI_POST_SERVICE: ${MONGO_URI_POST_SERVICE}
+    ports:
+      - "8083:8080"
+    networks:
+      - app-network
+
+  profile-service:
+    build:
+      context: .
+      dockerfile: profile-service/Dockerfile
+      args:
+        MODULE: profile-service
+    container_name: profile-service
+    environment:
+      NEO4J_URI: ${NEO4J_URI}
+      NEO4J_USERNAME: ${NEO4J_USERNAME}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+      FILE_SERVICE_URL: ${FILE_SERVICE_URL}
+    ports:
+      - "8081:8080"
+    networks:
+      - app-network
+
+  file-service:
+    build:
+      context: .
+      dockerfile: file-service/Dockerfile
+      args:
+        MODULE: file-service
+    container_name: file-service
+    environment:
+      MONGO_URI_FILE_SERVICE: ${MONGO_URI_FILE_SERVICE}
+      FILE_STORAGE_DIR: ${FILE_STORAGE_DIR}
+      DOWNLOAD_PREFIX: ${DOWNLOAD_PREFIX}
+    volumes:
+      - ./uploads:/app/uploads
+    ports:
+      - "8084:8080"
+    networks:
+      - app-network
+
+  chat-service:
+    build:
+      context: .
+      dockerfile: chat-service/Dockerfile
+      args:
+        MODULE: chat-service
+    container_name: chat-service
+    environment:
+      MONGO_URI_CHAT_SERVICE: ${MONGO_URI_CHAT_SERVICE}
+      MONGO_USERNAME: ${MONGO_USERNAME}
+      MONGO_PASSWORD: ${MONGO_PASSWORD}
+      PROFILE_SERVICE_URL: ${PROFILE_SERVICE_URL}
+      IDENTITY_SERVICE_URL: ${IDENTITY_SERVICE_URL}
+    ports:
+      - "8085:8080"
+      - "8999:8999"
+    networks:
+      - app-network
+
+  zookeeper:
+    image: bitnami/zookeeper:3.8
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    networks:
+      - kafka-net
+
+  kafka:
+    image: bitnami/kafka:3.8.0
+    container_name: kafka
+    ports:
+      - "9092:9092"
+      - "9094:9094"
+    environment:
+      - KAFKA_BROKER_ID=1
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,PLAINTEXT_HOST://:9094
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9094
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+    depends_on:
+      - zookeeper
+    networks:
+      - kafka-net
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "8089:8080"
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
+      - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
+    depends_on:
+      - kafka
+    networks:
+      - kafka-net
+
+networks:
+  app-network:
+    external: true
+  kafka-net:
+    driver: bridge

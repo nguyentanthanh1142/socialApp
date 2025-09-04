@@ -1,19 +1,31 @@
-# Stage 1: build
+# Stage 1: Build
 FROM maven:3.9.8-amazoncorretto-21 AS build
 
-ARG MODULE
+ARG MODULE=identity-service
 WORKDIR /app
-COPY pom.xml .
+
+# Copy parent pom và các module liên quan
+COPY pom.xml ./pom.xml
 COPY common-lib ./common-lib
 COPY ${MODULE} ./${MODULE}
 
-RUN mvn clean install -pl common-lib,${MODULE} -am -DskipTests
+# Build cả parent để Maven biết cấu trúc
+RUN mvn install -N -DskipTests
 
-#Stage 2: create image
-FROM amazoncorretto:21.0.4
+# Build common-lib trước
+RUN mvn -f common-lib/pom.xml clean install -DskipTests
+
+# Build module chính
+RUN mvn -f ${MODULE}/pom.xml clean package -DskipTests
+
+
+# Stage 2: Runtime
+FROM amazoncorretto:21-alpine
 
 WORKDIR /app
-COPY --from=build /app/${MODULE}/target/${MODULE}-*.jar app.jar
+
+ARG MODULE=identity-service
+COPY --from=build /app/${MODULE}/target/*.jar app.jar
 
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]

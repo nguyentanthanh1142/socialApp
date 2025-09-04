@@ -12,8 +12,9 @@ RUN mvn -f common-lib/pom.xml clean install -DskipTests
 RUN mvn -f ${MODULE}/pom.xml clean package -DskipTests
 
 
+
 #Stage 2: create image
-FROM amazoncorretto:21.0.4
+FROM amazoncorretto:21-alpine
 ARG MODULE
 WORKDIR /app
 

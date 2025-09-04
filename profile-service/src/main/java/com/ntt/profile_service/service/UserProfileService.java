@@ -78,8 +78,8 @@ public class UserProfileService {
     }
 
     public UserProfileResponse updateAvatar(MultipartFile file) throws IOException {
-        var ahuentication = SecurityContextHolder.getContext().getAuthentication();
-        String userId = ahuentication.getName();
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        String userId = authentication.getName();
         log.info(userId);
         var userProfile = userProfileRepository.findByUserId(userId)
                 .orElseThrow(()-> new AppException(ErrorCode.USER_NOT_EXISTED));

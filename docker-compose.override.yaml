@@ -12,6 +12,10 @@ services:
       - SPRING_PROFILES_ACTIVE=docker
     depends_on:
       - identity-service
+      - profile-service
+      - file-service
+      - chat-service
+      - post-service
 
 networks:
   app-network:

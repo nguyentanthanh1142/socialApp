@@ -14,16 +14,22 @@ import java.util.List;
 
 @Configuration
 public class WebClientConfiguration {
+
+
     @Bean
     public WebClient webClient() {
         return WebClient.builder()
-                .baseUrl("http://localhost:8080/identity")
+                .baseUrl("http://identity-service:8080/identity")
                 .build();
     }
     @Bean
     CorsWebFilter corsWebFilter() {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
-        corsConfiguration.setAllowedOrigins(List.of("http://localhost:3000"));
+        corsConfiguration.setAllowedOrigins(List.of(
+                "http://localhost",
+                "http://localhost:3000",
+                "http://13.210.206.166:3000",
+                "http://nononoapp.duckdns.org:3000"));
         corsConfiguration.setAllowedHeaders(List.of("*"));
         corsConfiguration.setAllowedMethods(List.of("*"));
         corsConfiguration.setAllowCredentials(true);
