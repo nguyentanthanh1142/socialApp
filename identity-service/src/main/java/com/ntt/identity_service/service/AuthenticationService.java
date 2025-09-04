@@ -244,6 +244,7 @@ public class AuthenticationService {
         var profileResponse = profileClient.createProfile(ProfileCreationRequest.builder()
                         .email(userInfo.getEmail())
                         .firstname(userInfo.getGivenName())
+                        .email(userInfo.getEmail())
                         .lastname(userInfo.getFamilyName())
                         .userId(user.getId())
                         .avatar(userInfo.getPicture())

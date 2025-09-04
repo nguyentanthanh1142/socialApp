@@ -1,23 +1,31 @@
-# Stage 1: build
-# Start with a Maven image that includes JDK 21
+# Stage 1: Build
 FROM maven:3.9.8-amazoncorretto-21 AS build
 
-# Copy source code and pom.xml file to /app folder
+ARG MODULE=file-service
 WORKDIR /app
-COPY pom.xml .
+
+# Copy parent pom và các module liên quan
+COPY pom.xml ./pom.xml
 COPY common-lib ./common-lib
-COPY identity-service ./identity-service
+COPY ${MODULE} ./${MODULE}
 
-# Build source code with maven
-RUN mvn -f identity-service/pom.xml clean package -DskipTests
+# Build cả parent để Maven biết cấu trúc
+RUN mvn install -N -DskipTests
 
-#Stage 2: create image
-# Start with Amazon Correto JDK 21
-FROM amazoncorretto:21.0.4
+# Build common-lib trước
+RUN mvn -f common-lib/pom.xml clean install -DskipTests
 
-# Set working folder to App and copy complied file from above step
+# Build module chính
+RUN mvn -f ${MODULE}/pom.xml clean package -DskipTests
+
+
+# Stage 2: Runtime
+FROM amazoncorretto:21-alpine
+
 WORKDIR /app
-COPY --from=build /app/identity-service/target/*.jar app.jar
 
-# Command to run the application
+ARG MODULE=identity-service
+COPY --from=build /app/${MODULE}/target/*.jar app.jar
+
+EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]

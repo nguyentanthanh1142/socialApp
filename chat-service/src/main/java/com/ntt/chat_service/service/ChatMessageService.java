@@ -46,12 +46,12 @@ public class ChatMessageService {
 
         String userId = SecurityContextHolder.getContext().getAuthentication().getName();
 
-        var conversation = conversationRepository.findById(conversationId).orElseThrow(()->
+        var conversation = conversationRepository.findById(conversationId).orElseThrow(() ->
                 new AppException(ErrorCode.CONVERSATION_NOT_FOUND));
 
         conversation.getParticipants().stream()
                 .filter(participant -> userId.equals(participant.getUserId()))
-                .findAny().orElseThrow(()->new AppException(ErrorCode.CONVERSATION_NOT_FOUND));
+                .findAny().orElseThrow(() -> new AppException(ErrorCode.CONVERSATION_NOT_FOUND));
 
         var messages = repository.findAllByConversationIdOrderByCreatedDateDesc(conversationId);
         return messages.stream().map(this::toChatMessageResponse).toList();
@@ -62,16 +62,16 @@ public class ChatMessageService {
         log.info("Creating chat message for user: {}", userId);
         log.info("request: {}", request);
         var conversation = conversationRepository.findById(request.getConversationId())
-                .orElseThrow(()->
-                new AppException(ErrorCode.CONVERSATION_NOT_FOUND));
+                .orElseThrow(() ->
+                        new AppException(ErrorCode.CONVERSATION_NOT_FOUND));
         log.info("conversation: {}", conversation);
         conversation.getParticipants().stream()
                 .filter(participant -> userId.equals(participant.getUserId()))
-                .findAny().orElseThrow(()->new AppException(ErrorCode.CONVERSATION_NOT_FOUND));
+                .findAny().orElseThrow(() -> new AppException(ErrorCode.CONVERSATION_NOT_FOUND));
         log.info("participants: {}", conversation);
         var userResponse = profileClient.getProfile(userId);
         log.info("userResponse: {}", userResponse);
-        if(Objects.isNull(userResponse)) {
+        if (Objects.isNull(userResponse)) {
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
         }
 
@@ -89,30 +89,26 @@ public class ChatMessageService {
         chatmessage = repository.save(chatmessage);
 
 
-
-
         List<String> participantIds = conversation.getParticipants().stream()
                 .map(ParticipantInfo::getUserId)
                 .toList();
 
-        Map<String,WebSocketSession> webSocketSessions =
+        Map<String, WebSocketSession> webSocketSessions =
                 webSocketSessionRepository.findAllByUserIdIn(participantIds)
                         .stream()
                         .collect(Collectors.toMap(WebSocketSession::getSocketSessionId, Function.identity()));
-//        List<String> webSocketSessions = webSocketSessionRepository
-//                .findAllByUserIdIn(participantIds).stream().
-//                map(WebSocketSession::getSocketSessionId).toList();
+
         ChatMessageResponse chatMessageResponse = chatMessageMapper.toChatMessageResponse(chatmessage);
         socketIOServer.getAllClients().forEach(client -> {
             var webSocketSessionIds = webSocketSessions.get(client.getSessionId().toString());
 
-            if(Objects.nonNull(webSocketSessionIds)) {
-                String message="";
-                try{
-                    chatMessageResponse.setMe( webSocketSessionIds.getUserId().equals(userId));
+            if (Objects.nonNull(webSocketSessionIds)) {
+                String message = "";
+                try {
+                    chatMessageResponse.setMe(webSocketSessionIds.getUserId().equals(userId));
                     message = objectMapper.writeValueAsString(chatMessageResponse);
                     client.sendEvent("message", message);
-                } catch(JsonProcessingException e){
+                } catch (JsonProcessingException e) {
                     throw new RuntimeException(e);
                 }
 
@@ -121,8 +117,9 @@ public class ChatMessageService {
 
         return toChatMessageResponse(chatmessage);
     }
+
     private ChatMessageResponse toChatMessageResponse(ChatMessage chatMessage) {
-        String userId =SecurityContextHolder.getContext().getAuthentication().getName();
+        String userId = SecurityContextHolder.getContext().getAuthentication().getName();
 
         var ChatMessageResponse = chatMessageMapper.toChatMessageResponse(chatMessage);
         ChatMessageResponse.setMe(userId.equals(chatMessage.getSender().getUserId()));

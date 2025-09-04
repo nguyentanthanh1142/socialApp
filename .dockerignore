@@ -1,0 +1,27 @@
+# Ignore target build output (will be rebuilt inside container)
+target
+
+# Ignore other services when building specific service
+web-app/
+
+# IDE and project files
+.idea
+.vscode
+*.iml
+
+# Git
+.git
+.gitignore
+
+# Logs and temp files
+*.log
+logs
+tmp
+*.swp
+
+# Node modules if you mix JS build
+node_modules
+
+# Mac and Windows system files
+.DS_Store
+Thumbs.db
