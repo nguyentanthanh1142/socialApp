@@ -1,5 +1,5 @@
 server:
-  port: 8081
+  port: 8080
   servlet:
     context-path: /profile
 spring:
@@ -12,4 +12,4 @@ spring:
       password: ${NEO4J_PASSWORD:123456789}
 app:
   services:
-    file-service: ${FILE_SERVICE_URL:http://localhost:8084/file}
+    file-service: ${FILE_SERVICE_URL:http://file-service:8080/file}

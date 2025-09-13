@@ -1,0 +1,37 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /identity
+
+spring:
+  datasource:
+    url: ${DBMS_CONNECTION:jdbc:mysql://localhost:3307/identity_service}
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD:123}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
+#    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9094}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+outbound:
+  identity:
+    client-id: ${CLIENT_ID}
+    client-secret: ${SECRET_KEY}
+    redirect-url: ${AUTH_REDIRECT_URL:http://localhost:3000/authenticated}
+
+
+jwt:
+  signerKey: ${JWT_SIGNER_KEY:K25adN3cmQsGmXDPQCpIbluXGC5cTdXwOU1TSOkm/h9Cj6FBuMExdcvkkxTzIRsM}
+  valid-duration: 3600 #seconds
+  refresh-duration: 36000  #seconds
+
+app:
+  services:
+    profile: ${PROFILE_SERVICE_URL:http://localhost:8081/profile}

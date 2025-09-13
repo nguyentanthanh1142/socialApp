@@ -3,7 +3,8 @@ server:
 
 app:
   api-prefix: /api/v1
-
+  services:
+    identity-service: ${IDENTITY_SERVICE_URL:http://identity-service:8080/identity}
 spring:
   application:
     name: api-gateway

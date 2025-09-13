@@ -1,6 +1,7 @@
 package com.ntt.api_gateway.configuration;
 
 import com.ntt.api_gateway.repository.IdentityClient;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
@@ -15,11 +16,13 @@ import java.util.List;
 @Configuration
 public class WebClientConfiguration {
 
+    @Value("${app.services.identity-service}")
+    private String identityServiceUrl;
 
     @Bean
     public WebClient webClient() {
         return WebClient.builder()
-                .baseUrl("http://identity-service:8080/identity")
+                .baseUrl(identityServiceUrl)
                 .build();
     }
     @Bean
@@ -29,6 +32,7 @@ public class WebClientConfiguration {
                 "http://localhost",
                 "http://localhost:3000",
                 "http://13.210.206.166:3000",
+                "http://3.26.18.197:3000",
                 "http://nononoapp.duckdns.org:3000"));
         corsConfiguration.setAllowedHeaders(List.of("*"));
         corsConfiguration.setAllowedMethods(List.of("*"));
