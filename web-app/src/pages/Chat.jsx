@@ -183,7 +183,7 @@ export default function Chat() {
       console.log("Initializing socket connection...");
 
       const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || "http://localhost:8999";
-      const connectionUrl = SOCKET_URL + getToken();
+      const connectionUrl = `${SOCKET_URL}?token=${getToken()}`;
       socketRef.current = new io(connectionUrl);
 
       socketRef.current.on("connect", () => {

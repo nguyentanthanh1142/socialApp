@@ -1,5 +1,5 @@
 server:
-  port: 8084
+  port: 8080
   servlet:
     context-path: /file
 spring:
@@ -7,7 +7,7 @@ spring:
     name: file-service
   data:
     mongodb:
-      uri: ${MONGO_URI_FILE_SERVICE:mongodb://root:root@localhost:27017/file-service?authSource=admin}
+      uri: ${MONGO_URI_FILE_SERVICE:mongodb://root:root@mongo:27017/file-service?authSource=admin}
 app:
   file:
     storage-dir: ${FILE_STORAGE_DIR:/app/uploads}

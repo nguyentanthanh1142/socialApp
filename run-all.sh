@@ -50,6 +50,7 @@ docker run -d --name identity-service \
   --network kafka-net \
   -p 8082:8080 \
   --env-file .env \
+  -e SPRING_PROFILES_ACTIVE=docker \
   nonono000/identity-service:latest
 
 #docker network connect kafka-net identity-service
@@ -60,6 +61,7 @@ docker run -d --name profile-service \
   --network app-network \
   -p 8081:8080 \
   --env-file .env \
+  -e SPRING_PROFILES_ACTIVE=docker \
   nonono000/profile-service:latest
 
 # ===========================
@@ -70,6 +72,7 @@ docker run -d --name file-service \
   -v ./uploads:/app/uploads \
   -p 8084:8080 \
   --env-file .env \
+  -e SPRING_PROFILES_ACTIVE=docker \
   nonono000/file-service:latest
 
 # ===========================
@@ -80,6 +83,7 @@ docker run -d --name chat-service \
   -p 8085:8080 \
   -p 8999:8999 \
   --env-file .env \
+  -e SPRING_PROFILES_ACTIVE=docker \
   nonono000/chat-service:latest
 
 # ===========================
@@ -89,6 +93,7 @@ docker run -d --name post-service \
   --network app-network \
   -p 8083:8080 \
   --env-file .env \
+  -e SPRING_PROFILES_ACTIVE=docker \
   nonono000/post-service:latest
 
 # ===========================
