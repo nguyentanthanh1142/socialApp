@@ -18,9 +18,7 @@ jobs:
           java-version: '21'
       - name: Build Identity Service
         run: |
-          cd identity-service
-          mvn clean package -DskipTests
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/identity-service .
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/identity-service -f identity-service/Dockerfile .
       - name: Login to docker hub
         run: docker login -u ${{secrets.DOCKER_USERNAME}} -p ${{secrets.DOCKER_PASSWORD}}
       - name: Publish image to docker hub
