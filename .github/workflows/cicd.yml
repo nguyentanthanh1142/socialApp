@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - deploy-to-ec2
+  workflow_dispatch:
 
 jobs:
   build:
@@ -27,7 +28,21 @@ jobs:
     needs: build
     runs-on: [aws-ec2]
     steps:
+      - name: Stop existing container if running
+        run: |
+          if [ $(docker ps -q -f name=identity-service) ]; then
+          docker stop identity-service
+          docker rm identity-service
+          fi
       - name: Pull Image from docker hub
         run: docker pull ${{ secrets.DOCKER_USERNAME }}/identity-service:latest
       - name: Run docker container
-        run: docker run -d -p 8080:8080 --name identity-service --env-file .env ${{ secrets.DOCKER_USERNAME }}/identity-service:latest
+        run: |
+          docker run -d \
+          --name identity-service \
+          --network app-network \
+          --network kafka-net \
+          -p 8082:8080 \
+          --env-file .env \
+          -e SPRING_PROFILES_ACTIVE=docker \
+          ${{ secrets.DOCKER_USERNAME }}/identity-service:latest
