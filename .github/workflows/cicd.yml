@@ -9,6 +9,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [identity-service, chat-service, profile-service]
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
@@ -19,33 +22,50 @@ jobs:
           java-version: '21'
       - name: Build Identity Service
         run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/identity-service -f identity-service/Dockerfile .
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/${{ matrix.service }} -f ${{ matrix.service }}/Dockerfile .
       - name: Login to docker hub
         run: docker login -u ${{secrets.DOCKER_USERNAME}} -p ${{secrets.DOCKER_PASSWORD}}
       - name: Publish image to docker hub
-        run: docker push ${{ secrets.DOCKER_USERNAME }}/identity-service
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/${{ matrix.service }}
   deploy:
     needs: build
     runs-on: [aws-ec2]
+    strategy:
+      matrix:
+        service: [ identity-service, chat-service, notification-service ]
+        include:
+          - service: identity-service
+            port: 8082
+            kafka: true
+          - service: chat-service
+            port: 8085
+            kafka: false
+          - service: profile-service
+            port: 8081
+            kafka: false
     steps:
       - name: Copy .env
         run: cp /home/ubuntu/.env ./.env
+
       - name: Stop existing container if running
         run: |
-          if [ $(docker ps -q -f name=identity-service) ]; then
-          docker stop identity-service
-          docker rm identity-service
+          if [ $(docker ps -q -f name=${{ matrix.service }}) ]; then
+          docker stop ${{ matrix.service }}
+          docker rm ${{ matrix.service }}
           fi
       - name: Pull Image from docker hub
-        run: docker pull ${{ secrets.DOCKER_USERNAME }}/identity-service:latest
+        run: docker pull ${{ secrets.DOCKER_USERNAME }}/${{ matrix.service }}:latest
+
       - name: Run docker container
         run: |
           docker run -d \
-            --name identity-service \
+            --name ${{matrix.service}} \
             --network app-network \
-            -p 8082:8080 \
+            -p ${{matrix.port}}:8080 \
             --env-file .env \
             -e SPRING_PROFILES_ACTIVE=docker \
-            ${{ secrets.DOCKER_USERNAME }}/identity-service:latest
+            ${{ secrets.DOCKER_USERNAME }}/${{matrix.service}}:latest
           
-          docker network connect kafka-net identity-service
+          if [ "${{matrix.kafka}}" = "true" ]; then
+            docker network connect kafka-net ${{ matrix.service }}
+          fi
