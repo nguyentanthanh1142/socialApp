@@ -1,7 +1,7 @@
 # Stage 1: Build
 FROM maven:3.9.8-amazoncorretto-21 AS build
 
-ARG MODULE=api-gateway
+ARG MODULE=chat-service
 WORKDIR /app
 
 # Copy parent pom và các module liên quan
@@ -24,7 +24,7 @@ FROM amazoncorretto:21-alpine
 
 WORKDIR /app
 
-ARG MODULE=identity-service
+ARG MODULE=chat-service
 COPY --from=build /app/${MODULE}/target/*.jar app.jar
 
 EXPOSE 8080

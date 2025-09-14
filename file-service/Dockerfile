@@ -24,7 +24,7 @@ FROM amazoncorretto:21-alpine
 
 WORKDIR /app
 
-ARG MODULE=identity-service
+ARG MODULE=file-service
 COPY --from=build /app/${MODULE}/target/*.jar app.jar
 
 EXPOSE 8080
