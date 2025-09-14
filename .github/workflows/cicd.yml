@@ -10,6 +10,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         service: [identity-service, chat-service, profile-service]
     steps:
@@ -31,8 +32,9 @@ jobs:
     needs: build
     runs-on: [aws-ec2]
     strategy:
+      fail-fast: false
       matrix:
-        service: [ identity-service, chat-service, notification-service ]
+        service: [ identity-service, chat-service, profile-service ]
         include:
           - service: identity-service
             port: 8082
