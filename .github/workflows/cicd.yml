@@ -39,10 +39,11 @@ jobs:
       - name: Run docker container
         run: |
           docker run -d \
-          --name identity-service \
-          --network app-network \
-          --network kafka-net \
-          -p 8082:8080 \
-          --env-file .env \
-          -e SPRING_PROFILES_ACTIVE=docker \
-          ${{ secrets.DOCKER_USERNAME }}/identity-service:latest
+            --name identity-service \
+            --network app-network \
+            -p 8082:8080 \
+            --env-file .env \
+            -e SPRING_PROFILES_ACTIVE=docker \
+            ${{ secrets.DOCKER_USERNAME }}/identity-service:latest
+          
+          docker network connect kafka-net identity-service
