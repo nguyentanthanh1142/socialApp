@@ -84,14 +84,19 @@ jobs:
       matrix:
         service: ${{ fromJson(needs.detect-changes.outputs.services) }}
     steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
       - name: Copy .env
         run: cp /home/ubuntu/.env ./.env
 
       - name: Install yq
-        run: sudo apt-get update && sudo apt-get install -y yq
+        run: |
+          sudo wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq
+          sudo chmod +x /usr/bin/yq
+          yq --version
+
       # Check out to read file
-      - name: Checkout source
-        uses: actions/checkout@v4
 
       - name: Load config
         run: |

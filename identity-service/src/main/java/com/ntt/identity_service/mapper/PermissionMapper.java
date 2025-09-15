@@ -11,5 +11,6 @@ public interface PermissionMapper {
     Permission toPermission(PermissionRequest request);
 
     PermissionResponse toPermissionResponse(Permission permission);
+
     //    void updateUser(@MappingTarget User user, UserUpdateRequest request);
 }
