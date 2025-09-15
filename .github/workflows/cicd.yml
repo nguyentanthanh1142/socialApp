@@ -75,7 +75,9 @@ jobs:
         run: docker push ${{ secrets.DOCKER_USERNAME }}/${{ matrix.service }}
 
   deploy:
-    needs: build
+    needs:
+      - detect-changes
+      - build
     runs-on: [aws-ec2]
     strategy:
       fail-fast: false
