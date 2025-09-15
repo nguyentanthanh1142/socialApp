@@ -18,14 +18,21 @@ jobs:
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 50
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
 
       - id: set
         run: |
-          echo "Checking which services changed..."
-          CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | awk -F/ '{print $1}' | sort | uniq)
+          echo "Detecting changed services..."
           
-          if [ "${{ github.event.inputs.service }}" != "" ]; then
-            CHANGED="${{ github.event.inputs.service }}"
+          if git rev-parse ${{ github.event.before }} >/dev/null 2>&1; then
+            CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | awk -F/ '{print $1}' | sort | uniq)
+          else
+            echo "Fallback: deploy all services"
+            CHANGED="identity-service chat-service profile-service"
           fi
           
           FILTERED=$(echo "$CHANGED" | grep -E "identity-service|chat-service|profile-service" || true)
@@ -45,16 +52,25 @@ jobs:
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 50
+
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '21'
+
       - name: Build Docker image
         run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/${{ matrix.service }} -f ${{ matrix.service }}/Dockerfile .
+          echo "Building ${{ matrix.service }}..."
+          docker build --cache-from ${{ secrets.DOCKER_USERNAME }}/${{ matrix.service }} \
+            -t ${{ secrets.DOCKER_USERNAME }}/${{ matrix.service }} \
+            -f ${{ matrix.service }}/Dockerfile .
+
       - name: Login to docker hub
         run: docker login -u ${{secrets.DOCKER_USERNAME}} -p ${{secrets.DOCKER_PASSWORD}}
+
       - name: Publish image to docker hub
         run: docker push ${{ secrets.DOCKER_USERNAME }}/${{ matrix.service }}
 
@@ -69,6 +85,17 @@ jobs:
       - name: Copy .env
         run: cp /home/ubuntu/.env ./.env
 
+      - name: Install yq
+        run: sudo apt-get update && sudo apt-get install -y yq
+
+      - name: Load config
+        run: |
+          # yq to read deploy-config.yml for current service port and kafka settings
+          export PORT=$(yq e ".${{ matrix.service }}.port" deploy-config.yml)   
+          export KAFKA=$(yq e ".${{ matrix.service }}.kafka" deploy-config.yml)
+          echo "PORT=$PORT" >> $GITHUB_ENV
+          echo "KAFKA=$KAFKA" >> $GITHUB_ENV
+
       - name: Stop existing container if running
         run: |
           if [ $(docker ps -q -f name=${{ matrix.service }}) ]; then
@@ -77,23 +104,6 @@ jobs:
           fi
       - name: Pull Image from docker hub
         run: docker pull ${{ secrets.DOCKER_USERNAME }}/${{ matrix.service }}:latest
-
-      - name: Set deploy variables
-        run: |
-          case "${{ matrix.service }}" in
-            identity-service)
-              echo "PORT=8082" >> $GITHUB_ENV
-              echo "KAFKA=true" >> $GITHUB_ENV
-              ;;
-            chat-service)
-              echo "PORT=8085" >> $GITHUB_ENV
-              echo "KAFKA=false" >> $GITHUB_ENV
-              ;;
-            profile-service)
-              echo "PORT=8081" >> $GITHUB_ENV
-              echo "KAFKA=false" >> $GITHUB_ENV
-              ;;
-          esac
 
       - name: Run docker container
         run: |
