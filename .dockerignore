@@ -2,7 +2,7 @@
 target
 
 # Ignore other services when building specific service
-web-app/
+nginx-frontend/
 
 # IDE and project files
 .idea
