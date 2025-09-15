@@ -33,6 +33,7 @@ public class UserController {
         apiResponse.setResult(userService.createUser(request));
         return apiResponse;
     }
+
 //    @PostMapping("/create-password")
 //    ApiResponse<Void> createPassword(@RequestBody @Valid UserCreationRequest request) {
 //

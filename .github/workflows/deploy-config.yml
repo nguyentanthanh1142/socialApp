@@ -1,0 +1,9 @@
+identity-service:
+  port: 8082
+  kafka: true
+chat-service:
+  port: 8085
+  kafka: false
+profile-service:
+  port: 8081
+  kafka: false
