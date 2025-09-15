@@ -5,14 +5,43 @@ on:
     branches:
       - deploy-to-ec2
   workflow_dispatch:
-
+    inputs:
+      service:
+        description: 'Service to deploy (optional)'
+        required: false
+        default: ''
 jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      services: ${{ steps.set.outputs.services }}
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - id: set
+        run: |
+          echo "Checking which services changed..."
+          CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | awk -F/ '{print $1}' | sort | uniq)
+          
+          if [ "${{ github.event.inputs.service }}" != "" ]; then
+            CHANGED="${{ github.event.inputs.service }}"
+          fi
+          
+          FILTERED=$(echo "$CHANGED" | grep -E "identity-service|chat-service|profile-service" || true)
+          
+          JSON_ARRAY=$(echo "$FILTERED" | jq -R -s -c 'split("\n")[:-1]')
+          
+          echo "services=$JSON_ARRAY" >> $GITHUB_OUTPUT
+          echo "Services to build/deploy: $FILTERED"
+
   build:
+    needs: detect-changes
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        service: [identity-service, chat-service, profile-service]
+        service: ${{ fromJson(needs.detect-changes.outputs.services) }}
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
@@ -21,30 +50,21 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
-      - name: Build Identity Service
+      - name: Build Docker image
         run: |
           docker build -t ${{ secrets.DOCKER_USERNAME }}/${{ matrix.service }} -f ${{ matrix.service }}/Dockerfile .
       - name: Login to docker hub
         run: docker login -u ${{secrets.DOCKER_USERNAME}} -p ${{secrets.DOCKER_PASSWORD}}
       - name: Publish image to docker hub
         run: docker push ${{ secrets.DOCKER_USERNAME }}/${{ matrix.service }}
+
   deploy:
     needs: build
     runs-on: [aws-ec2]
     strategy:
       fail-fast: false
       matrix:
-        service: [ identity-service, chat-service, profile-service ]
-        include:
-          - service: identity-service
-            port: 8082
-            kafka: true
-          - service: chat-service
-            port: 8085
-            kafka: false
-          - service: profile-service
-            port: 8081
-            kafka: false
+        service: ${{ fromJson(needs.detect-changes.outputs.services) }}
     steps:
       - name: Copy .env
         run: cp /home/ubuntu/.env ./.env
@@ -58,16 +78,33 @@ jobs:
       - name: Pull Image from docker hub
         run: docker pull ${{ secrets.DOCKER_USERNAME }}/${{ matrix.service }}:latest
 
+      - name: Set deploy variables
+        run: |
+          case "${{ matrix.service }}" in
+            identity-service)
+              echo "PORT=8082" >> $GITHUB_ENV
+              echo "KAFKA=true" >> $GITHUB_ENV
+              ;;
+            chat-service)
+              echo "PORT=8085" >> $GITHUB_ENV
+              echo "KAFKA=false" >> $GITHUB_ENV
+              ;;
+            profile-service)
+              echo "PORT=8081" >> $GITHUB_ENV
+              echo "KAFKA=false" >> $GITHUB_ENV
+              ;;
+          esac
+
       - name: Run docker container
         run: |
           docker run -d \
             --name ${{matrix.service}} \
             --network app-network \
-            -p ${{matrix.port}}:8080 \
+            -p $PORT:8080 \
             --env-file .env \
             -e SPRING_PROFILES_ACTIVE=docker \
             ${{ secrets.DOCKER_USERNAME }}/${{matrix.service}}:latest
           
-          if [ "${{matrix.kafka}}" = "true" ]; then
+          if [ "$KAFKA" = "true" ]; then
             docker network connect kafka-net ${{ matrix.service }}
           fi
