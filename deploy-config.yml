@@ -1,9 +1,27 @@
 identity-service:
   port: 8082
   kafka: true
+
 chat-service:
   port: 8085
   kafka: false
+
 profile-service:
   port: 8081
+  kafka: false
+
+api-gateway:
+  port: 8888
+  kafka: false
+
+post-service:
+  port: 8083
+  kafka: false
+
+file-service:
+  port: 8084
+  kafka: false
+
+nginx-frontend:
+  port: 3000
   kafka: false

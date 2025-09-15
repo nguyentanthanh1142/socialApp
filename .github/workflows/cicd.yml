@@ -35,7 +35,7 @@ jobs:
             CHANGED="identity-service chat-service profile-service"
           fi
           
-          FILTERED=$(echo "$CHANGED" | grep -E "identity-service|chat-service|profile-service" || true)
+          FILTERED=$(echo "$CHANGED" | grep -E "identity-service|chat-service|profile-service|post-service|file-service|api-gateway|nginx-frontend" || true)
           
           JSON_ARRAY=$(echo "$FILTERED" | jq -R -s -c 'split("\n")[:-1]')
           
@@ -101,6 +101,7 @@ jobs:
       - name: Load config
         run: |
           # yq to read deploy-config.yml for current service port and kafka settings
+          # default select file at root of repo
           export PORT=$(yq e ".${{ matrix.service }}.port" deploy-config.yml)   
           export KAFKA=$(yq e ".${{ matrix.service }}.kafka" deploy-config.yml)
           echo "PORT=$PORT" >> $GITHUB_ENV
@@ -117,14 +118,22 @@ jobs:
 
       - name: Run docker container
         run: |
-          docker run -d \
-            --name ${{matrix.service}} \
+          if [ "${{ matrix.service }}" = "nginx-frontend" ]; then
+            docker run -d \
+            --name ${{ matrix.service }} \
             --network app-network \
-            -p $PORT:8080 \
+            -p $PORT:80 \
             --env-file .env \
-            -e SPRING_PROFILES_ACTIVE=docker \
-            ${{ secrets.DOCKER_USERNAME }}/${{matrix.service}}:latest
-          
+            ${{ secrets.DOCKER_USERNAME }}/${{ matrix.service }}:latest
+          else         
+            docker run -d \
+              --name ${{matrix.service}} \
+              --network app-network \
+              -p $PORT:8080 \
+              --env-file .env \
+              -e SPRING_PROFILES_ACTIVE=docker \
+              ${{ secrets.DOCKER_USERNAME }}/${{matrix.service}}:latest
+          fi 
           if [ "$KAFKA" = "true" ]; then
             docker network connect kafka-net ${{ matrix.service }}
           fi

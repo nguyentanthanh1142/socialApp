@@ -2,7 +2,7 @@ version: "3.8"
 services:
   nginx-frontend:
     build:
-      context: ./web-app
+      context: nginx-frontend
       dockerfile: Dockerfile
       args:
         REACT_APP_API_GATEWAY: ${REACT_APP_API_GATEWAY}
