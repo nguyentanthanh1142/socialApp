@@ -1,5 +1,6 @@
 package com.ntt.post_service.service;
 
+import com.ntt.common_lib.event.PostCreatedEvent;
 import com.ntt.post_service.dto.PageResponse;
 import com.ntt.post_service.dto.request.PostRequest;
 import com.ntt.post_service.dto.response.PostResponse;
@@ -15,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -31,6 +33,7 @@ public class PostService {
     ProfileClient profileClient;
     DateTimeFormatter dateTimeFormatter;
 
+    KafkaTemplate<String, PostCreatedEvent> kafkaTemplate;
 
     public PostResponse createPost(PostRequest request) {
 
@@ -43,6 +46,14 @@ public class PostService {
                 .modifiedDate(Instant.now())
                 .build();
         post = postRepository.save(post);
+        PostCreatedEvent event = PostCreatedEvent.builder()
+                .postId(post.getId())
+                .userId(authentication.getName())
+                .content(request.getContent())
+                .createdAt(post.getCreateDate())
+                .build();
+
+        kafkaTemplate.send("post-created", event);
         return postMapper.ToPostResponse(post);
     }
     public PageResponse<PostResponse> getMyPosts(int page,int size) {

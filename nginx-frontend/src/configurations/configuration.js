@@ -29,5 +29,11 @@ export const API = {
   CREATE_CONVERSATION: "/chat/conversations/create",
   CREATE_MESSAGE: "/chat/messages/create",
   GET_CONVERSATION_MESSAGES: "/chat/messages",
+  SEND_FRIEND_REQUEST: "/relation/pending",
+  MY_FRIEND_REQUESTS: "relation/m",
+  ACCEPT_FRIENDS: "/relation/accept",
+  MY_FRIENDS: "/relation/my-friends",
+  FRIENDS_SUGGESTION: "/relation/friends-suggestion",
+  MY_FEED: "/feed/my-feed",
 };
 

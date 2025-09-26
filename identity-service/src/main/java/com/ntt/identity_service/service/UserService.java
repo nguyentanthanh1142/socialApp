@@ -60,17 +60,21 @@ public class UserService {
             user = userRepository.save(user);
             var profileRequest = profileMapper.toProfileCreationRequest(request);
             profileRequest.setUserId(user.getId());
+
             var profileResponse = profileClient.createProfile(profileRequest );
+
             log.info(profileResponse.toString());
+
         } catch( DataIntegrityViolationException exception) {
             throw new AppException(ErrorCode.USER_EXISTED);
         }
         NotificationEvent notificationEvent = NotificationEvent.builder()
-                .chanel("")
-                .recipient("")
-                .subject("")
+                .chanel("EMAIL")
+                .recipient(request.getEmail())
+                .subject("Welcome!")
                 .body("Hello, " + user.getUsername() + "!")
                 .build();
+
         kafkaTemplate.send("notification-delivery",notificationEvent);
         return userMapper.toUserResponse(user);
     }

@@ -15,4 +15,7 @@ public interface RelationRepository extends MongoRepository<Relation, String> {
 
     @Query("{'participants.userId' : ?0}")
     List<Relation> findAllByParticipantIdsContains(String userId);
+
+    @Query("{'participants.userId' : ?0, 'status' : ?1}")
+    List<Relation> findAllByParticipantIdsContainsAndStatus(String userId, String status);
 }

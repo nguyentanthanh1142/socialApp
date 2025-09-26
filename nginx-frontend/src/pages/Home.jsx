@@ -5,10 +5,6 @@ import {
   Card,
   CircularProgress,
   Typography,
-  Fab,
-  Popover,
-  TextField,
-  Button,
   Snackbar,
   Alert,
 } from "@mui/material";
@@ -17,9 +13,10 @@ import { isAuthenticated, logOut } from "../services/authenticationService";
 import Scene from "./Scene";
 import Post from "../components/header/Post";
 import FriendList from "../components/FriendList";
+import { getMyFeed } from "../services/feedService";
 import { getMyPosts, createPost } from "../services/postService";
 import DraggableDialog from "../components/DialogCreatePost";
-
+import SideMenu from "../components/header/SideMenu";
 export default function Home() {
   const [posts, setPosts] = useState([]);
   const [page, setPage] = useState(1);
@@ -35,7 +32,7 @@ export default function Home() {
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSeverity, setSnackbarSeverity] = useState("success");
   const [open, setOpen] = useState(false);
-
+  const [readPosts, setReadPosts] = useState([]);
   const navigate = useNavigate();
 
   // Handle opening the popover
@@ -76,10 +73,11 @@ export default function Home() {
         setSnackbarMessage("Failed to create post. Please try again.");
         setSnackbarSeverity("error");
         setSnackbarOpen(true);
+      })
+      .finally(() => {
+        handleCloseDialog();
       });
   };
-
-
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -90,9 +88,8 @@ export default function Home() {
   }, [navigate, page]);
 
   const loadPosts = (page) => {
-    console.log(`loading posts for page ${page}`);
     setLoading(true);
-    getMyPosts(page)
+    getMyFeed(page)
       .then((response) => {
         setTotalPages(response.data.result.totalPages);
         setPosts((prevPosts) => [...prevPosts, ...response.data.result.data]);
@@ -112,8 +109,8 @@ export default function Home() {
 
   useEffect(() => {
     if (!hasMore) return;
-
     if (observer.current) observer.current.disconnect();
+
     observer.current = new IntersectionObserver((entries) => {
       if (entries[0].isIntersecting) {
         if (page < totalPages) {
@@ -124,19 +121,67 @@ export default function Home() {
     if (lastPostElementRef.current) {
       observer.current.observe(lastPostElementRef.current);
     }
-
     setHasMore(false);
   }, [hasMore]);
 
+
+
+  useEffect(() => {
+    if (!hasMore) return;
+    if (observer.current) observer.current.disconnect();
+
+    observer.current = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && page < totalPages) {
+        setPage((prevPage) => prevPage + 1);
+      }
+    });
+
+    if (lastPostElementRef.current) {
+      observer.current.observe(lastPostElementRef.current);
+    }
+
+    setHasMore(false);
+  }, [hasMore, page, totalPages]);
+
+  // observer để đánh dấu đã đọc
+  useEffect(() => {
+    const readObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const postId = entry.target.getAttribute("data-id");
+            console.log("Đang check entry:", entry.target, "data-id:", entry.target.getAttribute("data-id"));
+            setReadPosts((prev) =>
+              prev.includes(postId) ? prev : [...prev, postId]
+            );
+          }
+        });
+      },
+      { threshold: 0.7 } // đọc khi nhìn thấy 70% post
+    );
+
+    document.querySelectorAll(".post-card").forEach((el) => {
+      readObserver.observe(el);
+    });
+
+    return () => readObserver.disconnect();
+  }, [posts]);
+
+useEffect(() => {
+  if (readPosts.length > 0) {
+    const readPostsData = posts.filter(p => readPosts.includes(p.postId?.toString()));
+    console.log("Chi tiết các post đã đọc:", readPostsData);
+  }
+}, [readPosts, posts]);
   return (
-    <Scene>
+    <Scene sideMenu={<SideMenu />}>
       {" "}
       <Snackbar
         open={snackbarOpen}
         autoHideDuration={6000}
         onClose={handleSnackbarClose}
         anchorOrigin={{ vertical: "top", horizontal: "right" }}
-        sx={{ marginTop: "64px" }} // Position below the header
+        sx={{ marginTop: "64px" }}
       >
         <Alert
           onClose={handleSnackbarClose}
@@ -182,7 +227,6 @@ export default function Home() {
               mb: "10px",
             }}
           >
-       
           </Typography>
           <Box
             sx={{
@@ -204,19 +248,23 @@ export default function Home() {
           })} */}
           {posts.map((post, index) => {
             const isLast = posts.length === index + 1;
-
+            const isRead = readPosts.includes(post.postId?.toString());
             const PostCard = (
-              <Card key={post.id} sx={{
-                width: "95%",
-                p: 2,
-                mb: 2,
-                borderRadius: 3,
-                boxShadow: 2,
-              }}>
+              <Card
+                key={post.postId}
+                data-id={post.postId}
+                className="post-card"
+                sx={{
+                  width: "95%",
+                  p: 2,
+                  mb: 2,
+                  borderRadius: 3,
+                  boxShadow: 2,
+                }}>
                 <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
                   {/* <Avatar /> */}
                   <Box sx={{ ml: 1 }}>
-                    <Typography fontWeight="bold">Người dùng</Typography>
+                    <Typography fontWeight="bold">{post.name}</Typography>
                     <Typography variant="caption" color="text.secondary">
                       {/* {formatTime(post.createdDate)} */}
                     </Typography>
@@ -232,6 +280,15 @@ export default function Home() {
                     alt="Ảnh bài viết"
                     sx={{ width: "100%", borderRadius: 2, objectFit: "cover", mt: 1 }}
                   />
+                )}
+                {isRead && (
+                  <Typography
+                    variant="caption"
+                    color="primary"
+                    sx={{ position: "absolute", top: 8, right: 12 }}
+                  >
+                    Đã đọc
+                  </Typography>
                 )}
 
                 <Box sx={{ width: "100%", display: "flex", justifyContent: "space-between", mt: 1 }}>

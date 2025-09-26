@@ -18,7 +18,7 @@ public class RelationReponse {
 
     String id;
     String status;    //GROUP, DIRECT
-    String participantHash;
+    String participantsHash;
     String conversationAvatar;
     String conversationName;
     List<ParticipantInfo> participants;

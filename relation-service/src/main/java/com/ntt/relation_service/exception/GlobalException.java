@@ -1,7 +1,7 @@
 package com.ntt.relation_service.exception;
 
 
-import com.ntt.relation_service.dto.response.ApiResponse;
+import com.ntt.common_lib.dto.ApiResponse;
 import jakarta.validation.ConstraintViolation;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.ResponseEntity;

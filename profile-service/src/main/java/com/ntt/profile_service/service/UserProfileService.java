@@ -1,5 +1,7 @@
 package com.ntt.profile_service.service;
 
+import com.ntt.common_lib.dto.UserProfileDTO;
+import com.ntt.profile_service.cache.UserProfileCacheImpl;
 import com.ntt.profile_service.dto.request.ProfileCreationRequest;
 import com.ntt.profile_service.dto.request.SearchUserRequest;
 import com.ntt.profile_service.dto.request.UpdateProfileRequest;
@@ -32,10 +34,17 @@ public class UserProfileService {
     UserProfileRespository userProfileRepository;
     UserProfileMapper userProfileMapper;
     FileClient fileClient;
+    UserProfileCacheImpl userProfileCache;
     public UserProfileResponse createProfile(ProfileCreationRequest request){
         UserProfile userProfile = userProfileMapper.toUserProfile(request);
         userProfile = userProfileRepository.save(userProfile);
-
+        userProfileCache.putUserProfile(UserProfileDTO.builder()
+                .avatarUrl(userProfile.getAvatar())
+                .name(userProfile.getUsername())
+                .userId(userProfile.getUserId())
+                .firstName(userProfile.getFirstname())
+                .lastName(userProfile.getLastname())
+                .build());
         return userProfileMapper.toUserProfileResponse(userProfile);
     }
     public UserProfileResponse getMyProfile() {
@@ -57,6 +66,13 @@ public class UserProfileService {
 
         var userProfile = userProfileRepository.findByUserId(userId).orElseThrow(()-> new AppException(ErrorCode.USER_NOT_EXISTED));
         userProfileMapper.update(userProfile,request);
+        userProfileCache.putUserProfile(UserProfileDTO.builder()
+                .avatarUrl(userProfile.getAvatar())
+                .name(userProfile.getUsername())
+                .userId(userProfile.getUserId())
+                .firstName(userProfile.getFirstname())
+                .lastName(userProfile.getLastname())
+                .build());
         return userProfileMapper.toUserProfileResponse(userProfileRepository.save(userProfile));
     }
     public UserProfileResponse getProfile(String userId){
@@ -96,5 +112,18 @@ public class UserProfileService {
                 .filter(userProfile -> !userProfile.getUserId().equals(userId))
                 .map(userProfileMapper::toUserProfileResponse).collect(Collectors.toList());
     }
+    public List<UserProfileResponse> getPopularProfiles(){
+        var userId = SecurityContextHolder.getContext().getAuthentication().getName();
+        List<UserProfile> popularUsers = userProfileRepository.findTop20ByCity(getMyProfile().getCity());
+        return popularUsers.stream().map(userProfileMapper::toUserProfileResponse).collect(Collectors.toList());
+    }
 
+    public List<UserProfileResponse> getProfilesByIds(List<String> userIds){
+        List<UserProfile> userProfiles = userProfileRepository.findAllById(userIds);
+        return userProfiles.stream().map(userProfileMapper::toUserProfileResponse).collect(Collectors.toList());
+    }
+    public UserProfileResponse getProfilesByUsername(String username){
+        UserProfile userProfile = userProfileRepository.findByUsername(username).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+        return userProfileMapper.toUserProfileResponse(userProfile);
+    }
 }

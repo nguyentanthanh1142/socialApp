@@ -1,0 +1,38 @@
+server:
+  port: 8087
+  servlet:
+    context-path: /feed
+
+spring:
+  datasource:
+    url: ${DBMS_CONNECTION:jdbc:mysql://localhost:3307/feed_service}
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD:123}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  kafka:
+    consumer:
+      bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9094}
+      group-id: feed-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+    properties:
+      spring.json.trusted.packages: com.ntt.common_lib.event,com.ntt.post_service.dto.request
+app:
+  services:
+    token: REDACTED_JWT
+    relation:
+      url: http://localhost:8086/relation
+jwt:
+  signerKey: ${JWT_SIGNER_KEY:REDACTED_SIGNER_KEY}
+  valid-duration: 3600 #seconds
+  refresh-duration: 36000  #seconds
+

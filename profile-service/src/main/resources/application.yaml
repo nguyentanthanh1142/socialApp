@@ -10,6 +10,10 @@ spring:
     authentication:
       username: ${NEO4J_USERNAME:neo4j}
       password: ${NEO4J_PASSWORD:123456789}
+  data:
+    redis:
+      host: localhost
+      port: 6379
 app:
   services:
     file-service: ${FILE_SERVICE_URL:http://localhost:8084/file}
