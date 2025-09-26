@@ -9,6 +9,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -19,6 +20,7 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class UserProfileController {
     UserProfileService userProfileService;
+    private final RestClient.Builder builder;
 
     @GetMapping("/users")
     List<UserProfileResponse> getAllProfiles()
@@ -49,6 +51,18 @@ public class UserProfileController {
     ApiResponse<List<UserProfileResponse>> search(@RequestBody SearchUserRequest request) {
         return ApiResponse.<List<UserProfileResponse>>builder()
                 .result(userProfileService.search(request))
+                .build();
+    }
+    @GetMapping("/users/popular")
+    ApiResponse<List<UserProfileResponse>> getPopularProfiles() {
+        return ApiResponse.<List<UserProfileResponse>>builder()
+                .result(userProfileService.getPopularProfiles())
+                .build();
+    }
+    @GetMapping("users/profile/{username}")
+    ApiResponse<UserProfileResponse> getProfile(@PathVariable String username) {
+        return ApiResponse.<UserProfileResponse>builder()
+                .result(userProfileService.getProfilesByUsername(username))
                 .build();
     }
 }

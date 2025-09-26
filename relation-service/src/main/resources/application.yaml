@@ -8,9 +8,14 @@ spring:
   data:
     mongodb:
       uri: mongodb://root:root@localhost:27017/relation-service?authSource=admin
+      username: ${MONGO_USERNAME:root}
+      password: ${MONGO_PASSWORD:root}
+      auto-index-creation: true
 app:
   services:
     profile:
       url: http://localhost:8081/profile
-    identity:
-      url: http://localhost:8080/identity
+jwt:
+  signerKey: ${JWT_SIGNER_KEY:K25adN3cmQsGmXDPQCpIbluXGC5cTdXwOU1TSOkm/h9Cj6FBuMExdcvkkxTzIRsM}
+  valid-duration: 3600 #seconds
+  refresh-duration: 36000  #seconds

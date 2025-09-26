@@ -30,7 +30,7 @@ import {
 } from "../services/chatService";
 import { io } from "socket.io-client";
 import { getToken } from "../services/localStorageService";
-
+import SideMenu from "../components/header/SideMenu";
 export default function Chat() {
   const [message, setMessage] = useState("");
   const [newChatAnchorEl, setNewChatAnchorEl] = useState(null);
@@ -41,6 +41,7 @@ export default function Chat() {
   const [messagesMap, setMessagesMap] = useState({});
   const messageContainerRef = useRef(null);
   const socketRef = useRef(null); // Function to scroll to the bottom of the message container
+  
   const scrollToBottom = useCallback(() => {
     if (messageContainerRef.current) {
       // Immediate scroll attempt
@@ -307,7 +308,7 @@ export default function Chat() {
   );
 
   return (
-    <Scene>
+    <Scene sideMenu={<SideMenu />}>
       <Card
         sx={{
           width: "100%",

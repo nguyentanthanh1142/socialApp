@@ -4,8 +4,81 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="afa41a76-9429-4fe5-9d5b-313cc434f5da" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.gitignore" afterDir="false" />
+    <list default="true" id="afa41a76-9429-4fe5-9d5b-313cc434f5da" name="Changes" comment="Fix build image nginx-frontend">
+      <change afterPath="$PROJECT_DIR$/common-lib/src/main/java/com/ntt/common_lib/cache/UserProfileCache.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/common-lib/src/main/java/com/ntt/common_lib/dto/PageResponse.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/common-lib/src/main/java/com/ntt/common_lib/dto/UserProfileDTO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/common-lib/src/main/java/com/ntt/common_lib/event/PostCreatedEvent.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/feed-service/.gitattributes" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/feed-service/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/feed-service/.mvn/wrapper/maven-wrapper.properties" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/feed-service/mvnw" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/feed-service/mvnw.cmd" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/feed-service/pom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/feed-service/src/main/java/com/ntt/feed_service/FeedServiceApplication.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/feed-service/src/main/java/com/ntt/feed_service/cache/UserProfileCacheImpl.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/feed-service/src/main/java/com/ntt/feed_service/configuration/AuthenticationRequestInterceptor.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/feed-service/src/main/java/com/ntt/feed_service/configuration/CustomerJwtDecoder.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/feed-service/src/main/java/com/ntt/feed_service/configuration/JwtAuthenticationEntryPoint.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/feed-service/src/main/java/com/ntt/feed_service/configuration/KafkaConsumerConfig.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/feed-service/src/main/java/com/ntt/feed_service/configuration/RedisConfig.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/feed-service/src/main/java/com/ntt/feed_service/configuration/SecurityConfig.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/feed-service/src/main/java/com/ntt/feed_service/configuration/ServiceTokenGenerator.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/feed-service/src/main/java/com/ntt/feed_service/controller/FeedController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/feed-service/src/main/java/com/ntt/feed_service/dto/response/FeedResponse.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/feed-service/src/main/java/com/ntt/feed_service/exception/AppException.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/feed-service/src/main/java/com/ntt/feed_service/exception/ErrorCode.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/feed-service/src/main/java/com/ntt/feed_service/exception/GlobalException.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/feed-service/src/main/java/com/ntt/feed_service/repository/httpClient/RelationClient.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/feed-service/src/main/java/com/ntt/feed_service/service/FeedService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/feed-service/src/main/resources/application.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/feed-service/src/test/java/com/ntt/feed_service/FeedServiceApplicationTests.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/identity-service/src/main/java/com/ntt/identity_service/configuration/KafkaTopicConfig.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/profile-service/src/main/java/com/ntt/profile_service/cache/UserProfileCacheImpl.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/profile-service/src/main/java/com/ntt/profile_service/configuration/RedisConfig.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/configuration/AuthenticationRequestInterceptor.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/dto/response/SuggestionResponse.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/enums/RelationStatus.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/encodings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api-gateway/src/main/java/com/ntt/api_gateway/configuration/AuthenticationFilter.java" beforeDir="false" afterPath="$PROJECT_DIR$/api-gateway/src/main/java/com/ntt/api_gateway/configuration/AuthenticationFilter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api-gateway/src/main/resources/application.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/api-gateway/src/main/resources/application.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/identity-service/src/main/java/com/ntt/identity_service/service/UserService.java" beforeDir="false" afterPath="$PROJECT_DIR$/identity-service/src/main/java/com/ntt/identity_service/service/UserService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/identity-service/src/main/resources/application.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/identity-service/src/main/resources/application.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/nginx-frontend/src/components/header/SideMenu.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/nginx-frontend/src/components/header/SideMenu.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/nginx-frontend/src/configurations/configuration.js" beforeDir="false" afterPath="$PROJECT_DIR$/nginx-frontend/src/configurations/configuration.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/nginx-frontend/src/pages/Chat.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/nginx-frontend/src/pages/Chat.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/nginx-frontend/src/pages/Home.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/nginx-frontend/src/pages/Home.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/nginx-frontend/src/pages/Profile.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/nginx-frontend/src/pages/Profile.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/nginx-frontend/src/pages/Scene.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/nginx-frontend/src/pages/Scene.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/nginx-frontend/src/routes/AppRoutes.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/nginx-frontend/src/routes/AppRoutes.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/nginx-frontend/src/services/userService.js" beforeDir="false" afterPath="$PROJECT_DIR$/nginx-frontend/src/services/userService.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/post-service/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/post-service/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/post-service/src/main/java/com/ntt/post_service/service/PostService.java" beforeDir="false" afterPath="$PROJECT_DIR$/post-service/src/main/java/com/ntt/post_service/service/PostService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/post-service/src/main/resources/application.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/post-service/src/main/resources/application.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/profile-service/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/profile-service/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/profile-service/src/main/java/com/ntt/profile_service/configuration/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/profile-service/src/main/java/com/ntt/profile_service/configuration/SecurityConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/profile-service/src/main/java/com/ntt/profile_service/controller/InternalUserProfileController.java" beforeDir="false" afterPath="$PROJECT_DIR$/profile-service/src/main/java/com/ntt/profile_service/controller/InternalUserProfileController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/profile-service/src/main/java/com/ntt/profile_service/controller/UserProfileController.java" beforeDir="false" afterPath="$PROJECT_DIR$/profile-service/src/main/java/com/ntt/profile_service/controller/UserProfileController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/profile-service/src/main/java/com/ntt/profile_service/repository/UserProfileRespository.java" beforeDir="false" afterPath="$PROJECT_DIR$/profile-service/src/main/java/com/ntt/profile_service/repository/UserProfileRespository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/profile-service/src/main/java/com/ntt/profile_service/service/UserProfileService.java" beforeDir="false" afterPath="$PROJECT_DIR$/profile-service/src/main/java/com/ntt/profile_service/service/UserProfileService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/profile-service/src/main/resources/application.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/profile-service/src/main/resources/application.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/relation-service/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/relation-service/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/configuration/JwtAuthenticationEntryPoint.java" beforeDir="false" afterPath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/configuration/JwtAuthenticationEntryPoint.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/configuration/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/configuration/SecurityConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/controller/RelationController.java" beforeDir="false" afterPath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/controller/RelationController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/dto/request/RelationRequest.java" beforeDir="false" afterPath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/dto/request/RelationRequest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/dto/response/ApiResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/dto/response/RelationReponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/dto/response/RelationReponse.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/entity/Relation.java" beforeDir="false" afterPath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/entity/Relation.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/exception/GlobalException.java" beforeDir="false" afterPath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/exception/GlobalException.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/repository/RelationRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/repository/RelationRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/repository/htppclient/ProfileClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/repository/htppclient/ProfileClient.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/service/RelationService.java" beforeDir="false" afterPath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/service/RelationService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/relation-service/src/main/resources/application.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/relation-service/src/main/resources/application.yaml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -16,11 +89,29 @@
     <option name="RECENT_TEMPLATES">
       <list>
         <option value="JavaScript File" />
+        <option value="package-info" />
+        <option value="Interface" />
+        <option value="Class" />
       </list>
     </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;nguyentanthanh1142&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/nguyentanthanh1142/socialApp.git&quot;,
+    &quot;accountId&quot;: &quot;85daab1e-4988-401b-aff6-07e4bbe39d86&quot;
+  }
+}</component>
+  <component name="JpbToolWindowState">
+    <option name="isToolWindowVisible" value="false" />
   </component>
   <component name="KubernetesApiPersistence">{}</component>
   <component name="KubernetesApiProvider">{
@@ -32,6 +123,9 @@
         <option name="mavenHomeTypeForPersistence" value="WRAPPER" />
       </MavenGeneralSettings>
     </option>
+  </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 4
@@ -46,6 +140,7 @@
   </component>
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
+    &quot;Maven.relation-service [clean].executor&quot;: &quot;Run&quot;,
     &quot;RequestMappingsPanelOrder0&quot;: &quot;0&quot;,
     &quot;RequestMappingsPanelOrder1&quot;: &quot;1&quot;,
     &quot;RequestMappingsPanelWidth0&quot;: &quot;75&quot;,
@@ -54,14 +149,16 @@
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
     &quot;Spring Boot.ApiGatewayApplication.executor&quot;: &quot;Run&quot;,
     &quot;Spring Boot.ChatServiceApplication.executor&quot;: &quot;Run&quot;,
+    &quot;Spring Boot.FeedServiceApplication.executor&quot;: &quot;Run&quot;,
     &quot;Spring Boot.FileServiceApplication.executor&quot;: &quot;Run&quot;,
     &quot;Spring Boot.IdentityServiceApplication.executor&quot;: &quot;Run&quot;,
     &quot;Spring Boot.PostServiceApplication.executor&quot;: &quot;Run&quot;,
     &quot;Spring Boot.ProfileServiceApplication.executor&quot;: &quot;Run&quot;,
     &quot;Spring Boot.RelationServiceApplication.executor&quot;: &quot;Run&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;test-deploy&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;feature/feed-service&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
     &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;D:/social-app/identity-service/src/main/resources&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/social-app/feed-service/src/main/java/com/ntt/feed_service/exception&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
     &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
@@ -70,15 +167,29 @@
     &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
     &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
     &quot;run.configurations.included.in.services&quot;: &quot;true&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;project.propCompiler&quot;,
+    &quot;ts.external.directory.path&quot;: &quot;C:\\Users\\nguye\\AppData\\Local\\JetBrains\\IntelliJ IDEA 2024.3.5\\plugins\\javascript-plugin\\jsLanguageServicesImpl\\external&quot;,
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
+  <component name="ReactorSettings">
+    <option name="notificationShown" value="true" />
+  </component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\social-app\feed-service\src\main\java\com\ntt\feed_service\exception" />
+      <recent name="D:\social-app\feed-service\src\main\java\com\ntt\feed_service\configuration" />
+      <recent name="D:\social-app" />
       <recent name="D:\social-app\identity-service\src\main\resources" />
       <recent name="D:\social-app\post-service\src\main\resources" />
-      <recent name="D:\social-app\chat-service\src\main\resources" />
-      <recent name="D:\social-app\file-service\src\main\resources" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="D:\social-app" />
+    </key>
+    <key name="CopyClassDialog.RECENTS_KEY">
+      <recent name="com.ntt.feed_service.configuration" />
+      <recent name="com.ntt.common_lib.event" />
+      <recent name="com.ntt.relation_service.configuration" />
     </key>
   </component>
   <component name="RunDashboard">
@@ -91,7 +202,7 @@
       </set>
     </option>
   </component>
-  <component name="RunManager" selected="Spring Boot.IdentityServiceApplication">
+  <component name="RunManager" selected="Spring Boot.FeedServiceApplication">
     <configuration name="ApiGatewayApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
       <module name="api-gateway" />
       <option name="SPRING_BOOT_MAIN_CLASS" value="com.ntt.api_gateway.ApiGatewayApplication" />
@@ -102,6 +213,13 @@
     <configuration name="ChatServiceApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
       <module name="chat-service" />
       <option name="SPRING_BOOT_MAIN_CLASS" value="com.ntt.chat_service.ChatServiceApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="FeedServiceApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <module name="feed-service" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.ntt.feed_service.FeedServiceApplication" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
@@ -146,11 +264,12 @@
       </method>
     </configuration>
     <list>
-      <item itemvalue="Spring Boot.ApiGatewayApplication" />
+      <item itemvalue="Spring Boot.FeedServiceApplication" />
       <item itemvalue="Spring Boot.ChatServiceApplication" />
+      <item itemvalue="Spring Boot.PostServiceApplication" />
+      <item itemvalue="Spring Boot.ApiGatewayApplication" />
       <item itemvalue="Spring Boot.FileServiceApplication" />
       <item itemvalue="Spring Boot.IdentityServiceApplication" />
-      <item itemvalue="Spring Boot.PostServiceApplication" />
       <item itemvalue="Spring Boot.ProfileServiceApplication" />
       <item itemvalue="Spring Boot.RelationServiceApplication" />
     </list>
@@ -164,6 +283,9 @@
     </attachedChunks>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="StructureViewState">
+    <option name="selectedTab" value="Logical" />
+  </component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
       <changelist id="afa41a76-9429-4fe5-9d5b-313cc434f5da" name="Changes" comment="" />
@@ -181,10 +303,163 @@
       <workItem from="1757540415917" duration="567000" />
       <workItem from="1757566903469" duration="40620000" />
       <workItem from="1757790355663" duration="1003000" />
+      <workItem from="1757851782029" duration="28868000" />
+      <workItem from="1757946623937" duration="12088000" />
+      <workItem from="1757997471519" duration="3848000" />
+      <workItem from="1758009463011" duration="1633000" />
+      <workItem from="1758012676276" duration="8498000" />
+      <workItem from="1758084257263" duration="2241000" />
+      <workItem from="1758088685443" duration="10677000" />
+      <workItem from="1758108406116" duration="312000" />
+      <workItem from="1758125483781" duration="2706000" />
+      <workItem from="1758133511216" duration="885000" />
+      <workItem from="1758134653138" duration="1506000" />
+      <workItem from="1758170465704" duration="24945000" />
+      <workItem from="1758218369264" duration="7456000" />
+      <workItem from="1758253930579" duration="7406000" />
+      <workItem from="1758262166763" duration="25860000" />
+      <workItem from="1758391515111" duration="1431000" />
+      <workItem from="1758429480586" duration="19228000" />
+      <workItem from="1758565006225" duration="61872000" />
+      <workItem from="1758725118273" duration="74651000" />
+      <workItem from="1758869951934" duration="7834000" />
     </task>
+    <task id="LOCAL-00001" summary="Fix services Dockerfile">
+      <option name="closed" value="true" />
+      <created>1757880621995</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1757880621995</updated>
+    </task>
+    <task id="LOCAL-00002" summary="deploy when update service">
+      <option name="closed" value="true" />
+      <created>1757921885324</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1757921885324</updated>
+    </task>
+    <task id="LOCAL-00003" summary="deploy when update service">
+      <option name="closed" value="true" />
+      <created>1757925064195</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1757925064195</updated>
+    </task>
+    <task id="LOCAL-00004" summary="fix deploy when update service">
+      <option name="closed" value="true" />
+      <created>1757927752242</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1757927752242</updated>
+    </task>
+    <task id="LOCAL-00005" summary="fix read config-deploy">
+      <option name="closed" value="true" />
+      <created>1757929705483</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1757929705483</updated>
+    </task>
+    <task id="LOCAL-00006" summary="fix read config-deploy">
+      <option name="closed" value="true" />
+      <created>1757932524272</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1757932524272</updated>
+    </task>
+    <task id="LOCAL-00007" summary="fix read config-deploy">
+      <option name="closed" value="true" />
+      <created>1757948214758</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1757948214758</updated>
+    </task>
+    <task id="LOCAL-00008" summary="Update cicd.yml">
+      <option name="closed" value="true" />
+      <created>1757952654615</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1757952654615</updated>
+    </task>
+    <task id="LOCAL-00009" summary="Fix web app Dockerfile">
+      <option name="closed" value="true" />
+      <created>1757953274970</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1757953274970</updated>
+    </task>
+    <task id="LOCAL-00010" summary="Fix build image nginx-frontend">
+      <option name="closed" value="true" />
+      <created>1757953894264</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1757953894264</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Fix services Dockerfile" />
+    <MESSAGE value="deploy when update service" />
+    <MESSAGE value="fix deploy when update service" />
+    <MESSAGE value="fix read config-deploy" />
+    <MESSAGE value="Update cicd.yml" />
+    <MESSAGE value="Fix web app Dockerfile" />
+    <MESSAGE value="Fix build image nginx-frontend" />
+    <option name="LAST_COMMIT_MESSAGE" value="Fix build image nginx-frontend" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="NONE" type="java-line">
+          <url>file://$PROJECT_DIR$/chat-service/src/main/java/com/ntt/chat_service/repository/htppclient/IndentityClient.java</url>
+          <line>9</line>
+          <log-expression expression="FeignClient(name = &quot;identity-client&quot;, url = &quot;${app.services.identity.url}&quot;)&#10;public interface IndentityClient {&#10;&#10;    @PostMapping(&quot;/auth/introspect&quot;)&#10;    ApiResponse&lt;IntrospectResponse&gt; authenticationResponseApiResponse(@RequestBody IntrospectRequest request);&#10;}" language="JAVA" />
+          <option name="timeStamp" value="3" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/feed-service/src/main/java/com/ntt/feed_service/service/FeedService.java</url>
+          <line>70</line>
+          <option name="timeStamp" value="10" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/feed-service/src/main/java/com/ntt/feed_service/service/FeedService.java</url>
+          <line>112</line>
+          <option name="timeStamp" value="11" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+    <watches-manager>
+      <configuration name="SpringBootApplicationConfigurationType">
+        <watch expression="profileClient" language="JAVA" />
+      </configuration>
+    </watches-manager>
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
   </component>
 </project>

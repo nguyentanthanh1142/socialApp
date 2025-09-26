@@ -1,14 +1,25 @@
 package com.ntt.relation_service.configuration;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
+
+import javax.crypto.spec.SecretKeySpec;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 
 @Configuration
@@ -17,13 +28,39 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     private static final String[] PUBLIC_ENDPOINTS = {
-            "/internal/users", "/internal/users/**"
+            "/internal/users", "/internal/users/**",
     };
 
+    @Value("${jwt.signerKey}")
+    private String signerKey;
     private final CustomerJwtDecoder customerJwtDecoder;
 
     public SecurityConfig(CustomerJwtDecoder customerJwtDecoder) {
         this.customerJwtDecoder = customerJwtDecoder;
+    }
+    @Bean
+    public JwtDecoder jwtDecoder() {
+        SecretKeySpec serviceKey  = new SecretKeySpec(signerKey.getBytes(), "HmacSHA256");
+        JwtDecoder serviceDecoder =  NimbusJwtDecoder.withSecretKey(serviceKey)
+                .macAlgorithm(MacAlgorithm.HS256)
+                .build();
+
+
+        SecretKeySpec userKey = new SecretKeySpec(signerKey.getBytes(), "HmacSHA512");
+        JwtDecoder userDecoder =  NimbusJwtDecoder.withSecretKey(userKey)
+                .macAlgorithm(MacAlgorithm.HS512)
+                .build();
+
+
+        return token -> {
+            try {
+                // Thử decode service token
+                return serviceDecoder.decode(token);
+            } catch (Exception ex1) {
+                // Nếu fail, thử decode user token
+                return userDecoder.decode(token);
+            }
+        };
     }
 
     @Bean
@@ -33,11 +70,12 @@ public class SecurityConfig {
 //                .cors().and()
                 .authorizeHttpRequests(request -> request.requestMatchers(PUBLIC_ENDPOINTS)
                 .permitAll()
-                .anyRequest()
+                        .requestMatchers("/followers/**").hasAnyRole("USER", "SERVICE")
+                        .anyRequest()
                 .authenticated());
 
         httpSecurity.oauth2ResourceServer(oauth2 -> oauth2.jwt(jwtConfigurer -> jwtConfigurer
-                        .decoder(customerJwtDecoder)
+                        .decoder(jwtDecoder())
                         .jwtAuthenticationConverter(jwtAuthenticationConverter()))
                 .authenticationEntryPoint(new JwtAuthenticationEntryPoint()));
 
@@ -48,9 +86,29 @@ public class SecurityConfig {
     @Bean
     JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtGrantedAuthoritiesConverter jwtGrantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
-        jwtGrantedAuthoritiesConverter.setAuthorityPrefix("");
+        jwtGrantedAuthoritiesConverter.setAuthorityPrefix(""); // bỏ ROLE_
+
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
-        converter.setJwtGrantedAuthoritiesConverter(jwtGrantedAuthoritiesConverter);
+        converter.setJwtGrantedAuthoritiesConverter(jwt -> {
+
+
+            Collection<GrantedAuthority> authorities = new ArrayList<>();
+
+            // scope từ token
+            Object scopeObj = jwt.getClaims().get("scope");
+            if (scopeObj instanceof String scopeStr) {
+                for (String s : scopeStr.split(" ")) {
+                    authorities.add(new SimpleGrantedAuthority(s));
+                }
+            } else if (scopeObj instanceof List<?> scopeList) {
+                scopeList.forEach(s -> authorities.add(new SimpleGrantedAuthority(s.toString())));
+            }
+
+            // fallback
+            authorities.addAll(jwtGrantedAuthoritiesConverter.convert(jwt));
+
+            return authorities;
+        });
         return converter;
     }
 }

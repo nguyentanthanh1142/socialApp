@@ -1,6 +1,7 @@
 package com.ntt.relation_service.dto.request;
 
 
+import com.ntt.relation_service.enums.RelationStatus;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
@@ -14,7 +15,7 @@ import java.util.List;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class RelationRequest {
-    String status; // e.g., "pending", "accepted", "blocked"
+    RelationStatus status; // e.g., "pending", "accepted", "blocked"
 
     @Size(min = 1)
     @NotNull

@@ -25,6 +25,7 @@ import {
   uploadAvatar,
 } from "../services/userService";
 import { isAuthenticated, logOut } from "../services/authenticationService";
+import SideMenu from "../components/header/SideMenu";
 import Scene from "./Scene";
 
 export default function Profile() {
@@ -161,7 +162,7 @@ export default function Profile() {
   }, [navigate]);
 
   return (
-    <Scene>
+    <Scene sideMenu={<SideMenu />}>
       <Snackbar
         open={snackbarOpen}
         autoHideDuration={6000}

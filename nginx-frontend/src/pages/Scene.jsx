@@ -7,14 +7,14 @@ import MenuIcon from "@mui/icons-material/Menu";
 import Toolbar from "@mui/material/Toolbar";
 import { useTheme } from "@mui/material";
 import Header from "../components/header/Header";
-import SideMenu from "../components/header/SideMenu";
+
 import FriendList from "../components/FriendList";
 import { useLocation } from "react-router-dom";
 
 
 const drawerWidth = 300;
 
-function Scene({ children }) {
+function Scene({ sideMenu, children }) {
 
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [isClosing, setIsClosing] = React.useState(false);
@@ -90,7 +90,8 @@ function Scene({ children }) {
               },
             }}
           >
-            <SideMenu />
+             {sideMenu && sideMenu}
+            {/* <SideMenu /> */}
           </Drawer>
           <Drawer
             variant="permanent"
@@ -103,7 +104,8 @@ function Scene({ children }) {
             }}
             open
           >
-            <SideMenu />
+            {sideMenu && sideMenu}
+            {/* <SideMenu /> */}
           </Drawer>
         </Box>
         <Box

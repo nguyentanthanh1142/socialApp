@@ -1,0 +1,38 @@
+server:
+  port: 8087
+  servlet:
+    context-path: /feed
+
+spring:
+  datasource:
+    url: ${DBMS_CONNECTION:jdbc:mysql://localhost:3307/feed_service}
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD:123}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  kafka:
+    consumer:
+      bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9094}
+      group-id: feed-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+    properties:
+      spring.json.trusted.packages: com.ntt.common_lib.event,com.ntt.post_service.dto.request
+app:
+  services:
+    token: eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJudHQuY29tIiwic3ViIjoiZmVlZC1zZXJ2aWNlIiwiYXVkIjoicmVsYXRpb24tc2VydmljZSIsImV4cCI6MTc1ODc4MDAwMCwiaWF0IjoxNzU4Nzc2NDAwLCJqdGkiOiI3YzJmOGFmMS0zZDViLTQxYzYtODEyYi0zZTYwYTJiYjVmNWMiLCJzY29wZSI6IlJPTEVfSU5URVJOQUwgU0VSVklDRV9DQUxMIn0.MbS_aPYZYVgV9-S7PdX-Vt2uCSVQm1vR-3rI68StWx7-7vxNmkGP51semSovDQhR-wrqZJFlg7xKMzqo86mZ7w
+    relation:
+      url: http://localhost:8086/relation
+jwt:
+  signerKey: ${JWT_SIGNER_KEY:K25adN3cmQsGmXDPQCpIbluXGC5cTdXwOU1TSOkm/h9Cj6FBuMExdcvkkxTzIRsM}
+  valid-duration: 3600 #seconds
+  refresh-duration: 36000  #seconds
+

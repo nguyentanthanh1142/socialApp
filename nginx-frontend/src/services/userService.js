@@ -9,6 +9,15 @@ export const getMyInfo = async () =>{
         }
     })
 };
+export const getProfile = async (username) =>{
+  return await httpClient.get(API.GET_PUBLIC_INFO, username,{
+
+            headers: {
+            Authorization: `Bearer ${getToken()}`,
+        }
+  })
+}
+
 export const updateProfile = async (profileData) => {
   return await httpClient.put(API.UPDATE_PROFILE, profileData, {
     headers: {

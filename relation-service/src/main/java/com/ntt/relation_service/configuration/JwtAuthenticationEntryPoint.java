@@ -1,7 +1,7 @@
 package com.ntt.relation_service.configuration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ntt.relation_service.dto.response.ApiResponse;
+import com.ntt.common_lib.dto.ApiResponse;
 import com.ntt.relation_service.exception.ErrorCode;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
