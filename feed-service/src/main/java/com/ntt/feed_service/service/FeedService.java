@@ -1,12 +1,11 @@
 package com.ntt.feed_service.service;
 
-
-import com.ntt.common_lib.cache.UserProfileCache;
 import com.ntt.common_lib.dto.PageResponse;
 import com.ntt.common_lib.dto.UserProfileDTO;
 import com.ntt.common_lib.event.PostCreatedEvent;
 import com.ntt.feed_service.cache.UserProfileCacheImpl;
 import com.ntt.feed_service.dto.response.FeedResponse;
+import com.ntt.feed_service.redis.RedisScripts;
 import com.ntt.feed_service.repository.httpClient.RelationClient;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -17,9 +16,9 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -27,13 +26,14 @@ import java.util.Map;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class FeedService {
 
-    RedisTemplate<String, Object> redisTemplate;
-    RedisTemplate<String, UserProfileDTO> userProfileredisTemplate;
+    RedisTemplate<String, String> redisTemplate;
     RelationClient relationClient;
     UserProfileCacheImpl userProfileCache;
+    RedisScripts redisScripts;
 
-    private static final String FEED_KEY_PREFIX = "feed:";
+    private static final String FEED_KEY_PREFIX = "feed:zset:";
     private static final String POST_KEY_PREFIX = "post:";
+    private static final String MARK_READ_PREFIX = "feed:read:";
 
     @KafkaListener(
             topics = "post-created",
@@ -52,24 +52,36 @@ public class FeedService {
 
         for (String followerId : followers) {
             String feedKey = FEED_KEY_PREFIX + followerId;
-            redisTemplate.opsForList().leftPush(feedKey, event.getPostId());
-            redisTemplate.opsForList().trim(feedKey, 0, 999); // giữ tối đa 1000 bài
-        }
 
+            //This for Redis List
+//            redisTemplate.opsForList().leftPush(feedKey, event.getPostId());
+//            redisTemplate.opsForList().trim(feedKey, 0, 999);
+
+            //This for Redis ZSET
+            redisTemplate.opsForZSet().add(feedKey, event.getPostId(), event.getCreatedAt().toEpochMilli());
+            long size = redisTemplate.opsForZSet().zCard(feedKey);
+            if (size > 1000) {
+                redisTemplate.opsForZSet().removeRange(feedKey, 0, size - 1001);
+            }
+        }
     }
 
     public PageResponse<FeedResponse> getMyFeed(int page, int size) {
         var userId = SecurityContextHolder.getContext().getAuthentication().getName();
         log.info("userId" + userId);
         String feedKey = FEED_KEY_PREFIX + userId;
-
+        String feedReadKey = MARK_READ_PREFIX + userId;
         int offset = (page-1) * size;
         int end = offset + size - 1;
+        List<String> blackList = new ArrayList<>();
 
+//        Set<Object> postIds = redisTemplate.opsForZSet().reverseRange(feedKey, offset, end);
+        List<String> postIds = redisScripts.filterFeed(feedKey,feedReadKey,offset,size,blackList);
+        log.info("Post iD : " + postIds.toString());
 
         // Lấy danh sách postId trong feed từ Redis List
-        List<Object> postIds = redisTemplate.opsForList().range(feedKey, offset, end);
-        if (postIds == null || postIds.isEmpty()) {
+//        List<Object> postIds = redisTemplate.opsForList().range(feedKey, offset, end);
+        if (postIds.isEmpty()) {
             return PageResponse.<FeedResponse>builder()
                     .totalElements(0)
                     .currentPage(page)
@@ -109,6 +121,7 @@ public class FeedService {
 //                    .createdAt(Instant.parse(postMap.get("createdAt")))
 //                    .build());
 //        }
+//        Set<String> readPostIds = redisTemplate.opsForSet().members(MARK_READ_PREFIX + userId);
 
         List<FeedResponse> feeds = postIds.stream()
                 .map(id -> {
@@ -116,7 +129,7 @@ public class FeedService {
                     Map<Object,Object> postMap = redisTemplate.opsForHash().entries(postKey);
                     UserProfileDTO profile = userProfileCache.getUserProfile((String)postMap.get("userId"));
                     return FeedResponse.builder()
-                            .postId((String)id)
+                            .postId(id)
                             .userId((String) postMap.get("userId"))
                             .content((String) postMap.get("content"))
                             .createdAt(Instant.parse((String) postMap.get("createdAt")))
@@ -125,8 +138,9 @@ public class FeedService {
                             .build();
                 } ).toList();
 
+//        long totalElements = redisTemplate.opsForList().size(feedKey);
 
-        long totalElements = redisTemplate.opsForList().size(feedKey);
+        long totalElements = Optional.ofNullable(redisTemplate.opsForZSet().zCard(feedKey)).orElse(0L);
         int totalPage = (int) Math.ceil(totalElements/(double) size);
 
         return PageResponse.<FeedResponse>builder()
@@ -136,12 +150,18 @@ public class FeedService {
                 .totalPages(totalPage)
                 .build();
     }
-
     public List<String> getMyFollowers() {
         String userId = SecurityContextHolder.getContext().getAuthentication().getName();
-        List<String> followers = getFollowersSafe(userId);
-        log.info("Follower: " + followers.toString());
-        return followers;
+        return getFollowersSafe(userId);
+    }
+
+    public void markRead(List<String> postIds) {
+        String userId = SecurityContextHolder.getContext().getAuthentication().getName();
+        String key = MARK_READ_PREFIX + userId;
+
+        redisTemplate.opsForSet().add(key, postIds.toArray(new String[0]));
+        redisTemplate.expire(key, Duration.ofDays(7));
+        log.info("postId"+postIds.toString());
     }
 
     private List<String> getFollowersSafe(String userId)
@@ -153,10 +173,4 @@ public class FeedService {
             return List.of();
         }
     }
-
-
-
-
-
-
 }

@@ -118,6 +118,8 @@ public class ChatMessageService {
         return toChatMessageResponse(chatmessage);
     }
 
+
+
     private ChatMessageResponse toChatMessageResponse(ChatMessage chatMessage) {
         String userId = SecurityContextHolder.getContext().getAuthentication().getName();
 

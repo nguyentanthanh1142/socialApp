@@ -35,5 +35,6 @@ export const API = {
   MY_FRIENDS: "/relation/my-friends",
   FRIENDS_SUGGESTION: "/relation/friends-suggestion",
   MY_FEED: "/feed/my-feed",
+  MARK_READ_POST: "/feed/read"
 };
 
