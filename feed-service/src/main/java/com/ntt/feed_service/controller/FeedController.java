@@ -39,16 +39,12 @@ public class FeedController {
                 .result(feedService.getMyFollowers())
                 .build();
     }
+    @PostMapping("/read")
+    ApiResponse<Void> readFeed(@RequestBody List<String> postIds)
+    {
+        feedService.markRead(postIds);
+        return ApiResponse.<Void>builder()
+                .build();
+    }
 }
-//        var userId = SecurityContextHolder.getContext().getAuthentication().getName();
-//
-//        String feedKey = FEED_KEY_PREFIX + userId;
-//        List<Object> postIds = redisTemplate.opsForList().range(feedKey, offset, offset + limit - 1);
-//        if(postIds == null) return List.of();
-//
-//        return postIds.stream().map(id-> redisTemplate.opsForHash().entries(feedKey+id)).collect(Collectors.toList());
 
-//    @KafkaListener(topics = "post-created", groupId = "feed-service")
-//    public void handlePostCreated(PostCreatedEvent event) {
-//        log.info("Received event: {}", event);
-//    }

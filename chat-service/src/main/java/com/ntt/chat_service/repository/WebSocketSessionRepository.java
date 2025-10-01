@@ -10,4 +10,6 @@ import java.util.List;
 public interface WebSocketSessionRepository extends MongoRepository<WebSocketSession, String> {
     void deleteBySocketSessionId(String socketSessionId);
     List<WebSocketSession> findAllByUserIdIn(List<String> userIds);
+    WebSocketSession findBySocketSessionId(String socketSessionId);
+//    List<WebSocketSession> findBySocketSessionId(String socketSessionId);
 }

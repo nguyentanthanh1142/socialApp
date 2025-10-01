@@ -4,81 +4,26 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="afa41a76-9429-4fe5-9d5b-313cc434f5da" name="Changes" comment="Fix build image nginx-frontend">
-      <change afterPath="$PROJECT_DIR$/common-lib/src/main/java/com/ntt/common_lib/cache/UserProfileCache.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/common-lib/src/main/java/com/ntt/common_lib/dto/PageResponse.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/common-lib/src/main/java/com/ntt/common_lib/dto/UserProfileDTO.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/common-lib/src/main/java/com/ntt/common_lib/event/PostCreatedEvent.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/feed-service/.gitattributes" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/feed-service/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/feed-service/.mvn/wrapper/maven-wrapper.properties" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/feed-service/mvnw" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/feed-service/mvnw.cmd" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/feed-service/pom.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/feed-service/src/main/java/com/ntt/feed_service/FeedServiceApplication.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/feed-service/src/main/java/com/ntt/feed_service/cache/UserProfileCacheImpl.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/feed-service/src/main/java/com/ntt/feed_service/configuration/AuthenticationRequestInterceptor.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/feed-service/src/main/java/com/ntt/feed_service/configuration/CustomerJwtDecoder.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/feed-service/src/main/java/com/ntt/feed_service/configuration/JwtAuthenticationEntryPoint.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/feed-service/src/main/java/com/ntt/feed_service/configuration/KafkaConsumerConfig.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/feed-service/src/main/java/com/ntt/feed_service/configuration/RedisConfig.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/feed-service/src/main/java/com/ntt/feed_service/configuration/SecurityConfig.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/feed-service/src/main/java/com/ntt/feed_service/configuration/ServiceTokenGenerator.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/feed-service/src/main/java/com/ntt/feed_service/controller/FeedController.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/feed-service/src/main/java/com/ntt/feed_service/dto/response/FeedResponse.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/feed-service/src/main/java/com/ntt/feed_service/exception/AppException.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/feed-service/src/main/java/com/ntt/feed_service/exception/ErrorCode.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/feed-service/src/main/java/com/ntt/feed_service/exception/GlobalException.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/feed-service/src/main/java/com/ntt/feed_service/repository/httpClient/RelationClient.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/feed-service/src/main/java/com/ntt/feed_service/service/FeedService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/feed-service/src/main/resources/application.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/feed-service/src/test/java/com/ntt/feed_service/FeedServiceApplicationTests.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/identity-service/src/main/java/com/ntt/identity_service/configuration/KafkaTopicConfig.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/profile-service/src/main/java/com/ntt/profile_service/cache/UserProfileCacheImpl.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/profile-service/src/main/java/com/ntt/profile_service/configuration/RedisConfig.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/configuration/AuthenticationRequestInterceptor.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/dto/response/SuggestionResponse.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/enums/RelationStatus.java" afterDir="false" />
+    <list default="true" id="afa41a76-9429-4fe5-9d5b-313cc434f5da" name="Changes" comment="feat(feed): store user profile and load follower posts">
+      <change afterPath="$PROJECT_DIR$/feed-service/src/main/java/com/ntt/feed_service/redis/RedisScripts.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/feed-service/src/main/resources/redis-scripts/filter_feed.lua" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/encodings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api-gateway/src/main/java/com/ntt/api_gateway/configuration/AuthenticationFilter.java" beforeDir="false" afterPath="$PROJECT_DIR$/api-gateway/src/main/java/com/ntt/api_gateway/configuration/AuthenticationFilter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api-gateway/src/main/resources/application.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/api-gateway/src/main/resources/application.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/identity-service/src/main/java/com/ntt/identity_service/service/UserService.java" beforeDir="false" afterPath="$PROJECT_DIR$/identity-service/src/main/java/com/ntt/identity_service/service/UserService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/identity-service/src/main/resources/application.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/identity-service/src/main/resources/application.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/nginx-frontend/src/components/header/SideMenu.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/nginx-frontend/src/components/header/SideMenu.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/chat-service/src/main/java/com/ntt/chat_service/controller/SocketIOHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/chat-service/src/main/java/com/ntt/chat_service/controller/SocketIOHandler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/chat-service/src/main/java/com/ntt/chat_service/repository/WebSocketSessionRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/chat-service/src/main/java/com/ntt/chat_service/repository/WebSocketSessionRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/chat-service/src/main/java/com/ntt/chat_service/service/ChatMessageService.java" beforeDir="false" afterPath="$PROJECT_DIR$/chat-service/src/main/java/com/ntt/chat_service/service/ChatMessageService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/chat-service/src/main/java/com/ntt/chat_service/service/WebSocketSessionService.java" beforeDir="false" afterPath="$PROJECT_DIR$/chat-service/src/main/java/com/ntt/chat_service/service/WebSocketSessionService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/feed-service/src/main/java/com/ntt/feed_service/configuration/RedisConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/feed-service/src/main/java/com/ntt/feed_service/configuration/RedisConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/feed-service/src/main/java/com/ntt/feed_service/controller/FeedController.java" beforeDir="false" afterPath="$PROJECT_DIR$/feed-service/src/main/java/com/ntt/feed_service/controller/FeedController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/feed-service/src/main/java/com/ntt/feed_service/dto/response/FeedResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/feed-service/src/main/java/com/ntt/feed_service/dto/response/FeedResponse.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/feed-service/src/main/java/com/ntt/feed_service/service/FeedService.java" beforeDir="false" afterPath="$PROJECT_DIR$/feed-service/src/main/java/com/ntt/feed_service/service/FeedService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/nginx-frontend/src/components/ChatBox.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/nginx-frontend/src/components/ChatBox.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/nginx-frontend/src/components/SocketContext.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/nginx-frontend/src/components/SocketContext.jsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/nginx-frontend/src/configurations/configuration.js" beforeDir="false" afterPath="$PROJECT_DIR$/nginx-frontend/src/configurations/configuration.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/nginx-frontend/src/pages/Chat.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/nginx-frontend/src/pages/Chat.jsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/nginx-frontend/src/pages/Home.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/nginx-frontend/src/pages/Home.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/nginx-frontend/src/pages/Profile.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/nginx-frontend/src/pages/Profile.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/nginx-frontend/src/pages/Scene.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/nginx-frontend/src/pages/Scene.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/nginx-frontend/src/routes/AppRoutes.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/nginx-frontend/src/routes/AppRoutes.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/nginx-frontend/src/services/userService.js" beforeDir="false" afterPath="$PROJECT_DIR$/nginx-frontend/src/services/userService.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/post-service/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/post-service/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/post-service/src/main/java/com/ntt/post_service/service/PostService.java" beforeDir="false" afterPath="$PROJECT_DIR$/post-service/src/main/java/com/ntt/post_service/service/PostService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/post-service/src/main/resources/application.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/post-service/src/main/resources/application.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/profile-service/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/profile-service/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/profile-service/src/main/java/com/ntt/profile_service/configuration/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/profile-service/src/main/java/com/ntt/profile_service/configuration/SecurityConfig.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/profile-service/src/main/java/com/ntt/profile_service/controller/InternalUserProfileController.java" beforeDir="false" afterPath="$PROJECT_DIR$/profile-service/src/main/java/com/ntt/profile_service/controller/InternalUserProfileController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/profile-service/src/main/java/com/ntt/profile_service/controller/UserProfileController.java" beforeDir="false" afterPath="$PROJECT_DIR$/profile-service/src/main/java/com/ntt/profile_service/controller/UserProfileController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/profile-service/src/main/java/com/ntt/profile_service/repository/UserProfileRespository.java" beforeDir="false" afterPath="$PROJECT_DIR$/profile-service/src/main/java/com/ntt/profile_service/repository/UserProfileRespository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/profile-service/src/main/java/com/ntt/profile_service/service/UserProfileService.java" beforeDir="false" afterPath="$PROJECT_DIR$/profile-service/src/main/java/com/ntt/profile_service/service/UserProfileService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/profile-service/src/main/resources/application.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/profile-service/src/main/resources/application.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/relation-service/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/relation-service/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/configuration/JwtAuthenticationEntryPoint.java" beforeDir="false" afterPath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/configuration/JwtAuthenticationEntryPoint.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/configuration/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/configuration/SecurityConfig.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/controller/RelationController.java" beforeDir="false" afterPath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/controller/RelationController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/dto/request/RelationRequest.java" beforeDir="false" afterPath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/dto/request/RelationRequest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/dto/response/ApiResponse.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/dto/response/RelationReponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/dto/response/RelationReponse.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/entity/Relation.java" beforeDir="false" afterPath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/entity/Relation.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/exception/GlobalException.java" beforeDir="false" afterPath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/exception/GlobalException.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/repository/RelationRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/repository/RelationRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/repository/htppclient/ProfileClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/repository/htppclient/ProfileClient.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/service/RelationService.java" beforeDir="false" afterPath="$PROJECT_DIR$/relation-service/src/main/java/com/ntt/relation_service/service/RelationService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/relation-service/src/main/resources/application.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/relation-service/src/main/resources/application.yaml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -152,6 +97,7 @@
     &quot;Spring Boot.FeedServiceApplication.executor&quot;: &quot;Run&quot;,
     &quot;Spring Boot.FileServiceApplication.executor&quot;: &quot;Run&quot;,
     &quot;Spring Boot.IdentityServiceApplication.executor&quot;: &quot;Run&quot;,
+    &quot;Spring Boot.NotificationServiceApplication.executor&quot;: &quot;Run&quot;,
     &quot;Spring Boot.PostServiceApplication.executor&quot;: &quot;Run&quot;,
     &quot;Spring Boot.ProfileServiceApplication.executor&quot;: &quot;Run&quot;,
     &quot;Spring Boot.RelationServiceApplication.executor&quot;: &quot;Run&quot;,
@@ -242,6 +188,13 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+    <configuration name="NotificationServiceApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <module name="notification-service" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.ntt.notification_service.NotificationServiceApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="PostServiceApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
       <module name="post-service" />
       <option name="SPRING_BOOT_MAIN_CLASS" value="com.ntt.post_service.PostServiceApplication" />
@@ -264,6 +217,7 @@
       </method>
     </configuration>
     <list>
+      <item itemvalue="Spring Boot.NotificationServiceApplication" />
       <item itemvalue="Spring Boot.FeedServiceApplication" />
       <item itemvalue="Spring Boot.ChatServiceApplication" />
       <item itemvalue="Spring Boot.PostServiceApplication" />
@@ -322,7 +276,11 @@
       <workItem from="1758429480586" duration="19228000" />
       <workItem from="1758565006225" duration="61872000" />
       <workItem from="1758725118273" duration="74651000" />
-      <workItem from="1758869951934" duration="7834000" />
+      <workItem from="1758869951934" duration="11067000" />
+      <workItem from="1758906796759" duration="27312000" />
+      <workItem from="1759206836680" duration="2173000" />
+      <workItem from="1759252294237" duration="24512000" />
+      <workItem from="1759330896478" duration="10236000" />
     </task>
     <task id="LOCAL-00001" summary="Fix services Dockerfile">
       <option name="closed" value="true" />
@@ -404,7 +362,15 @@
       <option name="project" value="LOCAL" />
       <updated>1757953894264</updated>
     </task>
-    <option name="localTasksCounter" value="11" />
+    <task id="LOCAL-00011" summary="feat(feed): store user profile and load follower posts">
+      <option name="closed" value="true" />
+      <created>1758880092664</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1758880092664</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -429,7 +395,8 @@
     <MESSAGE value="Update cicd.yml" />
     <MESSAGE value="Fix web app Dockerfile" />
     <MESSAGE value="Fix build image nginx-frontend" />
-    <option name="LAST_COMMIT_MESSAGE" value="Fix build image nginx-frontend" />
+    <MESSAGE value="feat(feed): store user profile and load follower posts" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat(feed): store user profile and load follower posts" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -441,20 +408,21 @@
           <option name="timeStamp" value="3" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/feed-service/src/main/java/com/ntt/feed_service/service/FeedService.java</url>
-          <line>70</line>
-          <option name="timeStamp" value="10" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/feed-service/src/main/java/com/ntt/feed_service/service/FeedService.java</url>
-          <line>112</line>
-          <option name="timeStamp" value="11" />
+          <url>file://$PROJECT_DIR$/chat-service/src/main/java/com/ntt/chat_service/service/ChatMessageService.java</url>
+          <line>61</line>
+          <option name="timeStamp" value="13" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
+    <pin-to-top-manager>
+      <pinned-members>
+        <PinnedItemInfo parentTag="com.ntt.common_lib.dto.ApiResponse" memberName="message" />
+      </pinned-members>
+    </pin-to-top-manager>
     <watches-manager>
       <configuration name="SpringBootApplicationConfigurationType">
         <watch expression="profileClient" language="JAVA" />
+        <watch expression="conversation" />
       </configuration>
     </watches-manager>
   </component>

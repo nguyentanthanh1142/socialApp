@@ -19,4 +19,7 @@ public class WebSocketSessionService {
     public void deleteSession(String sessionId) {
         repository.deleteBySocketSessionId(sessionId);
     }
+    public WebSocketSession findByDevice(String deviceId) {
+       return repository.findBySocketSessionId(deviceId);
+    }
 }

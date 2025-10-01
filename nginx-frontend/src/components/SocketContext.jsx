@@ -22,7 +22,7 @@ export const SocketProvider = ({ children }) => {
         newSocket.on("disconnect", () => {
             console.log("🛑 Socket disconnected");
         });
-
+            
         return () => {
             newSocket.disconnect();
         };

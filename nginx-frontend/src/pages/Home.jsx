@@ -13,7 +13,7 @@ import { isAuthenticated, logOut } from "../services/authenticationService";
 import Scene from "./Scene";
 import Post from "../components/header/Post";
 import FriendList from "../components/FriendList";
-import { getMyFeed } from "../services/feedService";
+import { getMyFeed, markReadPosts } from "../services/feedService";
 import { getMyPosts, createPost } from "../services/postService";
 import DraggableDialog from "../components/DialogCreatePost";
 import SideMenu from "../components/header/SideMenu";
@@ -34,6 +34,7 @@ export default function Home() {
   const [open, setOpen] = useState(false);
   const [readPosts, setReadPosts] = useState([]);
   const navigate = useNavigate();
+  const readQueueRef = useRef([]);
 
   // Handle opening the popover
   const handleCreatePostClick = (event) => {
@@ -143,7 +144,7 @@ export default function Home() {
     setHasMore(false);
   }, [hasMore, page, totalPages]);
 
-  // observer để đánh dấu đã đọc
+
   useEffect(() => {
     const readObserver = new IntersectionObserver(
       (entries) => {
@@ -151,28 +152,42 @@ export default function Home() {
           if (entry.isIntersecting) {
             const postId = entry.target.getAttribute("data-id");
             console.log("Đang check entry:", entry.target, "data-id:", entry.target.getAttribute("data-id"));
-            setReadPosts((prev) =>
-              prev.includes(postId) ? prev : [...prev, postId]
-            );
+            if (postId && !readQueueRef.current.includes(postId)) {
+              readQueueRef.current.push(postId);
+            }
           }
         });
       },
-      { threshold: 0.7 } // đọc khi nhìn thấy 70% post
+      { threshold: 0.7 } 
     );
 
     document.querySelectorAll(".post-card").forEach((el) => {
       readObserver.observe(el);
     });
 
-    return () => readObserver.disconnect();
+    const interval = setInterval(() => {
+      if (readQueueRef.current.length > 0) {
+        const batch = [...readQueueRef.current];
+        readQueueRef.current = [];
+        console.log(batch)
+        markReadPosts(batch)
+          .then(() => console.log("Marked read posts:", batch))
+          .catch(console.error);
+      }
+    }, 2000);
+
+    return () => {
+      clearInterval(interval);
+      readObserver.disconnect()
+    };
   }, [posts]);
 
-useEffect(() => {
-  if (readPosts.length > 0) {
-    const readPostsData = posts.filter(p => readPosts.includes(p.postId?.toString()));
-    console.log("Chi tiết các post đã đọc:", readPostsData);
-  }
-}, [readPosts, posts]);
+  useEffect(() => {
+    if (readPosts.length > 0) {
+      const readPostsData = posts.filter(p => readPosts.includes(p.postId?.toString()));
+      console.log("Chi tiết các post đã đọc:", readPostsData);
+    }
+  }, [readPosts, posts]);
   return (
     <Scene sideMenu={<SideMenu />}>
       {" "}

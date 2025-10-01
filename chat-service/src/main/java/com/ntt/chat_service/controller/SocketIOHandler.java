@@ -37,13 +37,22 @@ public class SocketIOHandler {
         }
         var introspectResponse = identityService.introspect(IntrospectRequest.builder()
                 .token(token).build());
+
         if (introspectResponse.isValid()) {
             log.info("Client connected: {}", client.getSessionId());
+
+            WebSocketSession existing = webSocketSessionService.findByDevice(client.getSessionId().toString());
+
+            if (existing != null) {
+                webSocketSessionService.deleteSession(existing.getSocketSessionId());
+            }
+
             WebSocketSession webSocketSession = WebSocketSession.builder()
                     .socketSessionId(client.getSessionId().toString())
                     .userId(introspectResponse.getUserId())
                     .createdAt(Instant.now())
                     .build();
+
             webSocketSession = webSocketSessionService.createWebSocketSession(webSocketSession);
             log.info("WebSocket session created: {}", webSocketSession.getId());
         }else{

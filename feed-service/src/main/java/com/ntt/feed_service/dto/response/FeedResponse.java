@@ -17,4 +17,5 @@ public class FeedResponse {
     String name;
     String content;
     Instant createdAt;
+    boolean isRead = false;
 }
