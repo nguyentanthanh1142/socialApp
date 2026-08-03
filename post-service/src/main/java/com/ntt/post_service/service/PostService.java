@@ -1,13 +1,17 @@
 package com.ntt.post_service.service;
 
+import com.ntt.common_lib.dto.FileResponse;
 import com.ntt.common_lib.event.PostCreatedEvent;
 import com.ntt.post_service.dto.PageResponse;
 import com.ntt.post_service.dto.request.PostRequest;
 import com.ntt.post_service.dto.response.PostResponse;
 import com.ntt.post_service.dto.response.UserProfileResponse;
 import com.ntt.post_service.enitity.Post;
+import com.ntt.post_service.exception.AppException;
+import com.ntt.post_service.exception.ErrorCode;
 import com.ntt.post_service.mapper.PostMapper;
 import com.ntt.post_service.repository.PostRepository;
+import com.ntt.post_service.repository.httpclient.FileClient;
 import com.ntt.post_service.repository.httpclient.ProfileClient;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +24,12 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 
 @Service
@@ -32,7 +41,7 @@ public class PostService {
     PostMapper postMapper;
     ProfileClient profileClient;
     DateTimeFormatter dateTimeFormatter;
-
+    FileClient fileClient;
     KafkaTemplate<String, PostCreatedEvent> kafkaTemplate;
 
     public PostResponse createPost(PostRequest request) {
@@ -46,15 +55,23 @@ public class PostService {
                 .modifiedDate(Instant.now())
                 .build();
         post = postRepository.save(post);
+        List<FileResponse> postImages = new ArrayList<>();
+        if(request.getFiles() != null) {
+            postImages = fileClient.uploadMediaPost(request.getFiles(), post.getId()).getResult();
+        }
         PostCreatedEvent event = PostCreatedEvent.builder()
                 .postId(post.getId())
                 .userId(authentication.getName())
                 .content(request.getContent())
                 .createdAt(post.getCreateDate())
+                .files(postImages)
                 .build();
 
         kafkaTemplate.send("post-created", event);
-        return postMapper.ToPostResponse(post);
+
+        var response = postMapper.ToPostResponse(post);
+        response.setFiles(postImages);
+        return response;
     }
     public PageResponse<PostResponse> getMyPosts(int page,int size) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -87,4 +104,24 @@ public class PostService {
                 .data(postList)
                 .build();
     }
+
+    public List<FileResponse> uploadPostImage(MultipartFile[] file, String postId) throws IOException {
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        String userId = authentication.getName();
+
+        var post = postRepository.findById(postId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        var response = fileClient.uploadMediaPost(file, postId);
+        return response.getResult();
+    }
+
+    public PostResponse getPost(String postId) {
+
+        Post post = null;
+        post = postRepository.getPostsById(postId);
+
+        return postMapper.ToPostResponse(post);
+    }
+
 }

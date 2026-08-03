@@ -16,5 +16,4 @@ public class FileInfo {
     String path;
     long size;
     String url;
-
 }

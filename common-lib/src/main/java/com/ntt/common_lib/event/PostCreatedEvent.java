@@ -1,9 +1,11 @@
 package com.ntt.common_lib.event;
 
+import com.ntt.common_lib.dto.FileResponse;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.time.Instant;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -15,4 +17,6 @@ public class PostCreatedEvent {
     String userId;
     String content;
     Instant createdAt;
+    List<FileResponse> files;
+
 }

@@ -1,5 +1,6 @@
 package com.ntt.relation_service.service;
 
+import com.ntt.common_lib.dto.PageResponse;
 import com.ntt.relation_service.dto.request.RelationRequest;
 import com.ntt.relation_service.dto.response.RelationReponse;
 import com.ntt.relation_service.dto.response.SuggestionResponse;
@@ -16,6 +17,10 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -36,43 +41,29 @@ public class RelationService {
 
     public RelationReponse createRelation(RelationRequest request, RelationStatus status) {
 
-        var userId = getCurrentUserId();
-        log.info(userId);
-        var userProfileResponse = profileClient.getProfile(userId);
-        var participantInfoResponse = profileClient.getProfile(request.getParticipantIds().getFirst());
-        log.info("ParticipantId" + request.getParticipantIds().getFirst());
+        String userId = getCurrentUserId();
+        String targetId = request.getParticipantIds().getFirst();
 
-        if (Objects.isNull(userProfileResponse) || Objects.isNull(participantInfoResponse)) {
+        var profilesResponse = profileClient.getProfiles(List.of(userId, targetId));
+
+        if (profilesResponse == null || profilesResponse.getResult() == null || profilesResponse.getResult().size() < 2) {
             throw new AppException(ErrorCode.USER_NOT_EXISTED);
         }
 
-        var userInfo = userProfileResponse.getResult();
-        var participantInfo = participantInfoResponse.getResult();
-        List<String> userIds = new ArrayList<>();
-        userIds.add(userId);
-        userIds.add(participantInfo.getUserId());
+        Map<String, UserProfileResponse> profileMap = profilesResponse.getResult().stream()
+                .collect(Collectors.toMap(UserProfileResponse::getUserId, profile -> profile));
 
-        log.info("List user IDS" + userIds);
-        var sortedUserIds = userIds.stream().sorted().toList();
+        var userInfo = profileMap.get(userId);
+        var targetInfo = profileMap.get(targetId);
+
+        List<String> sortedUserIds = List.of(userId, targetId).stream().sorted().toList();
         String userIdHash = generateConservationHash(sortedUserIds);
 
         var relation = relationRepository.findByParticipantsHash(userIdHash).orElseGet(() ->
         {
             List<ParticipantInfo> participantInfos = List.of(
-                    ParticipantInfo.builder()
-                            .userId(userId)
-                            .username(userInfo.getUsername())
-                            .firstname(userInfo.getFirstname())
-                            .lastname(userInfo.getLastname())
-                            .avatar(userInfo.getAvatar())
-                            .build(),
-                    ParticipantInfo.builder()
-                            .userId(participantInfo.getUserId())
-                            .username(participantInfo.getUsername())
-                            .firstname(participantInfo.getFirstname())
-                            .lastname(participantInfo.getLastname())
-                            .avatar(participantInfo.getAvatar())
-                            .build()
+                    mapToParticipant(userInfo),
+                    mapToParticipant(targetInfo)
             );
 
 
@@ -81,7 +72,7 @@ public class RelationService {
                     .modifiedDate(Instant.now())
                     .participants(participantInfos)
                     .participantsHash(userIdHash)
-                    .status(request.getStatus().name())
+                    .status(status.name())
                     .build();
 
             return relationRepository.save(newRelation);
@@ -103,6 +94,10 @@ public class RelationService {
         }
         relation.setStatus(status.name());
         relation.setModifiedDate(Instant.now());
+
+        if(status == RelationStatus.ACCEPTED){
+            relation.setAcceptedDate(Instant.now());
+        }
 
         return relationMapper.toRelationReponse(relationRepository.save(relation));
 
@@ -171,25 +166,33 @@ public class RelationService {
                                     .build();
                     }).toList();
             }
-        else {
-            List<UserProfileResponse> popularUsers = profileClient.getPopularProfiles().getResult();
-            return popularUsers.stream()
-                    .filter(u -> !u.getUserId().equals(userId))
-                    .filter(u -> !myRelationIds.contains(u.getUserId()))
-                    .map(profile -> SuggestionResponse.builder()
-                            .avatar(profile.getAvatar())
-                            .userId(profile.getUserId())
-                            .username(profile.getUsername())
-                            .build())
-                    .toList();
+
+        try {
+            var popularResponse = profileClient.getPopularProfiles();
+            if (popularResponse != null && popularResponse.getResult() != null) {
+                return popularResponse.getResult().stream()
+                        .filter(u -> u != null && !u.getUserId().equals(userId))
+                        .filter(u -> !myRelationIds.contains(u.getUserId()))
+                        .map(profile -> SuggestionResponse.builder()
+                                .avatar(profile.getAvatar())
+                                .userId(profile.getUserId())
+                                .username(profile.getUsername())
+                                .build())
+                        .toList();
+            }
+        } catch (Exception e) {
+            log.error("Error fetching popular profiles: ", e);
         }
+        return Collections.emptyList();
     }
 
     public List<RelationReponse> getMyFriendRequests(){
         String userId = getCurrentUserId();
 
         return getRelationsByStatus(RelationStatus.PENDING).stream()
-                .filter(r -> !r.getOwnerId().equals(userId))
+                .filter(r -> r.getParticipants() != null
+                        && !r.getParticipants().isEmpty()
+                        && !r.getParticipants().getFirst().getUserId().equals(userId))
                 .map(this::toRelationReponse)
                 .toList();
     }
@@ -220,6 +223,27 @@ public class RelationService {
         return response;
     }
 
+
+        private PageResponse<RelationReponse> listContactRelation(int page, int size)
+        {
+            String userId = getCurrentUserId();
+            Sort sort = Sort.by("acceptDate").descending();;
+            Pageable pageable = PageRequest.of(page - 1, size,sort);
+
+            Page<Relation> relationData = relationRepository.findAllByParticipantIdsContainsAndStatus(userId, RelationStatus.ACCEPTED.name(), pageable);
+
+            var relationReponseList = relationData.stream().map(this::toRelationReponse).toList();
+
+            return PageResponse.<RelationReponse>builder()
+                    .currentPage(page)
+                    .pageSize(relationData.getSize())
+                    .totalElements(relationData.getTotalElements())
+                    .totalPages(relationData.getTotalPages())
+                    .data(relationReponseList)
+                    .build();
+        }
+
+
     private String generateConservationHash(List<String> userIds) {
 
         return String.join("-", userIds);
@@ -229,6 +253,16 @@ public class RelationService {
     }
     private List<Relation> getRelationsByStatus(RelationStatus status) {
         return relationRepository.findAllByParticipantIdsContainsAndStatus(getCurrentUserId(), status.name());
+    }
+
+    private ParticipantInfo mapToParticipant(UserProfileResponse profile ){
+        return ParticipantInfo.builder()
+                .userId(profile.getUserId())
+                .username(profile.getUsername())
+                .firstname(profile.getFirstname())
+                .lastname(profile.getLastname())
+                .avatar(profile.getAvatar())
+                .build();
     }
 
 }

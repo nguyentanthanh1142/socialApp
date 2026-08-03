@@ -28,20 +28,27 @@ import {
   getMessages,
   createMessage,
 } from "../services/chatService";
-import { io } from "socket.io-client";
 import { getToken } from "../services/localStorageService";
 import SideMenu from "../components/header/SideMenu";
+import { useSocket } from "../components/hooks/useSocket"
+// SocketContext";
+
+
 export default function Chat() {
   const [message, setMessage] = useState("");
   const [newChatAnchorEl, setNewChatAnchorEl] = useState(null);
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [messageError, setMessageError] = useState(null);
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [messagesMap, setMessagesMap] = useState({});
   const messageContainerRef = useRef(null);
-  const socketRef = useRef(null); // Function to scroll to the bottom of the message container
-  
+
+  const { socket, connected } = useSocket();
+
+  // const socketRef = useRef(null); 
+
   const scrollToBottom = useCallback(() => {
     if (messageContainerRef.current) {
       // Immediate scroll attempt
@@ -72,30 +79,35 @@ export default function Chat() {
   };
 
   const handleSelectNewChatUser = async (user) => {
-    const response = await createConversation({
-      type: "DIRECT",
-      participantIds: [user.userId],
-    });
+    try {
+      setMessageError(null);
+      const response = await createConversation({
+        type: "DIRECT",
+        participantIds: [user.userId],
+      });
 
-    const newConversation = response?.data?.result;
+      const newConversation = response?.data?.result;
 
-    // Check if we already have a conversation with this user
-    const existingConversation = conversations.find(
-      (conv) => conv.id === newConversation.id
-    );
+      if (!newConversation?.id) {
+        throw new Error("Conversation payload missing id");
+      }
 
-    if (existingConversation) {
-      // If conversation exists, just select it
-      setSelectedConversation(existingConversation);
-    } else {
-      // Add to conversations list
-      setConversations((prevConversations) => [
-        newConversation,
-        ...prevConversations,
-      ]);
+      const existingConversation = conversations.find(
+        (conv) => conv.id === newConversation.id
+      );
 
-      // Select this new conversation
-      setSelectedConversation(newConversation);
+      if (existingConversation) {
+        setSelectedConversation(existingConversation);
+      } else {
+        setConversations((prevConversations) => [
+          newConversation,
+          ...prevConversations,
+        ]);
+        setSelectedConversation(newConversation);
+      }
+    } catch (err) {
+      console.error("Failed to create conversation:", err);
+      setMessageError("Unable to start a new conversation right now.");
     }
   };
 
@@ -127,44 +139,47 @@ export default function Chat() {
   }, [conversations, selectedConversation]);
 
   // Load messages from the conversation history when a conversation is selected
-  useEffect(() => {
-    const fetchMessages = async (conversationId) => {
-      try {
-        // Check if we already have messages for this conversation
-        if (!messagesMap[conversationId]) {
-          const response = await getMessages(conversationId);
-          if (response?.data?.result) {
-            // Sort messages by createdDate to ensure chronological order
-            const sortedMessages = [...response.data.result].sort(
-              (a, b) => new Date(a.createdDate) - new Date(b.createdDate)
-            );
+  const fetchMessages = useCallback(async (conversationId) => {
+    try {
+      setMessageError(null);
+      if (!messagesMap[conversationId]) {
+        const response = await getMessages(conversationId);
+        if (response?.data?.result) {
+          const sortedMessages = [...response.data.result].sort(
+            (a, b) => new Date(a.createdDate) - new Date(b.createdDate)
+          );
 
-            // Update messages map with the fetched messages
-            setMessagesMap((prev) => ({
-              ...prev,
-              [conversationId]: sortedMessages,
-            }));
-          }
+          setMessagesMap((prev) => ({
+            ...prev,
+            [conversationId]: sortedMessages,
+          }));
+        } else {
+          setMessagesMap((prev) => ({
+            ...prev,
+            [conversationId]: [],
+          }));
         }
-
-        // Mark conversation as read when selected
-        setConversations((prevConversations) =>
-          prevConversations.map((conv) =>
-            conv.id === conversationId ? { ...conv, unread: 0 } : conv
-          )
-        );
-      } catch (err) {
-        console.error(
-          `Error fetching messages for conversation ${conversationId}:`,
-          err
-        );
       }
-    };
 
+      setConversations((prevConversations) =>
+        prevConversations.map((conv) =>
+          conv.id === conversationId ? { ...conv, unread: 0 } : conv
+        )
+      );
+    } catch (err) {
+      console.error(
+        `Error fetching messages for conversation ${conversationId}:`,
+        err
+      );
+      setMessageError("Unable to load messages for this conversation.");
+    }
+  }, [messagesMap]);
+
+  useEffect(() => {
     if (selectedConversation?.id) {
       fetchMessages(selectedConversation.id);
     }
-  }, [selectedConversation, messagesMap]);
+  }, [selectedConversation, fetchMessages]);
   const currentMessages = selectedConversation
     ? messagesMap[selectedConversation.id] || []
     : [];
@@ -178,50 +193,9 @@ export default function Chat() {
     scrollToBottom();
   }, [selectedConversation, scrollToBottom]);
 
+
   useEffect(() => {
-    // Initialize socket connection only once
-    if (!socketRef.current) {
-      console.log("Initializing socket connection...");
-
-      const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || "http://localhost:8999";
-      const connectionUrl = `${SOCKET_URL}?token=${getToken()}`;
-      socketRef.current = new io(connectionUrl);
-
-      socketRef.current.on("connect", () => {
-        console.log("Socket connected");
-      });
-
-      socketRef.current.on("disconnect", () => {
-        console.log("Socket disconnected");
-      });
-
-      socketRef.current.on("message", (message) => {
-        console.log("New message received:", message);
-
-        const messageObject = JSON.parse(message);
-        console.log("Parsed message object:", messageObject);
-
-        // Update messages in the UI when a new message is received
-        if (messageObject?.conversationId) {
-          handleIncomingMessage(messageObject);
-        }
-      });
-    }
-
-    // Cleanup function - disconnect socket when component unmounts
-    return () => {
-      if (socketRef.current) {
-        console.log("Disconnecting socket...");
-        socketRef.current.disconnect();
-        socketRef.current = null;
-      }
-    };
-  }, []);
-
-  // Update unread count when conversation is selected
-  useEffect(() => {
-    if (selectedConversation?.id && socketRef.current) {
-      // Mark the currently selected conversation as read
+    if (selectedConversation?.id && socket) {
       setConversations((prevConversations) =>
         prevConversations.map((conv) =>
           conv.id === selectedConversation.id ? { ...conv, unread: 0 } : conv
@@ -237,11 +211,9 @@ export default function Chat() {
   const handleSendMessage = async () => {
     if (!message.trim() || !selectedConversation) return;
 
-    // Clear input field
     setMessage("");
 
     try {
-      // Send message to API
       const response = await createMessage({
         conversationId: selectedConversation.id,
         message: message,
@@ -251,17 +223,13 @@ export default function Chat() {
     }
   };
 
-  // Helper function to handle incoming socket messages
   const handleIncomingMessage = useCallback(
     (message) => {
 
-      // Add the new message to the appropriate conversation
       setMessagesMap((prev) => {
         const existingMessages = prev[message.conversationId] || [];
 
-        // Check if message already exists to avoid duplicates
         const messageExists = existingMessages.some((msg) => {
-          // Primary: Compare by ID if both messages have IDs
           if (msg.id && message.id) {
             return msg.id === message.id;
           }
@@ -306,6 +274,26 @@ export default function Chat() {
     },
     [selectedConversation]
   );
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleMessage = (message) => {
+      try {
+        const messageObject = typeof message === "string" ? JSON.parse(message) : message;
+        console.log("📩 New message received:", messageObject);
+        if (messageObject?.conversationId) {
+          handleIncomingMessage(messageObject);
+        }
+      } catch (err) {
+        console.error("❌ Error parsing message:", err);
+      }
+    };
+    socket.on("message", handleMessage);
+
+    return () => {
+      socket.off("message", handleMessage);
+    };
+  }, [socket, handleIncomingMessage]);
 
   return (
     <Scene sideMenu={<SideMenu />}>
@@ -553,6 +541,11 @@ export default function Chat() {
                       "auto 0 0 0" /* Push to bottom, but allow scrolling */,
                   }}
                 >
+                  {messageError && (
+                    <Alert severity="warning" sx={{ mb: 2 }}>
+                      {messageError}
+                    </Alert>
+                  )}
                   {currentMessages.map((msg) => {
                     // Extract background color logic to avoid nested ternary
                     let backgroundColor = "#f5f5f5"; // default for others

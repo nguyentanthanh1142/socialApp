@@ -1,168 +1,149 @@
 import * as React from "react";
-import { styled, alpha } from "@mui/material/styles";
+
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
 import Toolbar from "@mui/material/Toolbar";
 import IconButton from "@mui/material/IconButton";
-import InputBase from "@mui/material/InputBase";
+
 import Badge from "@mui/material/Badge";
 import MenuItem from "@mui/material/MenuItem";
 import Menu from "@mui/material/Menu";
-import SearchIcon from "@mui/icons-material/Search";
+
 import AccountCircle from "@mui/icons-material/AccountCircle";
 import MailIcon from "@mui/icons-material/Mail";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import MoreIcon from "@mui/icons-material/MoreVert";
 import { logOut } from "../../services/authenticationService";
+import NotificationMenu from "../../components/notifications/NotificationMenu";
+import SearchBar from "./SearchBar";
+import ProfileMenu from "./ProfileMenu";
+import MobileMenu from "./MobileMenu";
 
-const Search = styled("div")(({ theme }) => ({
-  position: "relative",
-  borderRadius: theme.shape.borderRadius,
-  backgroundColor: alpha(theme.palette.common.white, 0.15),
-  "&:hover": {
-    backgroundColor: alpha(theme.palette.common.white, 0.25),
-  },
-  marginRight: theme.spacing(2),
-  marginLeft: 0,
-  width: "100%",
-  [theme.breakpoints.up("sm")]: {
-    marginLeft: theme.spacing(3),
-    width: "auto",
-  },
-}));
 
-const SearchIconWrapper = styled("div")(({ theme }) => ({
-  padding: theme.spacing(0, 2),
-  height: "100%",
-  position: "absolute",
-  pointerEvents: "none",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-}));
 
-const StyledInputBase = styled(InputBase)(({ theme }) => ({
-  color: "inherit",
-  "& .MuiInputBase-input": {
-    padding: theme.spacing(1, 1, 1, 0),
-    // vertical padding + font size from searchIcon
-    paddingLeft: `calc(1em + ${theme.spacing(4)})`,
-    transition: theme.transitions.create("width"),
-    width: "100%",
-    [theme.breakpoints.up("md")]: {
-      width: "20ch",
-    },
-  },
-}));
+
+
 
 export default function Header() {
-  const [anchorEl, setAnchorEl] = React.useState(null);
+  const [profileAnchor, setProfileAnchor] = React.useState(null);
   const [mobileMoreAnchorEl, setMobileMoreAnchorEl] = React.useState(null);
+  const [notificationAnchorEl, setNotificationAnchorEl] = React.useState(null);
+  
+  // const isNotificationOpen = Boolean(notificationAnchorEl);
+  // const isMenuOpen = Boolean(profileAnchor);
+  // const isMobileMenuOpen = Boolean(mobileMoreAnchorEl);
 
-  const isMenuOpen = Boolean(anchorEl);
-  const isMobileMenuOpen = Boolean(mobileMoreAnchorEl);
+
+  const handleNotificationOpen = (event) => {
+    setNotificationAnchorEl(event.currentTarget);
+  };
+
+  const handleNotificationClose = () => {
+    setNotificationAnchorEl(null);
+  };
 
   const handleProfileMenuOpen = (event) => {
-    setAnchorEl(event.currentTarget);
+    setProfileAnchor(event.currentTarget);
+  };
+
+  const handleProfileMenuMenuClose = () => {
+    setProfileAnchor(null);
+    handleMobileMenuClose();
+  };
+
+  const handleMobileMenuOpen = (event) => {
+    setMobileMoreAnchorEl(event.currentTarget);
   };
 
   const handleMobileMenuClose = () => {
     setMobileMoreAnchorEl(null);
   };
 
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-    handleMobileMenuClose();
-  };
-  const handleOpenProfile = () => {
-      setAnchorEl(null);
-      window.location.href = "/profile";
-    };
-  const handleMobileMenuOpen = (event) => {
-    setMobileMoreAnchorEl(event.currentTarget);
-  };
 
-  const handleLogout = (event) => {
-    handleMenuClose();
-    logOut();
-    window.location.href = "/login";
-  };
+  // const menuId = "primary-search-account-menu";
+  // const mobileMenuId = "primary-search-account-menu-mobile";    
 
-  const menuId = "primary-search-account-menu";
-  const renderMenu = (
-    <Menu
-      anchorEl={anchorEl}
-      anchorOrigin={{
-        vertical: "top",
-        horizontal: "right",
-      }}
-      id={menuId}
-      keepMounted
-      transformOrigin={{
-        vertical: "top",
-        horizontal: "right",
-      }}
-      open={isMenuOpen}
-      onClose={handleMenuClose}
-    >
-      <MenuItem onClick={handleOpenProfile}>Profile</MenuItem>
-      <MenuItem onClick={handleMenuClose}>Settings</MenuItem>
-      <MenuItem onClick={handleLogout}>Log Out</MenuItem>
-    </Menu>
-  );
+  
 
-  const mobileMenuId = "primary-search-account-menu-mobile";
-  const renderMobileMenu = (
-    <Menu
-      anchorEl={mobileMoreAnchorEl}
-      anchorOrigin={{
-        vertical: "top",
-        horizontal: "right",
-      }}
-      id={mobileMenuId}
-      keepMounted
-      transformOrigin={{
-        vertical: "top",
-        horizontal: "right",
-      }}
-      open={isMobileMenuOpen}
-      onClose={handleMobileMenuClose}
-    >
-      <MenuItem>
-        <IconButton size="large" aria-label="show 2 new mails" color="inherit">
-          <Badge badgeContent={2} color="error">
-            <MailIcon />
-          </Badge>
-        </IconButton>
-        <p>Messages</p>
-      </MenuItem>
-      <MenuItem>
-        <IconButton
-          size="large"
-          aria-label="show 4 new notifications"
-          color="inherit"
-        >
-          <Badge badgeContent={4} color="error">
-            <NotificationsIcon />
-          </Badge>
-        </IconButton>
-        <p>Notifications</p>
-      </MenuItem>
-      <MenuItem onClick={handleProfileMenuOpen}>
-        <IconButton
-          size="large"
-          aria-label="account of current user"
-          aria-controls="primary-search-account-menu"
-          aria-haspopup="true"
-          color="inherit"
-        >
-          <AccountCircle />
-        </IconButton>
-        <p>Profile</p>
-      </MenuItem>
-    </Menu>
-  );
-
+  // <NotificationMenu
+  //   anchorEl={notificationAnchorEl}
+  //   open={isNotificationOpen}
+  //   onClose={handleNotificationClose}
+  // />
+  // const notifications = [
+  //   { id: 1, text: "Nguyễn Văn A đã thích bài viết của bạn", time: "2 phút trước" },
+  //   { id: 2, text: "Trần Thị B đã bình luận: 'Tuyệt vời!'", time: "5 phút trước" },
+  //   { id: 3, text: "Bạn có 3 lời mời kết bạn mới", time: "10 phút trước" },
+  //   { id: 4, text: "Hệ thống: Tính năng mới đã được cập nhật!", time: "1 giờ trước" },
+  // ];
+  // const renderNotificationMenu = (
+  //   <Menu
+  //     anchorEl={notificationAnchorEl}
+  //     open={isNotificationOpen}
+  //     onClose={handleNotificationClose}
+  //     PaperProps={{
+  //       elevation: 3,
+  //       sx: {
+  //         mt: 1.5,
+  //         minWidth: 320,
+  //         maxHeight: 400,
+  //         overflowY: "auto",
+  //         "&::-webkit-scrollbar": { width: "6px" },
+  //         "&::-webkit-scrollbar-thumb": {
+  //           backgroundColor: "#ccc",
+  //           borderRadius: "3px",
+  //         },
+  //       },
+  //     }}
+  //     anchorOrigin={{
+  //       vertical: "bottom",
+  //       horizontal: "right",
+  //     }}
+  //     transformOrigin={{
+  //       vertical: "top",
+  //       horizontal: "right",
+  //     }}
+  //   >
+  //     <Box sx={{ px: 2, py: 1 }}>
+  //       <strong>Notifications</strong>
+  //     </Box>
+  //     {notifications.length === 0 ? (
+  //       <MenuItem disabled>Không có thông báo nào</MenuItem>
+  //     ) : (
+  //       notifications.map((noti) => (
+  //         <MenuItem
+  //           key={noti.id}
+  //           onClick={handleNotificationClose}
+  //           sx={{
+  //             whiteSpace: "normal",
+  //             alignItems: "flex-start",
+  //             flexDirection: "column",
+  //             py: 1,
+  //             "&:hover": { backgroundColor: "rgba(0,0,0,0.05)" },
+  //           }}
+  //         >
+  //           <Box sx={{ fontSize: 14 }}>{noti.text}</Box>
+  //           <Box sx={{ fontSize: 12, color: "gray" }}>{noti.time}</Box>
+  //         </MenuItem>
+  //       ))
+  //     )}
+  //     <Box
+  //       sx={{
+  //         textAlign: "center",
+  //         py: 1,
+  //         borderTop: "1px solid #eee",
+  //         cursor: "pointer",
+  //         "&:hover": { backgroundColor: "rgba(0,0,0,0.04)" },
+  //       }}
+  //       onClick={() => {
+  //         handleNotificationClose();
+  //         window.location.href = "/notifications";
+  //       }}
+  //     >
+  //       See previous notifications
+  //     </Box>
+  //   </Menu>
+  // );
   return (
     <Box sx={{ flexGrow: 1 }}>
       <AppBar position="fixed">
@@ -184,7 +165,8 @@ export default function Header() {
               src="/logo/social-logo.png"
             ></Box>
           </IconButton>
-          <Search>
+          <SearchBar />
+          {/* <Search>
             <SearchIconWrapper>
               <SearchIcon />
             </SearchIconWrapper>
@@ -192,7 +174,7 @@ export default function Header() {
               placeholder="Search…"
               inputProps={{ "aria-label": "search" }}
             />
-          </Search>
+          </Search> */}
           <Box sx={{ flexGrow: 1 }} />
           <Box sx={{ display: { xs: "none", md: "flex" } }}>
             <IconButton
@@ -208,6 +190,7 @@ export default function Header() {
               size="large"
               aria-label="show 17 new notifications"
               color="inherit"
+              onClick={handleNotificationOpen}
             >
               <Badge badgeContent={17} color="error">
                 <NotificationsIcon />
@@ -217,7 +200,7 @@ export default function Header() {
               size="large"
               edge="end"
               aria-label="account of current user"
-              aria-controls={menuId}
+              // aria-controls={menuId}
               aria-haspopup="true"
               onClick={handleProfileMenuOpen}
               color="inherit"
@@ -229,7 +212,7 @@ export default function Header() {
             <IconButton
               size="large"
               aria-label="show more"
-              aria-controls={mobileMenuId}
+              // aria-controls={mobileMenuId}
               aria-haspopup="true"
               onClick={handleMobileMenuOpen}
               color="inherit"
@@ -239,8 +222,24 @@ export default function Header() {
           </Box>
         </Toolbar>
       </AppBar>
-      {renderMobileMenu}
-      {renderMenu}
+      <MobileMenu
+        anchorEl={mobileMoreAnchorEl}
+        open={Boolean(mobileMoreAnchorEl)}
+        onClose={handleMobileMenuClose}
+        onOpenProfile={handleProfileMenuOpen}
+        onOpenNotification={handleNotificationOpen}
+      />
+      <ProfileMenu
+        anchorEl={profileAnchor}
+        open={Boolean(profileAnchor)}
+        onClose={() => setProfileAnchor(null)}
+      />
+      {/* {renderNotificationMenu} */}
+      <NotificationMenu
+        anchorEl={notificationAnchorEl}
+        open={Boolean(notificationAnchorEl)}
+        onClose={handleNotificationClose}
+      />
     </Box>
   );
 }

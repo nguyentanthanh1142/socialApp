@@ -7,7 +7,9 @@ import java.util.*;
 
 import com.ntt.identity_service.constant.PredefindRole;
 import com.ntt.identity_service.dto.request.*;
+import com.ntt.identity_service.dto.response.VerifyEmailResponse;
 import com.ntt.identity_service.entity.Role;
+import com.ntt.identity_service.repository.VerificationTokenRepository;
 import com.ntt.identity_service.repository.httpClient.OutboundIdentityClient;
 import com.ntt.identity_service.repository.httpClient.OutboundUserClient;
 import com.ntt.identity_service.repository.httpClient.ProfileClient;
@@ -42,11 +44,14 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AuthenticationService {
+
     UserRepository userRepository;
     InvalidatedTokenRepository invalidatedTokenRepository;
     OutboundIdentityClient outboundIdentityClient;
     OutboundUserClient outboundUserClient;
     ProfileClient profileClient;
+    TokenService tokenService;
+    private final VerificationTokenRepository verificationTokenRepository;
 
     @NonFinal
     @Value("${jwt.signerKey}")
@@ -95,6 +100,11 @@ public class AuthenticationService {
         var user = userRepository
                 .findByUsername(request.getUsername())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+//        if(!user.isEmailVerified())
+//        {
+//            throw new AppException(ErrorCode.EMAIL_NOT_VERIFIED);
+//        }
 
         boolean authenticated = passwordEncoder.matches(request.getPassword(), user.getPassword());
         if (!authenticated) {
@@ -232,8 +242,6 @@ public class AuthenticationService {
                 .orElseGet(() -> {
                     User newUser = User.builder()
                             .username(userInfo.getEmail())
-                            .firstname(userInfo.getGivenName())
-                            .lastname(userInfo.getFamilyName())
                             .roles(roles)
                             .build();
                     return userRepository.save(newUser);
@@ -254,5 +262,24 @@ public class AuthenticationService {
         return AuthenticationResponse.builder()
                 .token(token)
                 .authenticated(true).build();
+    }
+
+    public VerifyEmailResponse verifyEmail(String token) {
+        log.info("Verify Email: " + token);
+        var userId = tokenService.verifyToken(token);
+        if (userId == null) throw new AppException(ErrorCode.TOKEN_INVALID);
+        log.info("Verified userId successfully: {}", userId);
+        User user = userRepository.findById(userId).orElseThrow(()->new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        if(user.isEmailVerified())
+        {
+            return VerifyEmailResponse.builder().verified(true).build();
+        }
+
+        user.setEmailVerified(true);
+        userRepository.save(user);
+
+        tokenService.invalidToken(token);
+        return VerifyEmailResponse.builder().verified(true).build();
     }
 }

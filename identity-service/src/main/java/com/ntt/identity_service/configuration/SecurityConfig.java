@@ -21,8 +21,17 @@ import org.springframework.web.filter.CorsFilter;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    private final String[] publicEndpoints = {
-        "/users/registration", "/auth/token", "/auth/introspect", "/auth/logout", "/auth/refresh","/auth/outbound/authentication"
+    private final String[] publicPostEndpoints = {
+            "/users/registration", "/auth/token", "/auth/introspect", "/auth/logout", "/auth/refresh", "/auth/outbound/authentication"
+
+    };
+    private final String[] publicGetEndpoints = {
+            "/auth/verify",
+
+    };
+
+    private static final String[] swaggerEndpoints = {
+            "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html"
     };
 
     private final CustomerJwtDecoder customerJwtDecoder;
@@ -34,10 +43,12 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity
-                .authorizeHttpRequests(request -> request.requestMatchers(HttpMethod.POST, publicEndpoints)
-                .permitAll()
-                .anyRequest()
-                .authenticated());
+                .authorizeHttpRequests(request -> request
+                        .requestMatchers(HttpMethod.POST, publicPostEndpoints).permitAll()
+                        .requestMatchers(HttpMethod.GET, publicGetEndpoints).permitAll()
+                        .requestMatchers(swaggerEndpoints).permitAll()
+                        .anyRequest()
+                        .authenticated());
 
         httpSecurity.oauth2ResourceServer(oauth2 -> oauth2.jwt(jwtConfigurer -> jwtConfigurer
                         .decoder(customerJwtDecoder)

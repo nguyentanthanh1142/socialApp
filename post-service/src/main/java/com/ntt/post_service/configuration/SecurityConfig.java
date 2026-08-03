@@ -19,6 +19,11 @@ public class SecurityConfig {
 
     private final String[] publicEndpoints = {
         "/email/send",
+            "/*"
+    };
+
+    private final String[] swaggerEndpoints = {
+        "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html"
     };
 
     private final CustomerJwtDecoder customerJwtDecoder;
@@ -32,10 +37,9 @@ public class SecurityConfig {
 
         httpSecurity
 //                .cors().and()
-                .authorizeHttpRequests(request -> request.requestMatchers(HttpMethod.POST, publicEndpoints)
-                .permitAll()
-                .anyRequest()
-                .authenticated());
+                .authorizeHttpRequests(request -> request
+                    .requestMatchers(swaggerEndpoints).permitAll()
+                    .anyRequest().authenticated());
 
         httpSecurity.oauth2ResourceServer(oauth2 -> oauth2.jwt(jwtConfigurer -> jwtConfigurer
                         .decoder(customerJwtDecoder)

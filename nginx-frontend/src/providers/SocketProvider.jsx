@@ -1,0 +1,1 @@
+export { SocketProvider } from "../app/providers/SocketProvider";

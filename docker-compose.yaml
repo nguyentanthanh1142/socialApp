@@ -1,6 +1,6 @@
-version: "3.8"
 services:
   nginx-frontend:
+    profiles: ["app"]
     build:
       context: nginx-frontend
       dockerfile: Dockerfile
@@ -13,23 +13,33 @@ services:
       - api-gateway
     networks:
       - app-network
+    restart: unless-stopped
 
   api-gateway:
+    profiles: ["app"]
     build:
       context: .
       dockerfile: Dockerfile
       args:
         MODULE: api-gateway
     image: nonono000/api-gateway:${VERSION}
-    depends_on:
-      - identity-service
-      - profile-service
-      - file-service
-      - chat-service
-      - post-service
     networks:
       - app-network
+    restart: unless-stopped
+    depends_on:
+      identity-service:
+        condition: service_started
+      profile-service:
+        condition: service_started
+      file-service:
+        condition: service_started
+      chat-service:
+        condition: service_started
+      post-service:
+        condition: service_started
+
   identity-service:
+    profiles: ["app"]
     build:
       context: .
       dockerfile: Dockerfile
@@ -39,9 +49,13 @@ services:
     networks:
       - app-network
       - kafka-net
+    restart: unless-stopped
     depends_on:
-      - kafka
+      mysql:
+        condition: service_healthy
+
   post-service:
+    profiles: ["app"]
     build:
       context: .
       dockerfile: Dockerfile
@@ -50,7 +64,13 @@ services:
     image: nonono000/post-service:${VERSION}
     networks:
       - app-network
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+
   profile-service:
+    profiles: ["app"]
     build:
       context: .
       dockerfile: Dockerfile
@@ -59,8 +79,13 @@ services:
     image: nonono000/profile-service:${VERSION}
     networks:
       - app-network
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
 
   file-service:
+    profiles: ["app"]
     build:
       context: .
       dockerfile: Dockerfile
@@ -69,8 +94,13 @@ services:
     image: nonono000/file-service:${VERSION}
     networks:
       - app-network
+    restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
 
   chat-service:
+    profiles: ["app"]
     build:
       context: .
       dockerfile: Dockerfile
@@ -79,31 +109,78 @@ services:
     image: nonono000/chat-service:${VERSION}
     networks:
       - app-network
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
 
   zookeeper:
-    image: bitnami/zookeeper:3.8
+    image: confluentinc/cp-zookeeper:7.5.0
     container_name: zookeeper
+    profiles: ["infra"]
     networks:
       - kafka-net
+    restart: unless-stopped
 
   kafka:
-    image: bitnami/kafka:3.8.0
+    image: confluentinc/cp-kafka:7.5.0
     container_name: kafka
-
+    profiles: ["infra"]
     depends_on:
       - zookeeper
     networks:
       - kafka-net
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:9.1.0
+    container_name: mysql-app
+    profiles: ["infra"]
+    networks:
+      - app-network
+    volumes:
+      - mysql_data:/var/lib/mysql
+    restart: unless-stopped
+
+  mongodb:
+    image: mongo:7.0
+    container_name: my-mongo
+    profiles: ["infra"]
+    networks:
+      - app-network
+    volumes:
+      - mongo_data:/data/db
+    restart: unless-stopped
+
+  neo4j:
+    image: neo4j:5.20-community
+    container_name: my-neo4j
+    profiles: ["infra"]
+    networks:
+      - app-network
+    volumes:
+      - neo4j_data:/data
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: redis
+    profiles: ["infra"]
+    networks:
+      - app-network
+    restart: unless-stopped
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
+    profiles: ["infra"]
     depends_on:
       - kafka
     networks:
       - kafka-net
+    restart: unless-stopped
 
 networks:
   app-network:
-    external: true
+    driver: bridge
   kafka-net:
     driver: bridge

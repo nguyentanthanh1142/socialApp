@@ -1,9 +1,12 @@
-version: "3.8"
-
 services:
   nginx-frontend:
     ports:
       - "3000:80"
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
 
   api-gateway:
     ports:
@@ -14,6 +17,12 @@ services:
       MYSQL_USERNAME: ${MYSQL_USERNAME}
       IDENTITY_SERVICE_URL: ${IDENTITY_SERVICE_URL}
       SERVER_PORT: 8080
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+
   identity-service:
     ports:
       - "8080:8080"
@@ -27,6 +36,11 @@ services:
       CLIENT_ID: ${CLIENT_ID}
       SECRET_KEY: ${SECRET_KEY}
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
 
   post-service:
     ports:
@@ -34,6 +48,11 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: docker
       MONGO_URI_POST_SERVICE: ${MONGO_URI_POST_SERVICE}
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
 
   profile-service:
     ports:
@@ -44,6 +63,11 @@ services:
       NEO4J_USERNAME: ${NEO4J_USERNAME}
       NEO4J_PASSWORD: ${NEO4J_PASSWORD}
       FILE_SERVICE_URL: ${FILE_SERVICE_URL}
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
 
   file-service:
     ports:
@@ -55,6 +79,11 @@ services:
       DOWNLOAD_PREFIX: ${DOWNLOAD_PREFIX}
     volumes:
       - ./uploads:/app/uploads
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
 
   chat-service:
     ports:
@@ -67,28 +96,137 @@ services:
       MONGO_PASSWORD: ${MONGO_PASSWORD}
       PROFILE_SERVICE_URL: ${PROFILE_SERVICE_URL}
       IDENTITY_SERVICE_URL: ${IDENTITY_SERVICE_URL}
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+
   zookeeper:
-    ports:
-      - "2181:2181"
     environment:
-      - ALLOW_ANONYMOUS_LOGIN=yes
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    healthcheck:
+      test: ["CMD", "echo", "ruok", "|", "nc", "localhost", "2181"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
+
   kafka:
     ports:
       - "9092:9092"
       - "9094:9094"
     environment:
-      - KAFKA_BROKER_ID=1
-      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
-      - ALLOW_PLAINTEXT_LISTENER=yes
-      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,PLAINTEXT_HOST://:9094
-      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9094
-      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
 
   kafka-ui:
     ports:
-      - "8089:8080"
+      - "9000:8080"
     environment:
       - KAFKA_CLUSTERS_0_NAME=local
       - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
       - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
+
+  mysql:
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: identity_db
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+
+  mongodb:
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: >
+        mongosh --quiet \
+        -u ${MONGO_USERNAME} \
+        -p ${MONGO_PASSWORD} \
+        --authenticationDatabase admin \
+        --eval "db.runCommand('ping').ok"
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+
+  neo4j:
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD}
+    volumes:
+      - neo4j_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7474"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  redis:
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
+
+volumes:
+  mysql_data:
+  mongo_data:
+  neo4j_data:

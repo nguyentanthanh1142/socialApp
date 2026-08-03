@@ -8,7 +8,21 @@ spring:
   data:
     mongodb:
       uri: ${MONGO_URI_FILE_SERVICE:mongodb://root:root@localhost:27017/file-service?authSource=admin}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9094}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    consumer:
+      group-id: file-post-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
 app:
   file:
     storage-dir: ${FILE_STORAGE_DIR:/app/uploads}
     download-prefix: ${DOWNLOAD_PREFIX:http://localhost:8888/api/v1/file/media/download/}
+  cloudinary:
+    cloud-name: ${CLOUDINARY_CLOUD_NAME:djemo9xew}
+    api-key: ${CLOUDINARY_API_KEY:874493536325289}
+    api-secret: ${CLOUDINARY_API_SECRET:VM8MMemWfUyLVZ8czHz8V5zGaMM}
+    folder: ${CLOUDINARY_FOLDER:social-media}

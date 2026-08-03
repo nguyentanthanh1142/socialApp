@@ -19,16 +19,13 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     String id;
-
     @Column( name = "username",unique = true, columnDefinition = "VARCHAR(255) COLLATE utf8mb4_unicode_ci")
     String username;
     @Column(name = "email", unique = true, columnDefinition = "VARCHAR(255) COLLATE utf8mb4_unicode_ci")
     String email;
     String password;
-    String lastname;
-    String firstname;
-    LocalDate birthday;
-    String city;
+    @Column(name = "email_verifield" , nullable = false, columnDefinition = "boolean default false")
+    boolean emailVerified;
     @ManyToMany
     Set<Role> roles;
 }

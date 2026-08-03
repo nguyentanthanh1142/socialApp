@@ -27,12 +27,20 @@ public class FeedController {
 
     @GetMapping("/my-feed")
     ApiResponse<PageResponse<FeedResponse>> getMyFeed(
-            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(required = false) Double checkpoint,
             @RequestParam(defaultValue = "20") int size) {
+
         return ApiResponse.<PageResponse<FeedResponse>>builder()
-                .result(feedService.getMyFeed(page,size))
+                .result(feedService.getMyFeeds(checkpoint, size))
                 .build();
     }
+//    ApiResponse<PageResponse<FeedResponse>> getMyFeed(
+//            @RequestParam(defaultValue = "0") int page,
+//            @RequestParam(defaultValue = "20") int size) {
+//        return ApiResponse.<PageResponse<FeedResponse>>builder()
+//                .result(feedService.getMyFeed(page,size))
+//                .build();
+//    }
     @GetMapping("/zzz")
     ApiResponse<List<String>> getMyFeed(){
         return ApiResponse.<List<String>>builder()
@@ -43,6 +51,13 @@ public class FeedController {
     ApiResponse<Void> readFeed(@RequestBody List<String> postIds)
     {
         feedService.markRead(postIds);
+        return ApiResponse.<Void>builder()
+                .build();
+    }
+    @PostMapping("/checkpoint")
+    ApiResponse<Void> readFeed(@RequestParam("lastPostId")  String lastPostIds)
+    {
+        feedService.updateCheckpoint(lastPostIds);
         return ApiResponse.<Void>builder()
                 .build();
     }

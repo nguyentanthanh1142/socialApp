@@ -1,13 +1,18 @@
 package com.ntt.identity_service.service;
 
+import java.time.Year;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 import com.ntt.event.dto.NotificationEvent;
 import com.ntt.identity_service.constant.PredefindRole;
 import com.ntt.identity_service.entity.Role;
 import com.ntt.identity_service.mapper.ProfileMapper;
 import com.ntt.identity_service.repository.httpClient.ProfileClient;
+import lombok.experimental.NonFinal;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.access.prepost.PostAuthorize;
@@ -37,42 +42,58 @@ import org.springframework.util.StringUtils;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Slf4j
 public class UserService {
+
     UserRepository userRepository;
     RoleRepository roleRepository;
     UserMapper userMapper;
     ProfileMapper profileMapper;
     PasswordEncoder passwordEncoder;
     ProfileClient profileClient;
+    TokenService tokenService;
 
     KafkaTemplate<String, Object> kafkaTemplate;
 
+    @NonFinal
+    @Value("${app.verify.url}")
+    protected String verifyEmailUrl;
+
     public UserResponse createUser(UserCreationRequest request) {
-        if(userRepository.existsByUsername(request.getUsername())) throw new AppException(ErrorCode.USER_EXISTED);
-
-
         User user = userMapper.toUser(request);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         HashSet<Role> roles = new HashSet<>();
         roleRepository.findById(PredefindRole.USER).ifPresent(roles::add);
         user.setRoles(roles);
+        user.setEmailVerified(false);
 
         try{
             user = userRepository.save(user);
-            var profileRequest = profileMapper.toProfileCreationRequest(request);
-            profileRequest.setUserId(user.getId());
-
-            var profileResponse = profileClient.createProfile(profileRequest );
-
-            log.info(profileResponse.toString());
-
         } catch( DataIntegrityViolationException exception) {
             throw new AppException(ErrorCode.USER_EXISTED);
         }
+
+        var profileRequest = profileMapper.toProfileCreationRequest(request);
+        profileRequest.setUserId(user.getId());
+
+        var profileResponse = profileClient.createProfile(profileRequest).getResult();
+        log.info(profileResponse.toString());
+
+        var token = tokenService.generateVerificationToken(user.getId());
+        log.info("token:" + token);
+
+        String verifyLink = verifyEmailUrl + "?token=" + token;
+        String subject = "";
+        Map<String, Object> params = new HashMap<>();
+        params.put("username", profileResponse.getFirstname() + " " +profileResponse.getLastname());
+        params.put("confirmLink", verifyLink);
+        params.put("year", Year.now().getValue());
+        params.put("appName", "NTT social network");
+
         NotificationEvent notificationEvent = NotificationEvent.builder()
                 .chanel("EMAIL")
                 .recipient(request.getEmail())
                 .subject("Welcome!")
-                .body("Hello, " + user.getUsername() + "!")
+                .params(params)
+                .templateCode("welcome_email")
                 .build();
 
         kafkaTemplate.send("notification-delivery",notificationEvent);
@@ -127,4 +148,5 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         userRepository.save(user);
     }
+
 }

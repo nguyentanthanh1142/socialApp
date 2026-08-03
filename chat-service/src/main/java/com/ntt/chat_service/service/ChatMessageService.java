@@ -1,24 +1,27 @@
 package com.ntt.chat_service.service;
 
-import com.corundumstudio.socketio.SocketIOServer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ntt.chat_service.dto.repuest.ChatMessageRequest;
 import com.ntt.chat_service.dto.response.ChatMessageResponse;
 import com.ntt.chat_service.entity.ChatMessage;
 import com.ntt.chat_service.entity.ParticipantInfo;
-import com.ntt.chat_service.entity.WebSocketSession;
 import com.ntt.chat_service.exception.AppException;
 import com.ntt.chat_service.exception.ErrorCode;
 import com.ntt.chat_service.mapper.ChatMessageMapper;
 import com.ntt.chat_service.repository.ChatMessageRepository;
 import com.ntt.chat_service.repository.ConversationRepository;
-import com.ntt.chat_service.repository.WebSocketSessionRepository;
 import com.ntt.chat_service.repository.htppclient.ProfileClient;
+import com.ntt.common_lib.dto.UserInfo;
+import com.ntt.common_lib.enums.ChatMessageType;
+import com.ntt.common_lib.event.chat.ChatMessageEvent;
+import com.ntt.common_lib.event.chat.ChatMessagePayload;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.catalina.User;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -38,8 +41,8 @@ public class ChatMessageService {
     ChatMessageMapper chatMessageMapper;
     ConversationRepository conversationRepository;
     ProfileClient profileClient;
-    SocketIOServer socketIOServer;
-    WebSocketSessionRepository webSocketSessionRepository;
+    KafkaTemplate<String, Object> kafkaTemplate;
+//    SocketIOServer socketIOServer;
     ObjectMapper objectMapper;
 
     public List<ChatMessageResponse> getMessages(String conversationId) {
@@ -89,36 +92,56 @@ public class ChatMessageService {
         chatmessage = repository.save(chatmessage);
 
 
+
         List<String> participantIds = conversation.getParticipants().stream()
                 .map(ParticipantInfo::getUserId)
                 .toList();
 
-        Map<String, WebSocketSession> webSocketSessions =
-                webSocketSessionRepository.findAllByUserIdIn(participantIds)
-                        .stream()
-                        .collect(Collectors.toMap(WebSocketSession::getSocketSessionId, Function.identity()));
+
+
+        ChatMessagePayload messagePayload = ChatMessagePayload.builder()
+                .id(chatmessage.getId())
+                .createdDate(chatmessage.getCreatedDate())
+                .content(chatmessage.getMessage())
+                .mediaUrl("")
+                .type(ChatMessageType.TEXT)
+                .sender(UserInfo.builder()
+                        .name(userInfo.getUsername())
+                        .avatarUrl(userInfo.getAvatar())
+                        .id(userInfo.getUserId())
+                        .build())
+                .build();
+
+        ChatMessageEvent chatMessageEvent = ChatMessageEvent.builder()
+                .conversationId(conversation.getId())
+                .participants(participantIds)
+                .payload(messagePayload)
+                .build();
+
+        kafkaTemplate.send("chat-topic", chatMessageEvent);
+//        Map<String, WebSocketSession> webSocketSessions =
+//                webSocketSessionRepository.findAllByUserIdIn(participantIds)
+//                        .stream()
+//                        .collect(Collectors.toMap(WebSocketSession::getSocketSessionId, Function.identity()));
 
         ChatMessageResponse chatMessageResponse = chatMessageMapper.toChatMessageResponse(chatmessage);
-        socketIOServer.getAllClients().forEach(client -> {
-            var webSocketSessionIds = webSocketSessions.get(client.getSessionId().toString());
-
-            if (Objects.nonNull(webSocketSessionIds)) {
-                String message = "";
-                try {
-                    chatMessageResponse.setMe(webSocketSessionIds.getUserId().equals(userId));
-                    message = objectMapper.writeValueAsString(chatMessageResponse);
-                    client.sendEvent("message", message);
-                } catch (JsonProcessingException e) {
-                    throw new RuntimeException(e);
-                }
-
-            }
-        });
+//        socketIOServer.getAllClients().forEach(client -> {
+//            var webSocketSessionIds = webSocketSessions.get(client.getSessionId().toString());
+//
+//            if (Objects.nonNull(webSocketSessionIds)) {
+//                String message = "";
+//                try {
+//                    chatMessageResponse.setMe(webSocketSessionIds.getUserId().equals(userId));
+//                    message = objectMapper.writeValueAsString(chatMessageResponse);
+//                    client.sendEvent("message", message);
+//                } catch (JsonProcessingException e) {
+//                    throw new RuntimeException(e);
+//                }
+//            }
+//        });
 
         return toChatMessageResponse(chatmessage);
     }
-
-
 
     private ChatMessageResponse toChatMessageResponse(ChatMessage chatMessage) {
         String userId = SecurityContextHolder.getContext().getAuthentication().getName();
