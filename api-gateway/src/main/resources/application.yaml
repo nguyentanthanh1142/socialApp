@@ -10,6 +10,21 @@ spring:
     name: api-gateway
   cloud:
     gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowed-origins:
+              - "http://localhost:3000"
+            allowed-methods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+              - PATCH
+            allowed-headers: "*"
+            allow-credentials: true
+            max-age: 3600
       routes:
         - id: identity_service
           uri: http://localhost:8080
@@ -59,3 +74,35 @@ spring:
             - Path=${app.api-prefix}/feed/**
           filters:
             - StripPrefix=2
+        - id: socket_service
+          uri: http://localhost:8089
+          predicates:
+            - Path=${app.api-prefix}/ws/**
+          filters:
+            - StripPrefix=2
+  webflux:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+      - name: Identity Service
+        url: /api/v1/identity/v3/api-docs
+      - name: Profile Service
+        url: /api/v1/profile/v3/api-docs
+      - name: Notification Service
+        url: /api/v1/notification/v3/api-docs
+      - name: Post Service
+        url: /api/v1/post/v3/api-docs
+      - name: File Service
+        url: /api/v1/file/v3/api-docs
+      - name: Chat Service
+        url: /api/v1/chat/v3/api-docs
+      - name: Relation Service
+        url: /api/v1/relation/v3/api-docs
+      - name: Feed Service
+        url: /api/v1/feed/v3/api-docs
+      - name: Socket Service
+        url: /api/v1/ws/v3/api-docs

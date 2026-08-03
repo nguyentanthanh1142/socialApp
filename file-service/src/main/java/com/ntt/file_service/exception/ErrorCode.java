@@ -15,9 +15,13 @@ public enum ErrorCode {
     UNAUTHENTICATED("Unauthenticated", 1006, HttpStatus.UNAUTHORIZED),
     UNAUTHORIZED("You do not have permission", 1007, HttpStatus.FORBIDDEN),
     CANNOT_SEND_EMAIL("Can not send email", 1007, HttpStatus.FORBIDDEN),
-    FILE_NOT_FOUND("Can not get file", 1009, HttpStatus.NOT_FOUND),
-    INVALID_DOB("Your age must be at least {min}", 1008, HttpStatus.BAD_REQUEST);
+    INVALID_DOB("Your age must be at least {min}", 1008, HttpStatus.BAD_REQUEST),
 
+    FILE_NOT_FOUND("Can not get file", 4001, HttpStatus.NOT_FOUND),
+    FILE_UPLOAD_FAILED("Failed to upload file to cloud storage", 4002, HttpStatus.INTERNAL_SERVER_ERROR),
+    INVALID_FILE_FORMAT("Invalid file format or extension", 4003, HttpStatus.BAD_REQUEST),
+    FILE_SIZE_EXCEEDED("File size exceeds the allowable limit", 4004, HttpStatus.BAD_REQUEST);
+    ;
     ErrorCode(String message, int code, HttpStatusCode statusCode) {
         this.message = message;
         this.code = code;

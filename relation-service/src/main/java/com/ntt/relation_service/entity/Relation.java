@@ -25,8 +25,10 @@ public class Relation {
     @Indexed(unique = true)
     String participantsHash;
     List<ParticipantInfo> participants;
-    @Indexed
+    Instant acceptedDate;
     Instant createdDate;
+    @Indexed
     Instant modifiedDate;
+
 
 }

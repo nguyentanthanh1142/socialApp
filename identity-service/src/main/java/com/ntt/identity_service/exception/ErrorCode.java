@@ -13,10 +13,15 @@ public enum ErrorCode {
     USERNAME_INVALID("Username must be at least {min} characters", 1003, HttpStatus.BAD_REQUEST),
     PASSWORD_INVALID("Password must be at least {min} characters", 1004, HttpStatus.BAD_REQUEST),
     USER_NOT_EXISTED("Username not existed", 1005, HttpStatus.NOT_FOUND),
+    INVALID_DOB("Your age must be at least {min}", 1008, HttpStatus.BAD_REQUEST),
+    PASSWORD_EXISTED("Password existed", 1009, HttpStatus.FORBIDDEN),
+
     UNAUTHENTICATED("Unauthenticated", 1006, HttpStatus.UNAUTHORIZED),
     UNAUTHORIZED("You do not have permission", 1007, HttpStatus.FORBIDDEN),
-    INVALID_DOB("Your age must be at least {min}", 1008, HttpStatus.BAD_REQUEST),
-    PASSWORD_EXISTED("Password existed", 1009, HttpStatus.FORBIDDEN),;
+    TOKEN_EXPIRED("Your token has expired", 1010, HttpStatus.BAD_REQUEST),
+    TOKEN_INVALID("Your token is invalid or expired", 1011, HttpStatus.BAD_REQUEST),
+    EMAIL_NOT_VERIFIED("Email not verified", 1012, HttpStatus.FORBIDDEN),
+    ;
 
     ErrorCode(String message, int code, HttpStatusCode statusCode) {
         this.message = message;

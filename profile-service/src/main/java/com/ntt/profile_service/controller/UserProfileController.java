@@ -42,7 +42,7 @@ public class UserProfileController {
                 .build();
     }
     @PutMapping("/users/avatar")
-    ApiResponse<UserProfileResponse> updateAvatar(@RequestParam MultipartFile file) throws IOException {
+    ApiResponse<UserProfileResponse> updateAvatar(@RequestParam MultipartFile[] file) throws IOException {
         return ApiResponse.<UserProfileResponse>builder()
                 .result(userProfileService.updateAvatar(file))
                 .build();

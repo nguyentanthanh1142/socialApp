@@ -1,9 +1,11 @@
 package com.ntt.feed_service.dto.response;
 
+import com.ntt.common_lib.dto.FileResponse;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.time.Instant;
+import java.util.List;
 
 @Data
 @Builder
@@ -17,5 +19,10 @@ public class FeedResponse {
     String name;
     String content;
     Instant createdAt;
+    boolean liked;
+    Long likeCount;
     boolean isRead = false;
+    Double score;
+    List<FileResponse> files;
 }
+

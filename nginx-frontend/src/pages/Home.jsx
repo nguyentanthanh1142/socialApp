@@ -1,338 +1,297 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Box,
-  Card,
-  CircularProgress,
-  Typography,
-  Snackbar,
-  Alert,
-} from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
-import { isAuthenticated, logOut } from "../services/authenticationService";
+import { Box, Card, Dialog, Snackbar, Alert, Typography } from "@mui/material";
+import { isAuthenticated } from "../services/authenticationService";
 import Scene from "./Scene";
-import Post from "../components/header/Post";
-import FriendList from "../components/FriendList";
 import { getMyFeed, markReadPosts } from "../services/feedService";
-import { getMyPosts, createPost } from "../services/postService";
+import { createPost, likePost } from "../services/postService";
+// import { getCurrentUser } from "../services/userService"; // 👈 Nhớ import hàm lấy user thật của bạn vào đây
+import { getMockFeedSnapshot } from "../mockData";
 import DraggableDialog from "../components/DialogCreatePost";
 import SideMenu from "../components/header/SideMenu";
+
+// Import các component theo đúng kiến trúc phân chia thư mục
+import FeedList from "../components/feed/FeedList";
+import CommentDialog from "../components/comments/CommentDialog";
+
 export default function Home() {
-  const [posts, setPosts] = useState([]);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [hasMore, setHasMore] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  
+  // Đưa hàm normalizePost và buildOptimisticPost vào trong component để truy cập được state `currentUser`
+  const normalizePost = (post) => {
+    const images = post.images || post.files?.map((file) => file.url).filter(Boolean) || [];
+    return {
+      ...post,
+      postId: post.postId ?? post.id,
+      name: post.name || post.authorName || currentUser?.name || "User",
+      authorName: post.authorName || post.name || currentUser?.name || "User",
+      avatarUrl: post.avatarUrl || post.avatar || currentUser?.avatarUrl || "",
+      avatar: post.avatar || post.avatarUrl || currentUser?.avatarUrl || "",
+      createdDate: post.createdDate || new Date().toISOString(),
+      images,
+      files: post.files?.length ? post.files : images.map((url) => ({ url })),
+      likeCount: post.likeCount ?? 0,
+      commentCount: post.commentCount ?? 0,
+      liked: Boolean(post.liked),
+    };
+  };
+
+  const buildOptimisticPost = (content, imagePreviews = []) => {
+    const images = imagePreviews.map((image) => image.preview || image.url || "").filter(Boolean);
+    return normalizePost({
+      postId: `temp-${Date.now()}`,
+      name: currentUser?.name || "User",
+      authorName: currentUser?.name || "User",
+      avatarUrl: currentUser?.avatarUrl || "",
+      avatar: currentUser?.avatarUrl || "",
+      timestamp: "Just now",
+      createdDate: new Date().toISOString(),
+      content,
+      images,
+      files: images.map((url) => ({ url })),
+      likeCount: 0,
+      commentCount: 0,
+      liked: false,
+    });
+  };
+
+  const [posts, setPosts] = useState(() => getMockFeedSnapshot().map((p) => ({
+    ...p,
+    postId: p.postId ?? p.id,
+    name: p.name || p.authorName || "User",
+    authorName: p.authorName || p.name || "User",
+    avatarUrl: p.avatarUrl || p.avatar || "",
+    avatar: p.avatar || p.avatarUrl || "",
+    createdDate: p.createdDate || new Date().toISOString(),
+    images: p.images || p.files?.map((file) => file.url).filter(Boolean) || [],
+    files: p.files?.length ? p.files : (p.images || []).map((url) => ({ url })),
+    likeCount: p.likeCount ?? 0,
+    commentCount: p.commentCount ?? 0,
+    liked: Boolean(p.liked),
+  })).slice(0, 3));
+
+  const [loading, setLoading] = useState(false);
+  const [feedError, setFeedError] = useState(null);
+  const [hasMore, setHasMore] = useState(true);
   const observer = useRef();
   const [dialogOpen, setDialogOpen] = useState(false);
   const lastPostElementRef = useRef();
-  const [anchorEl, setAnchorEl] = useState(null);
   const [newPostContent, setNewPostContent] = useState("");
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSeverity, setSnackbarSeverity] = useState("success");
-  const [open, setOpen] = useState(false);
   const [readPosts, setReadPosts] = useState([]);
+  const [selectedImages, setSelectedImages] = useState([]);
   const navigate = useNavigate();
   const readQueueRef = useRef([]);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewImages, setPreviewImages] = useState([]);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const checkpointRef = useRef(null);
 
-  // Handle opening the popover
-  const handleCreatePostClick = (event) => {
-    setDialogOpen(true);
-  };
-
-  // Handle closing the popover
-  const handleCloseDialog = () => {
-    setDialogOpen(false);
-    setNewPostContent("");
-  };
-
-  // Handle Snackbar close
-  const handleSnackbarClose = (event, reason) => {
-    if (reason === "clickaway") {
-      return;
-    }
-    setSnackbarOpen(false);
-  };
-
-  // Handle posting new content
-  const handlePostContent = () => {
-    console.log("New post content:", newPostContent);
-    handleCloseDialog();
-
-    createPost(newPostContent)
-      .then((response) => {
-        console.log("Post created successfully:", response.data);
-        setPosts((prevPosts) => [response.data.result, ...prevPosts]);
-        setNewPostContent("");
-        setSnackbarMessage("Post created successfully!");
-        setSnackbarSeverity("success");
-        setSnackbarOpen(true);
-      })
-      .catch((error) => {
-        console.error("Error creating post:", error);
-        setSnackbarMessage("Failed to create post. Please try again.");
-        setSnackbarSeverity("error");
-        setSnackbarOpen(true);
-      })
-      .finally(() => {
-        handleCloseDialog();
-      });
-  };
+  // Quản lý Dialog Bình luận
+  const [commentDialogOpen, setCommentDialogOpen] = useState(false);
+  const [selectedPost, setSelectedPost] = useState(null);
 
   useEffect(() => {
     if (!isAuthenticated()) {
       navigate("/login");
-    } else {
-      loadPosts(page);
+      return;
     }
-  }, [navigate, page]);
 
-  const loadPosts = (page) => {
+    // Thay thế bằng hàm gọi API lấy thông tin user thật của bạn (ví dụ: getCurrentUser())
+    // getCurrentUser()
+    //   .then((res) => {
+    //     setCurrentUser(res?.data?.result || res?.data);
+    //   })
+    //   .catch((err) => {
+    //     console.error("Không thể lấy thông tin user:", err);
+    //   });
+  }, [navigate]);
+
+  const handleOpenComments = (post) => {
+    setSelectedPost(post);
+    setCommentDialogOpen(true);
+  };
+
+  const handleCommentAdded = (postId) => {
+    setPosts((prevPosts) =>
+      prevPosts.map((p) => (p.postId === postId ? { ...p, commentCount: (p.commentCount || 0) + 1 } : p))
+    );
+  };
+
+  const handleLike = (postId) => {
+    setPosts((prevPosts) =>
+      prevPosts.map((post) => {
+        if (post.postId !== postId) return post;
+        const liked = !post.liked;
+        return {
+          ...post,
+          liked,
+          likeCount: Math.max(0, (post.likeCount || 0) + (liked ? 1 : -1)),
+        };
+      })
+    );
+
+    likePost(postId).catch((err) => console.error("Error liking post:", err));
+  };
+
+  const loadPosts = async (checkpoint) => {
+    if (loading) return;
     setLoading(true);
-    getMyFeed(page)
-      .then((response) => {
-        setTotalPages(response.data.result.totalPages);
-        setPosts((prevPosts) => [...prevPosts, ...response.data.result.data]);
-        setHasMore(response.data.result.data.length > 0);
-        console.log("loaded posts:", response.data.result);
-      })
-      .catch((error) => {
-        if (error.response.status === 401) {
-          logOut();
-          navigate("/login");
-        }
-      })
-      .finally(() => {
-        setLoading(false);
+    setFeedError(null);
+    try {
+      const response = await getMyFeed(checkpoint);
+      const result = response?.data?.result || {};
+      const incomingPosts = result.data || [];
+
+      setPosts((prevPosts) => {
+        const existingIds = new Set(prevPosts.map((p) => p.postId));
+        return [...prevPosts, ...incomingPosts.map(normalizePost).filter((p) => !existingIds.has(p.postId))];
       });
+
+      if (result.nextCheckpoint) {
+        checkpointRef.current = result.nextCheckpoint;
+      }
+      setHasMore(Boolean(result.hasMore));
+    } catch (error) {
+      const allMock = getMockFeedSnapshot().map(normalizePost);
+      setPosts((prevPosts) => {
+        const existingIds = new Set(prevPosts.map((p) => p.postId));
+        const nextMockPosts = allMock.filter((p) => !existingIds.has(p.postId)).slice(0, 3);
+        if (nextMockPosts.length === 0) setHasMore(false);
+        return [...prevPosts, ...nextMockPosts];
+      });
+      setFeedError("Đang ngoại tuyến: Hiển thị dữ liệu mẫu.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    if (!hasMore) return;
+    if (!hasMore || loading) return;
     if (observer.current) observer.current.disconnect();
 
     observer.current = new IntersectionObserver((entries) => {
       if (entries[0].isIntersecting) {
-        if (page < totalPages) {
-          setPage((prevPage) => prevPage + 1);
+        if (checkpointRef.current) {
+          loadPosts(checkpointRef.current);
+        } else {
+          loadPosts(null);
         }
       }
     });
-    if (lastPostElementRef.current) {
-      observer.current.observe(lastPostElementRef.current);
-    }
-    setHasMore(false);
-  }, [hasMore]);
-
-
-
-  useEffect(() => {
-    if (!hasMore) return;
-    if (observer.current) observer.current.disconnect();
-
-    observer.current = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting && page < totalPages) {
-        setPage((prevPage) => prevPage + 1);
-      }
-    });
 
     if (lastPostElementRef.current) {
       observer.current.observe(lastPostElementRef.current);
     }
 
-    setHasMore(false);
-  }, [hasMore, page, totalPages]);
+    return () => observer.current?.disconnect();
+  }, [posts, loading, hasMore]);
 
-
-  useEffect(() => {
-    const readObserver = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const postId = entry.target.getAttribute("data-id");
-            console.log("Đang check entry:", entry.target, "data-id:", entry.target.getAttribute("data-id"));
-            if (postId && !readQueueRef.current.includes(postId)) {
-              readQueueRef.current.push(postId);
-            }
-          }
-        });
-      },
-      { threshold: 0.7 } 
-    );
-
-    document.querySelectorAll(".post-card").forEach((el) => {
-      readObserver.observe(el);
-    });
-
-    const interval = setInterval(() => {
-      if (readQueueRef.current.length > 0) {
-        const batch = [...readQueueRef.current];
-        readQueueRef.current = [];
-        console.log(batch)
-        markReadPosts(batch)
-          .then(() => console.log("Marked read posts:", batch))
-          .catch(console.error);
-      }
-    }, 2000);
-
-    return () => {
-      clearInterval(interval);
-      readObserver.disconnect()
-    };
-  }, [posts]);
-
-  useEffect(() => {
-    if (readPosts.length > 0) {
-      const readPostsData = posts.filter(p => readPosts.includes(p.postId?.toString()));
-      console.log("Chi tiết các post đã đọc:", readPostsData);
-    }
-  }, [readPosts, posts]);
   return (
     <Scene sideMenu={<SideMenu />}>
-      {" "}
       <Snackbar
         open={snackbarOpen}
         autoHideDuration={6000}
-        onClose={handleSnackbarClose}
+        onClose={() => setSnackbarOpen(false)}
         anchorOrigin={{ vertical: "top", horizontal: "right" }}
         sx={{ marginTop: "64px" }}
       >
-        <Alert
-          onClose={handleSnackbarClose}
-          severity={snackbarSeverity}
-          sx={{ width: "100%" }}
-        >
+        <Alert onClose={() => setSnackbarOpen(false)} severity={snackbarSeverity} sx={{ width: "100%" }}>
           {snackbarMessage}
         </Alert>
       </Snackbar>
-      <Card
-        sx={{
-          minWidth: 500,
-          maxWidth: 600,
-          boxShadow: 3,
-          borderRadius: 2,
-          mt: "20px",
-          padding: "20px",
-        }}
-      >
-        <Box
+
+      <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", pb: 4 }}>
+        <Card
           sx={{
+            minWidth: 300,
+            width: "100%",
+            maxWidth: 600,
+            boxShadow: 3,
+            borderRadius: 2,
+            mt: "20px",
+            padding: "20px",
             display: "flex",
             flexDirection: "column",
-            alignItems: "flex-start",
-            width: "100%",
-            gap: "10px",
-            justifyContent: "center",
+            alignItems: "center",
           }}
         >
-
           <DraggableDialog
             open={dialogOpen}
-            onOpen={handleCreatePostClick}
-            onClose={handleCloseDialog}
+            onOpen={() => setDialogOpen(true)}
+            onClose={() => setDialogOpen(false)}
             newPostContent={newPostContent}
             setNewPostContent={setNewPostContent}
-            onPost={handlePostContent}
+            setSelectedImages={setSelectedImages}
+            selectedImages={selectedImages}
+            onPost={(content, files) => {
+              const optimisticPost = buildOptimisticPost(content, files);
+              setPosts((prev) => [optimisticPost, ...prev]);
+              setDialogOpen(false);
+
+              createPost(content, files.map((img) => img.file).filter(Boolean))
+                .then(() => {
+                  setSnackbarMessage("Post created successfully!");
+                  setSnackbarSeverity("success");
+                  setSnackbarOpen(true);
+                })
+                .catch(() => {
+                  setSnackbarMessage("Failed to create post.");
+                  setSnackbarSeverity("error");
+                  setSnackbarOpen(true);
+                });
+            }}
           />
 
-          <Typography
-            sx={{
-              fontSize: 18,
-              mb: "10px",
+          <FeedList
+            posts={posts}
+            loading={loading}
+            feedError={feedError}
+            readPosts={readPosts}
+            onLike={handleLike}
+            onOpenComments={handleOpenComments}
+            onImageClick={(imgs, idx) => {
+              setPreviewImages(imgs);
+              setCurrentImageIndex(idx);
+              setPreviewOpen(true);
             }}
-          >
-          </Typography>
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "flex-start",
-              width: "100%", // Ensure content takes full width
-            }}
-          ></Box>
-          {/* {posts.map((post, index) => {
-            if (posts.length === index + 1) {
-              return (
-                <Post ref={lastPostElementRef} key={post.id} post={post} />
-              );
-            } else {
-              return <Post key={post.id} post={post} />;
-            }
-          })} */}
-          {posts.map((post, index) => {
-            const isLast = posts.length === index + 1;
-            const isRead = readPosts.includes(post.postId?.toString());
-            const PostCard = (
-              <Card
-                key={post.postId}
-                data-id={post.postId}
-                className="post-card"
-                sx={{
-                  width: "95%",
-                  p: 2,
-                  mb: 2,
-                  borderRadius: 3,
-                  boxShadow: 2,
-                }}>
-                <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                  {/* <Avatar /> */}
-                  <Box sx={{ ml: 1 }}>
-                    <Typography fontWeight="bold">{post.name}</Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {/* {formatTime(post.createdDate)} */}
-                    </Typography>
-                  </Box>
-                </Box>
+            lastPostElementRef={lastPostElementRef}
+            onRetry={() => loadPosts(checkpointRef.current)}
+          />
+        </Card>
+      </Box>
 
-                <Typography sx={{ mb: 1 }}>{post.content}</Typography>
-
-                {post.image && (
-                  <Box
-                    component="img"
-                    src={post.image}
-                    alt="Ảnh bài viết"
-                    sx={{ width: "100%", borderRadius: 2, objectFit: "cover", mt: 1 }}
-                  />
-                )}
-                {isRead && (
-                  <Typography
-                    variant="caption"
-                    color="primary"
-                    sx={{ position: "absolute", top: 8, right: 12 }}
-                  >
-                    Đã đọc
-                  </Typography>
-                )}
-
-                <Box sx={{ width: "100%", display: "flex", justifyContent: "space-between", mt: 1 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    👍 {post.likes || 0}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    💬 {post.comments?.length || 0} bình luận
-                  </Typography>
-                </Box>
-              </Card>
-            );
-            return isLast ? (
-              <div style={{ width: "100%" }} ref={lastPostElementRef}>{PostCard}</div>
-            ) : (
-              PostCard
-            );
-          })}
-
-          {loading && (
+      <Dialog
+        open={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{ sx: { backgroundColor: "black", color: "white", position: "relative" } }}
+      >
+        {previewImages.length > 0 && (
+          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", p: 2 }}>
             <Box
-              sx={{ display: "flex", justifyContent: "center", width: "100%" }}
-            >
-              <CircularProgress size="24px" />
-            </Box>
-          )}
-        </Box>
-      </Card>
+              component="img"
+              src={previewImages[currentImageIndex]}
+              alt="Preview"
+              sx={{ width: "100%", height: "auto", maxHeight: "80vh", objectFit: "contain", borderRadius: 2 }}
+            />
+            <Typography variant="caption" sx={{ mt: 1, opacity: 0.7 }}>
+              {currentImageIndex + 1} / {previewImages.length}
+            </Typography>
+          </Box>
+        )}
+      </Dialog>
 
+      <CommentDialog
+        open={commentDialogOpen}
+        onClose={() => setCommentDialogOpen(false)}
+        selectedPost={selectedPost}
+        onCommentAdded={handleCommentAdded}
+        currentUser={currentUser}
+      />
     </Scene>
   );
 }

@@ -1,5 +1,6 @@
 package com.ntt.identity_service.repository.httpClient;
 
+import com.ntt.common_lib.dto.ApiResponse;
 import com.ntt.identity_service.configuration.AuthenticationRequestInterceptor;
 import com.ntt.identity_service.dto.request.ProfileCreationRequest;
 import com.ntt.identity_service.dto.response.UserProfileResponse;
@@ -13,5 +14,5 @@ import org.springframework.web.bind.annotation.RequestHeader;
         configuration = AuthenticationRequestInterceptor.class)
 public interface ProfileClient {
     @PostMapping(value = "/internal/users",produces = MediaType.APPLICATION_JSON_VALUE)
-    UserProfileResponse createProfile( @RequestBody ProfileCreationRequest request);
+    ApiResponse<UserProfileResponse> createProfile(@RequestBody ProfileCreationRequest request);
 }

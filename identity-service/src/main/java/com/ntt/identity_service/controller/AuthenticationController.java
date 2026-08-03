@@ -1,8 +1,13 @@
 package com.ntt.identity_service.controller;
 
+import java.io.IOException;
 import java.text.ParseException;
 
 import com.ntt.common_lib.dto.ApiResponse;
+import com.ntt.identity_service.dto.response.VerifyEmailResponse;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.experimental.NonFinal;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
 import com.nimbusds.jose.JOSEException;
@@ -22,6 +27,10 @@ import lombok.experimental.FieldDefaults;
 public class AuthenticationController {
     AuthenticationService authenticationService;
 
+    @Value("${app.url.frontend:http://localhost:3000}")
+    @NonFinal
+    String frontendUrl;
+
     @PostMapping("/outbound/authentication")
     ApiResponse<AuthenticationResponse> outboundAuthenticationResponseApiResponse(
             @RequestParam("code") String code){
@@ -30,7 +39,6 @@ public class AuthenticationController {
                 .result(result)
                 .build();
     }
-
 
     @PostMapping("/token")
     ApiResponse<AuthenticationResponse> authenticationResponseApiResponse(@RequestBody AuthenticationRequest request) {
@@ -56,5 +64,16 @@ public class AuthenticationController {
             throws ParseException, JOSEException {
         var result = authenticationService.refreshToken(request);
         return ApiResponse.<AuthenticationResponse>builder().result(result).build();
+    }
+
+    @GetMapping("/verify")
+    void verifyEmail(@RequestParam("token") String token, HttpServletResponse response) throws IOException {
+        try{
+            authenticationService.verifyEmail(token);
+            response.sendRedirect(frontendUrl + "/login?status=success");
+
+        } catch (Exception e) {
+            response.sendRedirect(frontendUrl + "/login?status=error");
+        }
     }
 }

@@ -35,7 +35,8 @@ public class UserProfileService {
     UserProfileMapper userProfileMapper;
     FileClient fileClient;
     UserProfileCacheImpl userProfileCache;
-    public UserProfileResponse createProfile(ProfileCreationRequest request){
+
+    public UserProfileResponse createProfile(ProfileCreationRequest request) {
         UserProfile userProfile = userProfileMapper.toUserProfile(request);
         userProfile = userProfileRepository.save(userProfile);
         userProfileCache.putUserProfile(UserProfileDTO.builder()
@@ -47,6 +48,7 @@ public class UserProfileService {
                 .build());
         return userProfileMapper.toUserProfileResponse(userProfile);
     }
+
     public UserProfileResponse getMyProfile() {
         var userId = SecurityContextHolder.getContext().getAuthentication().getName();
         log.info("User ID: {}", userId);
@@ -54,18 +56,17 @@ public class UserProfileService {
             UserProfile userProfile = userProfileRepository.findByUserId(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
             return userProfileMapper.toUserProfileResponse(userProfile);
-        }catch(NoSuchRecordException e)
-        {
+        } catch (NoSuchRecordException e) {
             throw new AppException(ErrorCode.USER_NOT_EXISTED);
         }
     }
 
-    public UserProfileResponse updateMyProfile(UpdateProfileRequest request){
+    public UserProfileResponse updateMyProfile(UpdateProfileRequest request) {
         var ahuentication = SecurityContextHolder.getContext().getAuthentication();
         String userId = ahuentication.getName();
 
-        var userProfile = userProfileRepository.findByUserId(userId).orElseThrow(()-> new AppException(ErrorCode.USER_NOT_EXISTED));
-        userProfileMapper.update(userProfile,request);
+        var userProfile = userProfileRepository.findByUserId(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+        userProfileMapper.update(userProfile, request);
         userProfileCache.putUserProfile(UserProfileDTO.builder()
                 .avatarUrl(userProfile.getAvatar())
                 .name(userProfile.getUsername())
@@ -75,35 +76,38 @@ public class UserProfileService {
                 .build());
         return userProfileMapper.toUserProfileResponse(userProfileRepository.save(userProfile));
     }
-    public UserProfileResponse getProfile(String userId){
+
+    public UserProfileResponse getProfile(String userId) {
         UserProfile userProfile =
                 userProfileRepository.findByUserId(userId)
                         .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
         return userProfileMapper.toUserProfileResponse(userProfile);
     }
+
     public UserProfileResponse getByUserId(String userId) {
         UserProfile userProfile = userProfileRepository.findByUserId(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
         return userProfileMapper.toUserProfileResponse(userProfile);
     }
+
     @PreAuthorize("hasRole('ADMIN')")
-    public List<UserProfileResponse> getAllProfiles()
-    {
+    public List<UserProfileResponse> getAllProfiles() {
         List<UserProfile> userProfiles = userProfileRepository.findAll();
         return userProfiles.stream().map(userProfileMapper::toUserProfileResponse).collect(Collectors.toList());
     }
 
-    public UserProfileResponse updateAvatar(MultipartFile file) throws IOException {
+    public UserProfileResponse updateAvatar(MultipartFile[] file) throws IOException {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
         String userId = authentication.getName();
         log.info(userId);
         var userProfile = userProfileRepository.findByUserId(userId)
-                .orElseThrow(()-> new AppException(ErrorCode.USER_NOT_EXISTED));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
-        var response = fileClient.uploadMedia(file);
-        userProfile.setAvatar(response.getResult().getUrl());
+        var response = fileClient.uploadMediaAvatar(file);
+        userProfile.setAvatar(response.getResult().getFirst().getUrl());
         return userProfileMapper.toUserProfileResponse(userProfileRepository.save(userProfile));
     }
+
     public List<UserProfileResponse> search(SearchUserRequest request) {
         var userId = SecurityContextHolder.getContext().getAuthentication().getName();
         List<UserProfile> userProfiles = userProfileRepository.findAllByUsernameLike(request.getKeyword());
@@ -112,17 +116,31 @@ public class UserProfileService {
                 .filter(userProfile -> !userProfile.getUserId().equals(userId))
                 .map(userProfileMapper::toUserProfileResponse).collect(Collectors.toList());
     }
-    public List<UserProfileResponse> getPopularProfiles(){
+
+    public List<UserProfileResponse> getPopularProfiles() {
         var userId = SecurityContextHolder.getContext().getAuthentication().getName();
-        List<UserProfile> popularUsers = userProfileRepository.findTop20ByCity(getMyProfile().getCity());
-        return popularUsers.stream().map(userProfileMapper::toUserProfileResponse).collect(Collectors.toList());
+        UserProfile myProfile = userProfileRepository.findByUserId(userId).orElse(null);
+
+        List<UserProfile> popularUsers;
+        if (myProfile != null && myProfile.getCity() != null && !myProfile.getCity().trim().isEmpty()) {
+            popularUsers = userProfileRepository.findTop20ByCity(myProfile.getCity());
+        } else {
+            popularUsers = userProfileRepository.findAll();
+        }
+
+        return popularUsers.stream()
+                .filter(profile -> profile != null && !profile.getUserId().equals(userId))
+                .map(userProfileMapper::toUserProfileResponse)
+                .limit(20)
+                .collect(Collectors.toList());
     }
 
-    public List<UserProfileResponse> getProfilesByIds(List<String> userIds){
+    public List<UserProfileResponse> getProfilesByIds(List<String> userIds) {
         List<UserProfile> userProfiles = userProfileRepository.findAllById(userIds);
         return userProfiles.stream().map(userProfileMapper::toUserProfileResponse).collect(Collectors.toList());
     }
-    public UserProfileResponse getProfilesByUsername(String username){
+
+    public UserProfileResponse getProfilesByUsername(String username) {
         UserProfile userProfile = userProfileRepository.findByUsername(username).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
         return userProfileMapper.toUserProfileResponse(userProfile);
     }

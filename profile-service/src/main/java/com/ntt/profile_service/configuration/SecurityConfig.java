@@ -21,6 +21,10 @@ public class SecurityConfig {
             "/internal/users", "/internal/users/**", "/relation/followers/**"
     };
 
+    private static final String[] SWAGGER_ENDPOINTS = {
+            "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html"
+    };
+
     private final CustomerJwtDecoder customerJwtDecoder;
 
     public SecurityConfig(CustomerJwtDecoder customerJwtDecoder) {
@@ -32,8 +36,9 @@ public class SecurityConfig {
 
         httpSecurity
 //                .cors().and()
-                .authorizeHttpRequests(request -> request.requestMatchers(PUBLIC_ENDPOINTS)
-                .permitAll()
+                .authorizeHttpRequests(request -> request
+                        .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
+                        .requestMatchers(SWAGGER_ENDPOINTS).permitAll()
                 .anyRequest()
                 .authenticated());
 

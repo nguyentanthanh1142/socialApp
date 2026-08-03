@@ -68,5 +68,10 @@ public class RelationController {
                 .result(relationService.getFollowers(userId))
                 .build();
     }
-
+    @GetMapping("/contact}")
+    public ApiResponse<List<String>> getFollowers(@PathVariable String userId) {
+        return ApiResponse.<List<String>>builder()
+                .result(relationService.getFollowers(userId))
+                .build();
+    }
 }

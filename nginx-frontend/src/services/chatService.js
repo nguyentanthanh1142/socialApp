@@ -1,53 +1,41 @@
 import httpClient from "../configurations/httpClient";
 import { API } from "../configurations/configuration";
-import { getToken } from "./localStorageService";
 
-export const getMyConversations = async () => {
-  return await httpClient.get(API.MY_CONVERSATIONS, {
-    headers: {
-      Authorization: `Bearer ${getToken()}`,
-    },
-  });
+const withRequestWarning = async (operation, request) => {
+  try {
+    return await request();
+  } catch (error) {
+    console.warn(`[chatService] ${operation} failed`, error);
+    throw error;
+  }
 };
 
+export const getMyConversations = async () => {
+  return await withRequestWarning("getMyConversations", () => 
+    httpClient.get(API.MY_CONVERSATIONS)
+  );
+};
 export const createConversation = async (data) => {
-  return await httpClient.post(
-    API.CREATE_CONVERSATION,
-    {
+  return await withRequestWarning("createConversation", () => 
+    httpClient.post(API.CREATE_CONVERSATION, {
       type: data.type,
       participantIds: data.participantIds,
-    },
-    {
-      headers: {
-        Authorization: `Bearer ${getToken()}`,
-        "Content-Type": "application/json",
-      },
-    }
+    })
   );
 };
 
 
 export const createMessage = async (data) => {
-  console.log("Creating message with:", data);
-  return await httpClient.post(
-    API.CREATE_MESSAGE,
-    {
+  return await withRequestWarning("createMessage", () => 
+    httpClient.post(API.CREATE_MESSAGE, {
       conversationId: data.conversationId,
       message: data.message,
-    },
-    {
-      headers: {
-        Authorization: `Bearer ${getToken()}`,
-        "Content-Type": "application/json",
-      },
-    }
+    })
   );
 };
 
 export const getMessages = async (conversationId) => {
-  return await httpClient.get(`${API.GET_CONVERSATION_MESSAGES}?conversationId=${conversationId}`, {
-    headers: {
-      Authorization: `Bearer ${getToken()}`,
-    },
-  });
+  return await withRequestWarning("getMessages", () => 
+    httpClient.get(`${API.GET_CONVERSATION_MESSAGES}?conversationId=${conversationId}`)
+  );
 };

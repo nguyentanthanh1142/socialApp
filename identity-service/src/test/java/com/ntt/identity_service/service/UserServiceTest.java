@@ -58,17 +58,11 @@ public class UserServiceTest {
         userResponse = UserResponse.builder()
                 .id("cf3034564871")
                 .username("daylaclone2")
-                .lastname("Thanh")
-                .firstname("Nguyen")
-                .birthday(dob)
                 .build();
 
         user = User.builder()
                 .id("cf3034564871")
                 .username("daylaclone2")
-                .lastname("Thanh")
-                .firstname("Nguyen")
-                .birthday(dob)
                 .build();
     }
 

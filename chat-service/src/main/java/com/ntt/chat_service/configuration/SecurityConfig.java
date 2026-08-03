@@ -18,7 +18,10 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     private final String[] publicEndpoints = {
-
+            "/v3/api-docs/**",
+            "/swagger-ui/**",
+            "/swagger-ui.html",
+            "/chat/v3/api-docs/**"
     };
 
     private final CustomerJwtDecoder customerJwtDecoder;
@@ -32,10 +35,15 @@ public class SecurityConfig {
 
         httpSecurity
 //                .cors().and()
-                .authorizeHttpRequests(request -> request.requestMatchers(HttpMethod.POST, publicEndpoints)
-                .permitAll()
-                .anyRequest()
-                .authenticated());
+//                .authorizeHttpRequests(request -> request.requestMatchers(publicEndpoints)
+//                .permitAll()
+//                .anyRequest()
+//                .authenticated());
+                .csrf(AbstractHttpConfigurer::disable) // Tắt CSRF
+                .authorizeHttpRequests(request -> request
+                        .requestMatchers(publicEndpoints).permitAll() // Dùng mảng publicEndpoints
+                        .anyRequest().authenticated() // Bật lại bảo mật cho các request khác
+                );
 
         httpSecurity.oauth2ResourceServer(oauth2 -> oauth2.jwt(jwtConfigurer -> jwtConfigurer
                         .decoder(customerJwtDecoder)
@@ -50,6 +58,7 @@ public class SecurityConfig {
     JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtGrantedAuthoritiesConverter jwtGrantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
         jwtGrantedAuthoritiesConverter.setAuthorityPrefix("");
+
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
         converter.setJwtGrantedAuthoritiesConverter(jwtGrantedAuthoritiesConverter);
         return converter;

@@ -6,6 +6,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.MongoId;
 
 import java.time.Instant;
+import java.util.HashSet;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -21,4 +23,7 @@ public class Post {
     String content;
     Instant createDate;
     Instant modifiedDate;
+    Set<String> likes = new HashSet<>();
+
+
 }

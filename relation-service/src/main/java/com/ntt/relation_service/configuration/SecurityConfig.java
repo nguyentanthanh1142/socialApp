@@ -22,6 +22,11 @@ import java.util.Collection;
 import java.util.List;
 
 
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
+
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -29,6 +34,10 @@ public class SecurityConfig {
 
     private static final String[] PUBLIC_ENDPOINTS = {
             "/internal/users", "/internal/users/**",
+    };
+
+    private static final String[] swaggerEndpoints = {
+        "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html"
     };
 
     @Value("${jwt.signerKey}")
@@ -68,11 +77,9 @@ public class SecurityConfig {
 
         httpSecurity
 //                .cors().and()
-                .authorizeHttpRequests(request -> request.requestMatchers(PUBLIC_ENDPOINTS)
-                .permitAll()
-                        .requestMatchers("/followers/**").hasAnyRole("USER", "SERVICE")
-                        .anyRequest()
-                .authenticated());
+                .authorizeHttpRequests(request -> request
+                    .requestMatchers(swaggerEndpoints).permitAll()
+                    .anyRequest().authenticated());
 
         httpSecurity.oauth2ResourceServer(oauth2 -> oauth2.jwt(jwtConfigurer -> jwtConfigurer
                         .decoder(jwtDecoder())
@@ -98,13 +105,19 @@ public class SecurityConfig {
             Object scopeObj = jwt.getClaims().get("scope");
             if (scopeObj instanceof String scopeStr) {
                 for (String s : scopeStr.split(" ")) {
-                    authorities.add(new SimpleGrantedAuthority(s));
+                    if(!s.isBlank())
+                    {
+                        authorities.add(new SimpleGrantedAuthority(s));
+                    }
                 }
             } else if (scopeObj instanceof List<?> scopeList) {
-                scopeList.forEach(s -> authorities.add(new SimpleGrantedAuthority(s.toString())));
+                scopeList.forEach(s -> {
+                    if(s != null && !s.toString().isBlank()) {
+                        authorities.add(new SimpleGrantedAuthority(s.toString()));
+                    }
+                });
             }
 
-            // fallback
             authorities.addAll(jwtGrantedAuthoritiesConverter.convert(jwt));
 
             return authorities;

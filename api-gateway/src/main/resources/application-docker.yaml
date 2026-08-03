@@ -10,6 +10,75 @@ spring:
     name: api-gateway
   cloud:
     gateway:
+      server:
+        port: 8080
+      app:
+        api-prefix: /api/v1
+        services:
+          identity-service: ${IDENTITY_SERVICE_URL:http://identity-service:8080/identity}
+      spring:
+        application:
+          name: api-gateway
+        cloud:
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allowed-origins:
+                  - "${FRONTEND_URL:http://localhost:3000}"
+                allowed-methods:
+                  - GET
+                  - POST
+                  - PUT
+                  - DELETE
+                  - OPTIONS
+                  - PATCH
+                allowed-headers: "*"
+                allow-credentials: true
+                max-age: 3600
+          gateway:
+            routes:
+              - id: identity_service
+                uri: http://identity-service:8080/identity
+                predicates:
+                  - Path=${app.api-prefix}/identity/**
+                filters:
+                  - StripPrefix=2
+              - id: profile_service
+                uri: http://profile-service:8080/profile
+                predicates:
+                  - Path=${app.api-prefix}/profile/**
+                filters:
+                  - StripPrefix=2
+              - id: notification_service
+                uri: http://notification-service:8080/notification
+                predicates:
+                  - Path=${app.api-prefix}/notification/**
+                filters:
+                  - StripPrefix=2
+              - id: post_service
+                uri: http://post-service:8080/post
+                predicates:
+                  - Path=${app.api-prefix}/post/**
+                filters:
+                  - StripPrefix=2
+              - id: file_service
+                uri: http://file-service:8080/file
+                predicates:
+                  - Path=${app.api-prefix}/file/**
+                filters:
+                  - StripPrefix=2
+              - id: chat_service
+                uri: http://chat-service:8080/chat
+                predicates:
+                  - Path=${app.api-prefix}/chat/**
+                filters:
+                  - StripPrefix=2
+              - id: relation_service
+                uri: http://relation-service:8080/relation
+                predicates:
+                  - Path=${app.api-prefix}/relation/**
+                filters:
+                  - StripPrefix=2
       routes:
         - id: identity_service
           uri: http://identity-service:8080/identity
