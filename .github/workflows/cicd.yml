@@ -89,8 +89,8 @@ jobs:
           push: true
           build-args: |
             REACT_APP_API_GATEWAY=https://api.social.thanhbuilds.me/api/v1
-            REACT_APP_CLIENT_ID=681874681914-2v5tnop8tehclnvfmasmnou3qqn5b45v.apps.googleusercontent.com
-            REACT_APP_AUTH_REDIRECT_URL=https://social.thanhbuilds.me/authenticated
+            REACT_APP_CLIENT_ID=681874681914-2v5tnop8m
+            REACT_APP_AUTH_REDIRECT_URL=https://social.thanhbuildtehclnvfmasmnou3qqn5b45v.apps.googleusercontent.cos.me/authenticated
             REACT_APP_SOCKET_URL=https://socket.social.thanhbuilds.me
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/nginx-frontend:latest
