@@ -6,7 +6,7 @@
 # Cần file .env cùng thư mục (có VERSION=latest, KHÔNG có SERVER_PORT).
 # Debug kafka-ui: docker compose -f docker-compose.prod.yml --profile debug up -d kafka-ui
 #
-# Cổng public: 80, 443 (nginx), 8888 (api-gateway), 8999 (socket.io / Netty)
+# Cổng public: chỉ 80, 443 (Caddy: HTTPS + reverse proxy tới nginx / gateway / socket)
 # Còn lại chỉ bind 127.0.0.1 hoặc không publish.
 # =====================================================================
 
@@ -41,9 +41,6 @@ services:
     restart: always
     networks:
       - app-network
-    ports:
-      - "80:80"
-      - "443:443"
     environment:
       REACT_APP_API_GATEWAY: ${REACT_APP_API_GATEWAY}
       REACT_APP_CLIENT_ID: ${REACT_APP_CLIENT_ID}
@@ -61,8 +58,6 @@ services:
     <<: *app
     image: nonono000/api-gateway:${VERSION:?VERSION is required}
     container_name: api-gateway
-    ports:
-      - "8888:8080"
     depends_on:
       identity-service:
         condition: service_healthy
@@ -209,8 +204,6 @@ services:
     <<: *app
     image: nonono000/socket-service:${VERSION:?VERSION is required}
     container_name: socket-service
-    ports:
-      - "8999:8999"        # Netty Socket.IO (Tomcat 8080 chỉ dùng nội bộ cho healthcheck)
     networks:
       - app-network
       - kafka-net
@@ -286,6 +279,27 @@ services:
     healthcheck:
       <<: *hc
       test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/relation/actuator/health || exit 1"]
+
+  # ============== HTTPS REVERSE PROXY (Caddy tự xin cert Let's Encrypt) ==============
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    restart: always
+    networks:
+      - app-network
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.5"
 
   # ============== INFRASTRUCTURE (không publish ra ngoài) ==============
   zookeeper:
@@ -479,3 +493,5 @@ volumes:
   neo4j_data:
   redis_data:
   file_uploads:
+  caddy_data:
+  caddy_config:
