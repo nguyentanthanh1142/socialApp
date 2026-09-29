@@ -19,6 +19,7 @@ public class ChatMessageEventListener {
 
     @KafkaListener(
             topics = "chat-topic",
+            groupId = "socket-service-chat-group",
             containerFactory = "kafkaListenerContainerFactory"
     )
     public void handleMessage(

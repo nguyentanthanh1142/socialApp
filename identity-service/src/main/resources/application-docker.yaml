@@ -5,7 +5,7 @@ server:
 
 spring:
   datasource:
-    url: ${DBMS_CONNECTION:jdbc:mysql://localhost:3306/identity_db}
+    url: ${DBMS_CONNECTION:jdbc:mysql://mysql-app:3306/identity_db}
     username: ${MYSQL_USERNAME:root}
     password: ${MYSQL_PASSWORD:123}
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -13,6 +13,10 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
+  data:
+    redis:
+      host: ${REDIS_HOST:redis}
+      port: ${REDIS_PORT:6379}
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
 #    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9094}
@@ -34,4 +38,4 @@ jwt:
 
 app:
   services:
-    profile: ${PROFILE_SERVICE_URL:http://localhost:8081/profile}
+    profile: ${PROFILE_SERVICE_URL:http://profile-service:8080/profile}

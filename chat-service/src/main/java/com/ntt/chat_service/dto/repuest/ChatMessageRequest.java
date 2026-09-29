@@ -13,7 +13,6 @@ public class ChatMessageRequest {
     @NotBlank
     String message;
 
-    @NotBlank
     String conversationId;
-
+    String recipientId;
 }

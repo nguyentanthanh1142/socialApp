@@ -4,15 +4,18 @@ import java.io.IOException;
 import java.text.ParseException;
 
 import com.ntt.common_lib.dto.ApiResponse;
-import com.ntt.identity_service.dto.response.VerifyEmailResponse;
+import com.ntt.identity_service.dto.response.UserResponse;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.experimental.NonFinal;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import com.nimbusds.jose.JOSEException;
 import com.ntt.identity_service.dto.request.*;
 import com.ntt.identity_service.dto.response.AuthenticationResponse;
+import com.ntt.identity_service.dto.response.AuthCheckResponse;
 import com.ntt.identity_service.dto.response.IntrospectResponse;
 import com.ntt.identity_service.service.AuthenticationService;
 
@@ -75,5 +78,33 @@ public class AuthenticationController {
         } catch (Exception e) {
             response.sendRedirect(frontendUrl + "/login?status=error");
         }
+    }
+
+    @GetMapping("/check-auth")
+    public ApiResponse<AuthCheckResponse> checkAuth(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ApiResponse.<AuthCheckResponse>builder()
+                    .result(AuthCheckResponse.builder().authenticated(false).build())
+                    .build();
+        }
+
+        String userId = authentication.getName();
+        return ApiResponse.<AuthCheckResponse>builder()
+                .result(authenticationService.checkAuth(userId))
+                .build();
+    }
+
+    @PostMapping("/resend-verification")
+    public ApiResponse<String> resendVerificationEmail(@RequestBody @Valid ResendVerificationRequest request ){
+        authenticationService.resendVerificationEmail(request);
+        return ApiResponse.<String>builder()
+                .message("Verification email has been sent")
+                .build();
+    }
+    @PostMapping("/registration")
+    ApiResponse<UserResponse> createUser(@RequestBody @Valid UserCreationRequest request) {
+        return ApiResponse.<UserResponse>builder()
+                .result(authenticationService.createUser(request))
+                .build();
     }
 }

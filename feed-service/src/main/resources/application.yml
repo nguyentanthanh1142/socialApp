@@ -5,7 +5,7 @@ server:
 
 spring:
   datasource:
-    url: ${DBMS_CONNECTION:jdbc:mysql://localhost:3307/feed_service}
+    url: ${FEED_DBMS_CONNECTION:jdbc:mysql://localhost:3307/feed_service}
     username: ${MYSQL_USERNAME:root}
     password: ${MYSQL_PASSWORD:123}
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -15,7 +15,7 @@ spring:
     show-sql: true
   data:
     redis:
-      host: localhost
+      host: ${REDIS_HOST:localhost}
       port: 6379
   kafka:
     consumer:

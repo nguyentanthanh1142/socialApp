@@ -1,10 +1,12 @@
 package com.ntt.post_service.service;
 
 import com.ntt.common_lib.dto.FileResponse;
+import com.ntt.common_lib.enums.FileOwnerType;
 import com.ntt.common_lib.event.PostCreatedEvent;
 import com.ntt.post_service.dto.PageResponse;
 import com.ntt.post_service.dto.request.PostRequest;
 import com.ntt.post_service.dto.response.PostResponse;
+import com.ntt.post_service.dto.response.PostStatsResponse;
 import com.ntt.post_service.dto.response.UserProfileResponse;
 import com.ntt.post_service.enitity.Post;
 import com.ntt.post_service.exception.AppException;
@@ -53,11 +55,12 @@ public class PostService {
                 .content(request.getContent())
                 .createDate(Instant.now())
                 .modifiedDate(Instant.now())
+                .deleted(false)
                 .build();
         post = postRepository.save(post);
         List<FileResponse> postImages = new ArrayList<>();
         if(request.getFiles() != null) {
-            postImages = fileClient.uploadMediaPost(request.getFiles(), post.getId()).getResult();
+            postImages = fileClient.uploadMedia(request.getFiles(), FileOwnerType.POST ,post.getId()).getResult();
         }
         PostCreatedEvent event = PostCreatedEvent.builder()
                 .postId(post.getId())
@@ -86,7 +89,7 @@ public class PostService {
         }
         Sort sort = Sort.by("createDate").descending();
         Pageable pageable = PageRequest.of(page - 1, size,sort);
-        var pageData = postRepository.findAllByUserId(userId, pageable);
+        var pageData = postRepository.findAllByUserIdAndDeletedFalse(userId, pageable);
 
         String userName = userProfile != null ? userProfile.getUsername() : null ;
         var postList = pageData.stream().map(post -> {
@@ -105,23 +108,64 @@ public class PostService {
                 .build();
     }
 
-    public List<FileResponse> uploadPostImage(MultipartFile[] file, String postId) throws IOException {
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
-        String userId = authentication.getName();
-
-        var post = postRepository.findById(postId)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
-
-        var response = fileClient.uploadMediaPost(file, postId);
+    public List<FileResponse> uploadPostImage(MultipartFile[] file, String postId){
+        var response = fileClient.uploadMedia(file, FileOwnerType.POST, postId);
         return response.getResult();
     }
 
     public PostResponse getPost(String postId) {
-
-        Post post = null;
-        post = postRepository.getPostsById(postId);
-
+        Post post = postRepository.getPostsByIdAndDeletedFalse(postId);
+        if (post == null) {
+            throw new AppException(ErrorCode.POST_NOT_FOUND);
+        }
         return postMapper.ToPostResponse(post);
+    }
+
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+    public PageResponse<PostResponse> getPostsForAdmin(int page, int size, boolean includeDeleted) {
+        Pageable pageable = PageRequest.of(Math.max(page - 1, 0), size, Sort.by("createDate").descending());
+        var pageData = includeDeleted
+                ? postRepository.findAllByOrderByCreateDateDesc(pageable)
+                : postRepository.findAllByDeletedFalse(pageable);
+
+        var postList = pageData.stream().map(postMapper::ToPostResponse).toList();
+
+        return PageResponse.<PostResponse>builder()
+                .currentPage(page)
+                .pageSize(pageData.getSize())
+                .totalElements(pageData.getTotalElements())
+                .totalPages(pageData.getTotalPages())
+                .data(postList)
+                .build();
+    }
+
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+    @org.springframework.transaction.annotation.Transactional
+    public PostResponse softDeletePost(String postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new AppException(ErrorCode.POST_NOT_FOUND));
+
+        if (post.isDeleted()) {
+            throw new AppException(ErrorCode.POST_ALREADY_DELETED);
+        }
+
+        String adminId = SecurityContextHolder.getContext().getAuthentication().getName();
+        post.setDeleted(true);
+        post.setDeletedAt(Instant.now());
+        post.setDeletedBy(adminId);
+        post.setModifiedDate(Instant.now());
+        return postMapper.ToPostResponse(postRepository.save(post));
+    }
+
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+    public PostStatsResponse getPostStats() {
+        long deleted = postRepository.countByDeletedTrue();
+        long active = postRepository.countByDeletedFalse();
+        return PostStatsResponse.builder()
+                .totalPosts(deleted + active)
+                .activePosts(active)
+                .deletedPosts(deleted)
+                .build();
     }
 
 }

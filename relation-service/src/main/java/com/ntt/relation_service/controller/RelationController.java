@@ -1,6 +1,7 @@
 package com.ntt.relation_service.controller;
 
 import com.ntt.common_lib.dto.ApiResponse;
+import com.ntt.common_lib.dto.PageResponse;
 import com.ntt.relation_service.dto.request.RelationRequest;
 import com.ntt.relation_service.dto.response.RelationReponse;
 import com.ntt.relation_service.dto.response.SuggestionResponse;
@@ -10,6 +11,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -68,10 +70,10 @@ public class RelationController {
                 .result(relationService.getFollowers(userId))
                 .build();
     }
-    @GetMapping("/contact}")
-    public ApiResponse<List<String>> getFollowers(@PathVariable String userId) {
-        return ApiResponse.<List<String>>builder()
-                .result(relationService.getFollowers(userId))
+    @GetMapping("/contact")
+    public ApiResponse<PageResponse<RelationReponse>> getContactRelation(Pageable pageable) {
+        return ApiResponse.<PageResponse<RelationReponse>>builder()
+                .result(relationService.getListContactRelation(pageable))
                 .build();
     }
 }

@@ -3,8 +3,8 @@ package com.ntt.identity_service.dto.request;
 import java.time.LocalDate;
 
 import jakarta.validation.constraints.Size;
-
-import com.ntt.identity_service.validator.DobConstraint;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Email;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -15,18 +15,16 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserCreationRequest {
-    String id;
 
+    @NotBlank(message = "EMAIL_IS_REQUIRED")
+    @Email(message = "EMAIL_INVALID")
+    String email;
+
+    @NotBlank(message = "USERNAME_IS_REQUIRED")
     @Size(min = 5, message = "USERNAME_INVALID")
     String username;
 
+    @NotBlank(message = "PASSWORD_IS_REQUIRED")
     @Size(min = 7, message = "PASSWORD_INVALID")
     String password;
-
-    String lastname;
-    String firstname;
-    String email;
-    @DobConstraint(min = 16, message = "INVALID_DOB")
-    LocalDate birthday;
-    String city;
 }

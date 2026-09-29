@@ -1,4 +1,55 @@
-/uploads/
-.env
-.env.production
+# ==========================
+# Java / Maven
+# ==========================
+**/target/
+*.class
+*.jar
+*.war
+*.ear
+*.iml
+.mvn/
+mvnw
+mvnw.cmd
+
+# ==========================
+# Node / Frontend
+# ==========================
+**/node_modules/
+**/dist/
+**/build/
+nginx-frontend/build/
+
+# ==========================
+# IDE / Tools / Local Scripts
+# ==========================
 .idea/
+.vscode/
+*.swp
+*.swo
+*.log
+.devin/
+scp
+docker
+docker/
+seed_data.py
+
+# ==========================
+# Docker Data & Uploads
+# ==========================
+*.pid
+*.seed
+uploads/
+**/uploads/
+
+# ==========================
+# Environment files (Secrets)
+# ==========================
+.env
+.env.*
+!.env.example
+
+# ==========================
+# System
+# ==========================
+.DS_Store
+Thumbs.db

@@ -1,15 +1,21 @@
-import { useEffect } from "react";
-import { useSocket } from "../../app/providers/useSocket";
+import { useEffect, useRef } from "react";
+import { useSocket } from "../../providers/SocketProvider";
 
 export const useNotificationSocket = (handler) => {
   const { subscribe } = useSocket();
+  const handlerRef = useRef(handler);
 
   useEffect(() => {
-    if (!handler) return undefined;
+    handlerRef.current = handler;
+  }, [handler]);
 
-    const unsubscribe = subscribe("notification_message", handler);
-    return () => unsubscribe && unsubscribe();
-  }, [handler, subscribe]);
+  useEffect(() => {
+    const unsubscribe = subscribe("notification_message", (payload) => {
+      handlerRef.current?.(payload);
+    });
+
+    return () => {
+      if (typeof unsubscribe === "function") unsubscribe();
+    };
+  }, [subscribe]);
 };
-            prev.includes(conversationId) ? prev : [...prev, conversationId];
-

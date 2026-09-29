@@ -2,6 +2,7 @@ package com.ntt.identity_service.controller;
 
 import java.time.LocalDate;
 
+import com.ntt.identity_service.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
@@ -36,6 +37,7 @@ public class UserControllerTest {
     @MockBean
     private UserService userService;
 
+    private User user;
     private UserCreationRequest request;
     private UserResponse userResponse;
     private LocalDate dob;
@@ -47,9 +49,12 @@ public class UserControllerTest {
         request = UserCreationRequest.builder()
                 .username("daylaclone2")
                 .password("daylaclone1")
-                .lastname("Thanh")
-                .firstname("Nguyen")
-                .birthday(dob)
+                .build();
+
+        // Khai báo entity User để dùng cho Mockito userService.createUser()
+        user = User.builder()
+                .id("cf3034564871")
+                .username("daylaclone2")
                 .build();
 
         userResponse = UserResponse.builder()
@@ -60,16 +65,15 @@ public class UserControllerTest {
 
     @Test
     void createUser_validRequest_success() throws Exception {
-
         // GIVEN
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
         String content = mapper.writeValueAsString(request);
 
-        Mockito.when(userService.createUser(ArgumentMatchers.any())).thenReturn(userResponse);
+        Mockito.when(userService.createUser(ArgumentMatchers.any(UserCreationRequest.class)))
+                .thenReturn(user);
 
         // WHEN
-
         mockMvc.perform(MockMvcRequestBuilders.post("/users")
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(content))
@@ -81,17 +85,10 @@ public class UserControllerTest {
     @Test
     void createUser_usernameInvalid_fail() throws Exception {
 
-        // GIVEN
         request.setUsername("abc");
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
         String content = mapper.writeValueAsString(request);
-
-        //
-        //        Mockito.when(userService.createUser(ArgumentMatchers.any()))
-        //                .thenReturn(userResponse);
-
-        // WHEN
 
         mockMvc.perform(MockMvcRequestBuilders.post("/users")
                         .contentType(MediaType.APPLICATION_JSON_VALUE)

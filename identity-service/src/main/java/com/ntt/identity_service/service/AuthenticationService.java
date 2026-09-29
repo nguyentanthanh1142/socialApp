@@ -2,9 +2,11 @@ package com.ntt.identity_service.service;
 
 import java.text.ParseException;
 import java.time.Instant;
+import java.time.Year;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
+import com.ntt.event.dto.NotificationEvent;
 import com.ntt.identity_service.constant.PredefindRole;
 import com.ntt.identity_service.dto.request.*;
 import com.ntt.identity_service.dto.response.VerifyEmailResponse;
@@ -14,6 +16,8 @@ import com.ntt.identity_service.repository.httpClient.OutboundIdentityClient;
 import com.ntt.identity_service.repository.httpClient.OutboundUserClient;
 import com.ntt.identity_service.repository.httpClient.ProfileClient;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -25,13 +29,17 @@ import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import com.ntt.identity_service.dto.response.AuthenticationResponse;
+import com.ntt.identity_service.dto.response.AuthCheckResponse;
 import com.ntt.identity_service.dto.response.IntrospectResponse;
+import com.ntt.identity_service.dto.response.UserResponse;
 import com.ntt.identity_service.entity.InvalidatedToken;
 import com.ntt.identity_service.entity.User;
+import com.ntt.identity_service.enums.UserStatus;
 import com.ntt.identity_service.exception.AppException;
 import com.ntt.identity_service.exception.ErrorCode;
 import com.ntt.identity_service.repository.InvalidatedTokenRepository;
 import com.ntt.identity_service.repository.UserRepository;
+import com.ntt.identity_service.mapper.UserMapper;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -51,31 +59,40 @@ public class AuthenticationService {
     OutboundUserClient outboundUserClient;
     ProfileClient profileClient;
     TokenService tokenService;
-    private final VerificationTokenRepository verificationTokenRepository;
+    UserService userService;
+    VerificationTokenRepository verificationTokenRepository;
+    UserMapper userMapper;
+    KafkaTemplate<String, Object> kafkaTemplate;
 
     @NonFinal
     @Value("${jwt.signerKey}")
-    protected String SIGNER_KEY;
+    protected String signerKey;
 
     @NonFinal
     @Value("${jwt.valid-duration}")
-    protected long VALID_DURATION;
+    protected long validDuration;
 
     @NonFinal
     @Value("${jwt.refresh-duration}")
-    protected long REFRESH_DURATION;
+    protected long refreshDuration;
+
     @NonFinal
     @Value("${outbound.identity.client-id}")
-    protected  String OUTBOUND_CLIENT_ID;
+    protected String outboundClientId;
+
     @NonFinal
     @Value("${outbound.identity.client-secret}")
-    protected  String OUTBOUND_CLIENT_SECRET;
+    protected String outboundClientSecret;
+
     @NonFinal
     @Value("${outbound.identity.redirect-url}")
-    protected  String REDIRECT_URL;
-    @NonFinal
-    protected  final String GRANT_TYPE = "authorization_code";
+    protected String redirectUrl;
 
+    @NonFinal
+    @Value("${app.verify.url}")
+    protected String verifyEmailUrl;
+
+    protected static final String GRANT_TYPE = "authorization_code";
 
     public IntrospectResponse introspect(IntrospectRequest request) throws JOSEException, ParseException {
         var token = request.getToken();
@@ -87,43 +104,55 @@ public class AuthenticationService {
             isValid = false;
         }
 
+        String userId = null;
+        if (isValid && signedJWT.getJWTClaimsSet() != null) {
+            userId = signedJWT.getJWTClaimsSet().getSubject();
+        }
+
         return IntrospectResponse.builder()
                 .valid(isValid)
-                .userId(Objects.isNull(signedJWT.getJWTClaimsSet().getSubject())?
-                        null : signedJWT.getJWTClaimsSet().getSubject())
+                .userId(userId)
                 .build();
     }
 
     public AuthenticationResponse authenticated(AuthenticationRequest request) {
-        log.info(SIGNER_KEY);
-        PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
-        var user = userRepository
-                .findByUsername(request.getUsername())
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
-//        if(!user.isEmailVerified())
-//        {
-//            throw new AppException(ErrorCode.EMAIL_NOT_VERIFIED);
-//        }
+        PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
+
+        var user = userRepository
+                .findByUsernameOrEmail(request.getUsername())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
         boolean authenticated = passwordEncoder.matches(request.getPassword(), user.getPassword());
         if (!authenticated) {
             throw new AppException(ErrorCode.UNAUTHENTICATED);
         }
 
+        if (user.getStatus() == UserStatus.BANNED) {
+            throw new AppException(ErrorCode.USER_BANNED);
+        }
+
+        if (!user.isEmailVerified()) {
+            throw new AppException(ErrorCode.EMAIL_NOT_VERIFIED);
+        }
+
         var token = generateToken(user);
-        return AuthenticationResponse.builder().token(token).authenticated(true).build();
+        return AuthenticationResponse.builder()
+                .token(token)
+                .authenticated(true)
+                .isFirstLogin(user.isFirstLogin())
+                .build();
     }
 
     public void logout(LogoutRequest request) throws ParseException, JOSEException {
-
         try {
             var signToken = verifyToken(request.getToken(), true);
 
             String jit = signToken.getJWTClaimsSet().getJWTID();
-            Date expiration = signToken.getJWTClaimsSet().getExpirationTime();
+
+            Instant expiration = signToken.getJWTClaimsSet().getExpirationTime().toInstant();
             InvalidatedToken invalidatedToken =
-                    InvalidatedToken.builder().id(jit).expiryTime(expiration).build();
+                    InvalidatedToken.builder().id(jit).expiryTime(Date.from(expiration)).build();
 
             invalidatedTokenRepository.save(invalidatedToken);
         } catch (AppException e) {
@@ -132,7 +161,6 @@ public class AuthenticationService {
     }
 
     public AuthenticationResponse refreshToken(RefreshRequest request) throws ParseException, JOSEException {
-
         var signJWT = verifyToken(request.getToken(), true);
 
         var jit = signJWT.getJWTClaimsSet().getJWTID();
@@ -144,50 +172,48 @@ public class AuthenticationService {
         invalidatedTokenRepository.save(invalidatedToken);
 
         var username = signJWT.getJWTClaimsSet().getSubject();
-        var user =
-                userRepository.findByUsername(username).orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
+        var user = userRepository
+                .findByUsername(username)
+                .orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
 
         var token = generateToken(user);
 
         return AuthenticationResponse.builder().token(token).authenticated(true).build();
     }
 
+
+
     private SignedJWT verifyToken(String token, boolean isRefresh) throws JOSEException, ParseException {
-        JWSVerifier verifier = new MACVerifier(SIGNER_KEY.getBytes());
+        JWSVerifier verifier = new MACVerifier(signerKey.getBytes());
 
         SignedJWT signedJWT = SignedJWT.parse(token);
 
-        Date expiryTime = isRefresh
-                ? new Date(signedJWT
-                        .getJWTClaimsSet()
-                        .getIssueTime()
-                        .toInstant()
-                        .plus(REFRESH_DURATION, ChronoUnit.SECONDS)
-                        .toEpochMilli())
-                : signedJWT.getJWTClaimsSet().getExpirationTime();
+        Instant issueTime = signedJWT.getJWTClaimsSet().getIssueTime().toInstant();
+
+        Instant expiryTime = isRefresh
+                ? issueTime.plus(refreshDuration, ChronoUnit.SECONDS)
+                : signedJWT.getJWTClaimsSet().getExpirationTime().toInstant();
 
         var verified = signedJWT.verify(verifier);
-        if (!(verified && expiryTime.after(new Date()))) {
-            log.info("Da het han.");
-            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        if (!(verified && expiryTime.isAfter(Instant.now()))) {
+            log.info("Token expired.");
+            throw new AppException(ErrorCode.TOKEN_EXPIRED);
         }
         if (invalidatedTokenRepository.existsById(signedJWT.getJWTClaimsSet().getJWTID())) {
-            log.info("Da ton tai JWID" + signedJWT.getJWTClaimsSet().getJWTID().toString());
+            log.info("Token invalidated JWTID: {}", signedJWT.getJWTClaimsSet().getJWTID());
             throw new AppException(ErrorCode.UNAUTHORIZED);
         }
         return signedJWT;
     }
 
     private String generateToken(User user) {
-
         JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
-
+        Instant now = Instant.now();
         JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
                 .subject(user.getId())
                 .issuer("ntt.com")
-                .issueTime(new Date())
-                .expirationTime(new Date(
-                        Instant.now().plus(VALID_DURATION, ChronoUnit.SECONDS).toEpochMilli()))
+                .issueTime(Date.from(now))
+                .expirationTime(Date.from(now.plus(validDuration, ChronoUnit.SECONDS)))
                 .jwtID(UUID.randomUUID().toString())
                 .claim("scope", buildScope(user))
                 .build();
@@ -196,7 +222,7 @@ public class AuthenticationService {
         JWSObject jwsObject = new JWSObject(header, payload);
 
         try {
-            jwsObject.sign(new MACSigner(SIGNER_KEY.getBytes()));
+            jwsObject.sign(new MACSigner(signerKey.getBytes()));
             return jwsObject.serialize();
         } catch (JOSEException e) {
             log.error("JWT serialization failed", e);
@@ -211,9 +237,7 @@ public class AuthenticationService {
             user.getRoles().forEach(role -> {
                 stringJoiner.add("ROLE_" + role.getName());
                 if (!CollectionUtils.isEmpty(role.getPermissions())) {
-                    role.getPermissions().forEach(permission -> {
-                        stringJoiner.add(permission.getName());
-                    });
+                    role.getPermissions().forEach(permission -> stringJoiner.add(permission.getName()));
                 }
             });
         }
@@ -221,58 +245,76 @@ public class AuthenticationService {
     }
 
     public AuthenticationResponse outboundAuthentication(String code) {
-        var response = outboundIdentityClient.exchangeToken( ExchangeTokenRequest.builder()
+        var response = outboundIdentityClient.exchangeToken(ExchangeTokenRequest.builder()
                 .code(code)
-                .clientId(OUTBOUND_CLIENT_ID)
-                .clientSecret(OUTBOUND_CLIENT_SECRET)
+                .clientId(outboundClientId)
+                .clientSecret(outboundClientSecret)
                 .grantType(GRANT_TYPE)
-                .redirectUri(REDIRECT_URL)
+                .redirectUri(redirectUrl)
                 .build());
 
-        log.info("Outbound Authentication response: " + response);
+        log.info("Outbound Authentication response: {}", response);
 
         var userInfo = outboundUserClient.exchangeToken("json", response.getAccessToken());
-        log.info("User Info: " + userInfo);
+        log.info("User Info: {}", userInfo);
 
-        Set<Role> roles = new HashSet<>();
-        roles.add(Role.builder().name(PredefindRole.USER).build());
+        // 1. Tìm User theo EMAIL (Không tìm theo username nữa)
+        User user = userRepository.findByEmail(userInfo.getEmail()).orElse(null);
 
-        var user = userRepository
-                .findByUsername(userInfo.getEmail())
-                .orElseGet(() -> {
-                    User newUser = User.builder()
-                            .username(userInfo.getEmail())
-                            .roles(roles)
-                            .build();
-                    return userRepository.save(newUser);
-                });
-        user = userRepository.save(user);
+        // 2. Nếu User chưa tồn tại -> Khởi tạo User mới với handling Race Condition
+        if (user == null) {
+            Set<Role> roles = new HashSet<>();
+            roles.add(Role.builder().name(PredefindRole.USER).build());
 
+            User newUser = User.builder()
+                    .email(userInfo.getEmail())
+                    .username(null)
+                    .emailVerified(true)
+                    .isFirstLogin(true)
+                    .roles(roles)
+                    .status(UserStatus.ACTIVE)
+                    .build();
 
-        var profileResponse = profileClient.createProfile(ProfileCreationRequest.builder()
-                        .email(userInfo.getEmail())
-                        .firstname(userInfo.getGivenName())
-                        .email(userInfo.getEmail())
-                        .lastname(userInfo.getFamilyName())
-                        .userId(user.getId())
-                        .avatar(userInfo.getPicture())
-                        .build() );
-        log.info(profileResponse.toString());
+            try {
+                user = userRepository.saveAndFlush(newUser);
+
+                try {
+                    var profileResponse = profileClient.createProfile(ProfileCreationRequest.builder()
+                            .userId(user.getId())
+                            .email(userInfo.getEmail())
+                            .firstname(userInfo.getGivenName())
+                            .lastname(userInfo.getFamilyName())
+                            .avatar(userInfo.getPicture())
+                            .build());
+                    log.info("Profile created response: {}", profileResponse);
+                } catch (Exception e) {
+                    log.warn("Failed to create profile or profile already exists: {}", e.getMessage());
+                }
+
+            } catch (DataIntegrityViolationException e) {
+                log.warn("Race condition hit for email {}, fetching existing user", userInfo.getEmail());
+                user = userRepository.findByEmail(userInfo.getEmail())
+                        .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+            }
+        }
+
         var token = generateToken(user);
         return AuthenticationResponse.builder()
                 .token(token)
-                .authenticated(true).build();
+                .authenticated(true)
+                .isFirstLogin(user.isFirstLogin())
+                .build();
     }
 
     public VerifyEmailResponse verifyEmail(String token) {
-        log.info("Verify Email: " + token);
+
+        log.info("Verify Email: {}", token);
         var userId = tokenService.verifyToken(token);
         if (userId == null) throw new AppException(ErrorCode.TOKEN_INVALID);
         log.info("Verified userId successfully: {}", userId);
-        User user = userRepository.findById(userId).orElseThrow(()->new AppException(ErrorCode.USER_NOT_EXISTED));
+        User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
-        if(user.isEmailVerified())
-        {
+        if (user.isEmailVerified()) {
             return VerifyEmailResponse.builder().verified(true).build();
         }
 
@@ -281,5 +323,77 @@ public class AuthenticationService {
 
         tokenService.invalidToken(token);
         return VerifyEmailResponse.builder().verified(true).build();
+    }
+
+
+    public AuthCheckResponse checkAuth(String userId) {
+        User user = userRepository.findById(userId).orElse(null);
+
+        if (user == null) {
+            return AuthCheckResponse.builder()
+                    .authenticated(false)
+                    .isFirstLogin(false)
+                    .build();
+        }
+
+        UserResponse userResponse = userMapper.toUserResponse(user);
+
+        return AuthCheckResponse.builder()
+                .authenticated(true)
+                .isFirstLogin(user.isFirstLogin())
+                .user(userResponse)
+                .build();
+    }
+
+    public UserResponse createUser(UserCreationRequest request)
+    {
+        User user = userService.createUser(request);
+
+        var token = tokenService.generateVerificationToken(user.getId());
+        log.info("Verification token generated for userId: {}", user.getId());
+
+        sendVerificationKafkaEvent(user, token);
+        return userMapper.toUserResponse(user);
+    }
+
+    public void resendVerificationEmail(ResendVerificationRequest request){
+        String email = request.getEmail();
+
+        if(tokenService.hasResendCooldown(email)) {
+            throw new AppException(ErrorCode.TOO_MANY_REQUESTS);
+        }
+
+        var user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        if (user.isEmailVerified()) {
+            throw new AppException(ErrorCode.EMAIL_ALREADY_VERIFIED);
+        }
+
+        var token = tokenService.generateVerificationToken(user.getId());
+
+        tokenService.setResendCooldown(email);
+
+        sendVerificationKafkaEvent(user, token);
+    }
+
+    private void sendVerificationKafkaEvent(User user, String token)  {
+
+        String verifyLink = verifyEmailUrl + "?token=" + token;
+        Map<String, Object> params = new HashMap<>();
+        params.put("username", user.getUsername());
+        params.put("confirmLink", verifyLink);
+        params.put("year", Year.now().getValue());
+        params.put("appName", "NTT social network");
+
+        NotificationEvent notificationEvent = NotificationEvent.builder()
+                .channel("EMAIL")
+                .recipient(user.getEmail())
+                .subject("Welcome!")
+                .params(params)
+                .templateCode("welcome_email")
+                .build();
+
+        kafkaTemplate.send("notification-delivery", notificationEvent);
     }
 }

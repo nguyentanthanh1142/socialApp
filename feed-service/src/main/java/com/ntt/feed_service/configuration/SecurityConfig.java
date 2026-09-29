@@ -18,7 +18,9 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     private final String[] publicEndpoints = {
-         "/relation/followers/**"
+         "/relation/followers/**",
+         "/actuator/**",
+         "/feed/actuator/**"
     };
 
     private final String[] swaggerEndpoints = {

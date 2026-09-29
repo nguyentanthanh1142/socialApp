@@ -7,14 +7,23 @@ spring:
     name: chat-service
   data:
     mongodb:
-      uri: ${MONGO_URI_CHAT_SERVICE}
-      username: ${MONGO_USERNAME:root}
-      password: ${MONGO_PASSWORD:root}
+      uri: ${MONGO_URI_CHAT_SERVICE:mongodb://root:root@my-mongo:27017/chat-service?authSource=admin}
       auto-index-creation: true
-
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: notification-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
 app:
   services:
     profile:
-      url: ${PROFILE_SERVICE_URL:http://profile-service:8081/profile}
+      url: ${PROFILE_SERVICE_URL:http://profile-service:8080/profile}
     identity:
       url: ${IDENTITY_SERVICE_URL:http://identity-service:8080/identity}

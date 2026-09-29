@@ -21,7 +21,9 @@ import io.swagger.v3.oas.models.security.SecurityScheme;
 public class SecurityConfig {
 
     private static final String[] PUBLIC_ENDPOINTS = {
-            "/media/download/**"
+            "/media/download/**",
+            "/actuator/**",
+            "/file/actuator/**"
     };
 
     private static final String[] swaggerEndpoints = {

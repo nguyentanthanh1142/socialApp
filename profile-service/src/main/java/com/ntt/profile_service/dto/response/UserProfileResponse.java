@@ -14,12 +14,20 @@ import java.time.LocalDate;
 public class UserProfileResponse {
     String id;
     String userId;
-    String lastname;
-    String firstname;
-    LocalDate birthday;
-    String city;
-    String avatar;
-    String email;
     String username;
+    String firstName;
+    String lastName;
+    String fullName;
+
+    String avatarUrl;
+    String coverUrl;
+    String bio;
+
+    String currentCity;
+    String hometown;
+    String country;
+
+    LocalDate birthday;
+    String preferredTheme;
 }
 

@@ -8,6 +8,7 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,4 +24,7 @@ public interface RelationRepository extends MongoRepository<Relation, String> {
 
     @Query("{'participants.userId' : ?0, 'status' : ?1}")
     Page<Relation> findAllByParticipantIdsContainsAndStatus(String userId, String status, Pageable pageable);
+
+    @Query("{'participants.userId' : { $in: ?0 }, 'status' : ?1}")
+    List<Relation> findAllByParticipantIdsInAndStatus(Collection<String> userIds, String status);
 }

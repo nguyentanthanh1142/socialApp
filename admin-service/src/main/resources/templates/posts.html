@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title th:text="${pageTitle} + ' | Admin'">Posts | Admin</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.3/css/bootstrap.min.css}"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
+    <link rel="stylesheet" th:href="@{/css/admin.css}"/>
+</head>
+<body>
+<div class="d-flex" id="wrapper">
+    <nav th:replace="~{fragments/sidebar :: sidebar}"></nav>
+    <div id="page-content" class="flex-grow-1">
+        <header th:replace="~{fragments/navbar :: navbar}"></header>
+        <main class="container-fluid p-4">
+            <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+                <span th:text="${success}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h2 class="h5 mb-0">Post Moderation</h2>
+                    <span class="text-muted small"
+                          th:text="'Page ' + ${posts.currentPage} + ' of ' + ${posts.totalPages}"></span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light">
+                        <tr>
+                            <th>Content</th>
+                            <th>Author</th>
+                            <th>Created</th>
+                            <th>Status</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:if="${posts == null or #lists.isEmpty(posts.data)}">
+                            <td colspan="5" class="text-center text-muted py-4">No posts found</td>
+                        </tr>
+                        <tr th:each="post : ${posts.data}">
+                            <td style="max-width: 360px;">
+                                <div class="text-truncate" th:text="${post.content}">content</div>
+                                <div class="small text-muted" th:text="${post.id}">id</div>
+                            </td>
+                            <td>
+                                <div th:text="${post.username != null ? post.username : post.userId}">user</div>
+                            </td>
+                            <td th:text="${post.createDate != null ? #temporals.format(post.createDate, 'yyyy-MM-dd HH:mm') : '-'}">
+                                date
+                            </td>
+                            <td>
+                                <span th:if="${post.deleted}" class="badge text-bg-secondary">DELETED</span>
+                                <span th:unless="${post.deleted}" class="badge text-bg-success">ACTIVE</span>
+                            </td>
+                            <td class="text-end">
+                                <form th:unless="${post.deleted}"
+                                      th:action="@{/posts/{id}/delete(id=${post.id})}" method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                                            onclick="return confirm('Soft-delete this post?')">
+                                        <i class="bi bi-trash"></i> Delete
+                                    </button>
+                                </form>
+                                <span th:if="${post.deleted}" class="text-muted small">Already deleted</span>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer bg-white" th:if="${posts != null and posts.totalPages > 1}">
+                    <nav>
+                        <ul class="pagination pagination-sm mb-0 justify-content-end">
+                            <li class="page-item" th:classappend="${currentPage <= 1} ? 'disabled'">
+                                <a class="page-link"
+                                   th:href="@{/posts(page=${currentPage - 1}, size=${pageSize})}">Previous</a>
+                            </li>
+                            <li class="page-item"
+                                th:each="p : ${#numbers.sequence(1, posts.totalPages)}"
+                                th:classappend="${p == currentPage} ? 'active'">
+                                <a class="page-link" th:href="@{/posts(page=${p}, size=${pageSize})}" th:text="${p}">1</a>
+                            </li>
+                            <li class="page-item" th:classappend="${currentPage >= posts.totalPages} ? 'disabled'">
+                                <a class="page-link"
+                                   th:href="@{/posts(page=${currentPage + 1}, size=${pageSize})}">Next</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+<script th:src="@{/webjars/bootstrap/5.3.3/js/bootstrap.bundle.min.js}"></script>
+</body>
+</html>

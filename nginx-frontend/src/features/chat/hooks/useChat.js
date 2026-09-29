@@ -1,1 +1,1 @@
-export { useChat } from "../../../app/providers/ChatProvider";
+export { useChat } from "../../../providers/ChatProvider";

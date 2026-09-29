@@ -16,9 +16,8 @@ spring:
   data:
     redis:
       host: ${REDIS_HOST:localhost}
-      port: 6379
+      port: ${REDIS_PORT:6379}
   kafka:
-#    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9094}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
@@ -30,11 +29,10 @@ outbound:
     client-secret: ${SECRET_KEY}
     redirect-url: ${AUTH_REDIRECT_URL:http://localhost:3000/authenticated}
 
-
 jwt:
   signerKey: ${JWT_SIGNER_KEY:K25adN3cmQsGmXDPQCpIbluXGC5cTdXwOU1TSOkm/h9Cj6FBuMExdcvkkxTzIRsM}
-  valid-duration: 3600 #seconds
-  refresh-duration: 36000  #seconds
+  valid-duration: 3600
+  refresh-duration: 36000
 
 app:
   services:
@@ -43,8 +41,23 @@ app:
     url: ${VERIFY_EMAIL_URL:http://localhost:8888/api/v1/identity/auth/verify}
   frontend:
     url: ${FRONTEND_URL:http://localhost:3000}
+
 springdoc:
   api-docs:
     path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
+
+feign:
+  httpclient:
+    hc5:
+      enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: always

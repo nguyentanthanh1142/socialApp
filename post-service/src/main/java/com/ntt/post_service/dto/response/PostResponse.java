@@ -21,4 +21,6 @@ public class PostResponse {
     Instant createDate;
     Instant modifiedDate;
     List<FileResponse> files;
+    boolean deleted;
+    Instant deletedAt;
 }

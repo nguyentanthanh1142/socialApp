@@ -17,6 +17,10 @@ spring:
       group-id: file-post-group
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 200MB
 app:
   file:
     storage-dir: ${FILE_STORAGE_DIR:/app/uploads}
@@ -26,3 +30,12 @@ app:
     api-key: ${CLOUDINARY_API_KEY:874493536325289}
     api-secret: ${CLOUDINARY_API_SECRET:VM8MMemWfUyLVZ8czHz8V5zGaMM}
     folder: ${CLOUDINARY_FOLDER:social-media}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: always

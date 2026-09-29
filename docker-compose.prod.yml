@@ -1,19 +1,109 @@
+# =====================================================================
+# PRODUCTION (Oracle Cloud, 4 vCPU / 7.8GB RAM) - file độc lập
+#   cd ~/social-app
+#   docker compose -f docker-compose.prod.yml up -d mysql mongodb neo4j redis zookeeper kafka
+#   docker compose -f docker-compose.prod.yml up -d
+# Cần file .env cùng thư mục (có VERSION=latest, KHÔNG có SERVER_PORT).
+# Debug kafka-ui: docker compose -f docker-compose.prod.yml --profile debug up -d kafka-ui
+#
+# Cổng public: 80, 443 (nginx), 8888 (api-gateway), 8999 (socket.io / Netty)
+# Còn lại chỉ bind 127.0.0.1 hoặc không publish.
+# =====================================================================
+
+# Chỉ chứa tham số chung; mỗi service tự đặt `test` (đúng context-path)
+x-hc: &hc
+  interval: 30s
+  timeout: 5s
+  retries: 3
+  start_period: 120s
+  start_interval: 3s
+
+x-app: &app
+  restart: always
+  networks:
+    - app-network
+  deploy:
+    resources:
+      limits:
+        memory: 600M
+        cpus: "1.0"
+
+x-spring-env: &spring-env
+  SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
+  SERVER_PORT: 8080
+  JAVA_TOOL_OPTIONS: "-Xms128m -Xmx300m -XX:+UseSerialGC"
+
 services:
+  # ============== APP SERVICES ==============
   nginx-frontend:
+    image: nonono000/nginx-frontend:${VERSION:?VERSION is required}
+    container_name: nginx-frontend
+    restart: always
+    networks:
+      - app-network
     ports:
-      - "3000:80"
+      - "80:80"
+      - "443:443"
+    environment:
+      REACT_APP_API_GATEWAY: ${REACT_APP_API_GATEWAY}
+      REACT_APP_CLIENT_ID: ${REACT_APP_CLIENT_ID}
+      REACT_APP_AUTH_REDIRECT_URL: ${REACT_APP_AUTH_REDIRECT_URL}
+      REACT_APP_SOCKET_URL: ${REACT_APP_SOCKET_URL}
+    healthcheck:
+      disable: true       # giống bản local (không có healthcheck), không depends_on service khác
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.5"
 
   api-gateway:
-    environment:
-      SPRING_PROFILES_ACTIVE: docker
-      DBMS_CONNECTION: ${DBMS_CONNECTION}
-      MYSQL_USERNAME: ${MYSQL_USERNAME}
-      SERVER_PORT: 8080
+    <<: *app
+    image: nonono000/api-gateway:${VERSION:?VERSION is required}
+    container_name: api-gateway
     ports:
       - "8888:8080"
+    depends_on:
+      identity-service:
+        condition: service_healthy
+      profile-service:
+        condition: service_healthy
+      file-service:
+        condition: service_healthy
+      chat-service:
+        condition: service_healthy
+      post-service:
+        condition: service_healthy
+    environment:
+      <<: *spring-env
+      DBMS_CONNECTION: ${DBMS_CONNECTION}
+      MYSQL_USERNAME: ${MYSQL_USERNAME}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      IDENTITY_SERVICE_URL: ${IDENTITY_SERVICE_URL}
+      PROFILE_SERVICE_URL: ${PROFILE_SERVICE_URL}
+      FILE_SERVICE_URL: ${FILE_SERVICE_URL}
+      CHAT_SERVICE_URL: ${CHAT_SERVICE_URL}
+      POST_SERVICE_URL: ${POST_SERVICE_URL}
+    healthcheck:
+      <<: *hc
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1"]
 
   identity-service:
+    <<: *app
+    image: nonono000/identity-service:${VERSION:?VERSION is required}
+    container_name: identity-service
+    ports:
+      - "127.0.0.1:8080:8080"
+    networks:
+      - app-network
+      - kafka-net
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
     environment:
+      <<: *spring-env
       DBMS_CONNECTION: ${DBMS_CONNECTION}
       MYSQL_USERNAME: ${MYSQL_USERNAME}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
@@ -21,70 +111,371 @@ services:
       AUTH_REDIRECT_URL: ${AUTH_REDIRECT_URL}
       CLIENT_ID: ${CLIENT_ID}
       SECRET_KEY: ${SECRET_KEY}
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-    ports:
-      - "8082:8080"
+      JWT_SIGNER_KEY: ${JWT_SIGNER_KEY}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
+    healthcheck:
+      <<: *hc
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/identity/actuator/health || exit 1"]
 
   post-service:
-    environment:
-      MONGO_URI_POST_SERVICE: ${MONGO_URI_POST_SERVICE}
+    <<: *app
+    image: nonono000/post-service:${VERSION:?VERSION is required}
+    container_name: post-service
     ports:
-      - "8083:8080"
+      - "127.0.0.1:8083:8080"
+    networks:
+      - app-network
+      - kafka-net
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      <<: *spring-env
+      MONGO_URI_POST_SERVICE: ${MONGO_URI_POST_SERVICE}
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
+    healthcheck:
+      <<: *hc
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/post/actuator/health || exit 1"]
 
   profile-service:
+    <<: *app
+    image: nonono000/profile-service:${VERSION:?VERSION is required}
+    container_name: profile-service
+    ports:
+      - "127.0.0.1:8081:8080"
+    depends_on:
+      neo4j:
+        condition: service_healthy
     environment:
+      <<: *spring-env
       NEO4J_URI: ${NEO4J_URI}
       NEO4J_USERNAME: ${NEO4J_USERNAME}
       NEO4J_PASSWORD: ${NEO4J_PASSWORD}
       FILE_SERVICE_URL: ${FILE_SERVICE_URL}
-    ports:
-      - "8081:8080"
+    healthcheck:
+      <<: *hc
+      start_period: 180s
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/profile/actuator/health || exit 1"]
 
   file-service:
+    <<: *app
+    image: nonono000/file-service:${VERSION:?VERSION is required}
+    container_name: file-service
+    ports:
+      - "127.0.0.1:8084:8080"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    volumes:
+      - file_uploads:/app/uploads
     environment:
+      <<: *spring-env
       MONGO_URI_FILE_SERVICE: ${MONGO_URI_FILE_SERVICE}
       FILE_STORAGE_DIR: ${FILE_STORAGE_DIR}
       DOWNLOAD_PREFIX: ${DOWNLOAD_PREFIX}
-    volumes:
-      - ./uploads:/app/uploads
-    ports:
-      - "8084:8080"
+    healthcheck:
+      <<: *hc
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/file/actuator/health || exit 1"]
 
   chat-service:
+    <<: *app
+    image: nonono000/chat-service:${VERSION:?VERSION is required}
+    container_name: chat-service
+    ports:
+      - "127.0.0.1:8085:8080"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
+      <<: *spring-env
       MONGO_URI_CHAT_SERVICE: ${MONGO_URI_CHAT_SERVICE}
       MONGO_USERNAME: ${MONGO_USERNAME}
       MONGO_PASSWORD: ${MONGO_PASSWORD}
       PROFILE_SERVICE_URL: ${PROFILE_SERVICE_URL}
       IDENTITY_SERVICE_URL: ${IDENTITY_SERVICE_URL}
-    ports:
-      - "8085:8080"
-      - "8999:8999"
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    healthcheck:
+      <<: *hc
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/chat/actuator/health || exit 1"]
 
-  zookeeper:
+  socket-service:
+    <<: *app
+    image: nonono000/socket-service:${VERSION:?VERSION is required}
+    container_name: socket-service
     ports:
-      - "2181:2181"
+      - "8999:8999"        # Netty Socket.IO (Tomcat 8080 chỉ dùng nội bộ cho healthcheck)
+    networks:
+      - app-network
+      - kafka-net
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
     environment:
-      - ALLOW_ANONYMOUS_LOGIN=yes
+      <<: *spring-env      # SERVER_PORT=8080; Netty 8999 hardcode trong Java
+      MONGO_URI_CHAT_SERVICE: ${MONGO_URI_CHAT_SERVICE}
+      MONGO_USERNAME: ${MONGO_USERNAME}
+      MONGO_PASSWORD: ${MONGO_PASSWORD}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
+      PROFILE_SERVICE_URL: ${PROFILE_SERVICE_URL}
+      IDENTITY_SERVICE_URL: ${IDENTITY_SERVICE_URL}
+    healthcheck:
+      <<: *hc
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ws/actuator/health || exit 1"]
+    deploy:
+      resources:
+        limits:
+          memory: 700M
+          cpus: "1.0"
+
+  admin-service:
+    <<: *app
+    image: nonono000/admin-service:${VERSION:?VERSION is required}
+    container_name: admin-service
+    ports:
+      - "127.0.0.1:8090:8080"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    environment:
+      <<: *spring-env
+      MONGO_URI_ADMIN_SERVICE: ${MONGO_URI_ADMIN_SERVICE}
+      IDENTITY_SERVICE_URL: ${IDENTITY_SERVICE_URL}
+      POST_SERVICE_URL: ${POST_SERVICE_URL}
+    healthcheck:
+      <<: *hc
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/admin/actuator/health || exit 1"]
+
+  relation-service:
+    <<: *app
+    image: nonono000/relation-service:${VERSION:?VERSION is required}
+    container_name: relation-service
+    ports:
+      - "127.0.0.1:8086:8080"
+    networks:
+      - app-network
+      - kafka-net
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      <<: *spring-env
+      MONGO_URI_RELATION_SERVICE: ${MONGO_URI_RELATION_SERVICE}
+      MONGO_USERNAME: ${MONGO_USERNAME}
+      MONGO_PASSWORD: ${MONGO_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
+      PROFILE_SERVICE_URL: ${PROFILE_SERVICE_URL}
+      JWT_SIGNER_KEY: ${JWT_SIGNER_KEY}
+    healthcheck:
+      <<: *hc
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/relation/actuator/health || exit 1"]
+
+  # ============== INFRASTRUCTURE (không publish ra ngoài) ==============
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: zookeeper
+    networks:
+      - kafka-net
+    restart: always
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_4LW_COMMANDS_WHITELIST: "*"
+      KAFKA_HEAP_OPTS: "-Xmx256m -Xms256m"
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+          cpus: "0.5"
+    healthcheck:
+      test: ["CMD", "cub", "zk-ready", "localhost:2181", "5"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+      start_interval: 3s
 
   kafka:
-    ports:
-      - "9092:9092"
-      - "9094:9094"
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka
+    networks:
+      - kafka-net
+    restart: always
+    depends_on:
+      zookeeper:
+        condition: service_healthy
     environment:
-      - KAFKA_BROKER_ID=1
-      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
-      - ALLOW_PLAINTEXT_LISTENER=yes
-      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,PLAINTEXT_HOST://:9094
-      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9094
-      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_HEAP_OPTS: "-Xmx512m -Xms512m"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "1.0"
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 90s
+      start_interval: 5s
 
+  # Chỉ chạy khi cần debug: --profile debug ; truy cập qua SSH tunnel
   kafka-ui:
+    image: provectuslabs/kafka-ui:v0.7.2
+    container_name: kafka-ui
+    profiles: ["debug"]
     ports:
-      - "8089:8080"
+      - "127.0.0.1:9000:8080"
+    networks:
+      - kafka-net
+    restart: "no"
+    depends_on:
+      kafka:
+        condition: service_healthy
     environment:
-      - KAFKA_CLUSTERS_0_NAME=local
-      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
-      - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
+      KAFKA_CLUSTERS_0_NAME: production
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
 
+  mysql:
+    image: mysql:8.0            # giống local (mysql 9 đã bỏ mysql_native_password)
+    container_name: mysql-app
+    networks:
+      - app-network
+    restart: always
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command:
+      - --default-authentication-plugin=mysql_native_password
+      - --skip-name-resolve
+      - --innodb-buffer-pool-size=256M
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: identity_db
+      # không đặt MYSQL_USER/MYSQL_PASSWORD: nếu MYSQL_USERNAME=root container sẽ lỗi
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "1.0"
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p\"$$MYSQL_ROOT_PASSWORD\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 90s
+      start_interval: 3s
+
+  mongodb:
+    image: mongo:7.0
+    container_name: my-mongo
+    networks:
+      - app-network
+    restart: always
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "1.0"
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh -u \"$$MONGO_INITDB_ROOT_USERNAME\" -p \"$$MONGO_INITDB_ROOT_PASSWORD\" --authenticationDatabase admin --quiet --eval 'db.adminCommand(\"ping\").ok' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+      start_interval: 3s
+
+  neo4j:
+    image: neo4j:5.20-community
+    container_name: my-neo4j
+    networks:
+      - app-network
+    restart: always
+    volumes:
+      - neo4j_data:/data
+    environment:
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD}
+      NEO4J_server_memory_heap_initial__size: 512M
+      NEO4J_server_memory_heap_max__size: 512M
+      NEO4J_server_memory_pagecache_size: 128M
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "1.0"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:7474 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 90s
+      start_interval: 3s
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: redis
+    networks:
+      - app-network
+    restart: always
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}"]
+    volumes:
+      - redis_data:/data
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" --no-auth-warning ping | grep PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+      start_interval: 2s
+
+networks:
+  app-network:
+    driver: bridge
+  kafka-net:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  mongo_data:
+  neo4j_data:
+  redis_data:
+  file_uploads:

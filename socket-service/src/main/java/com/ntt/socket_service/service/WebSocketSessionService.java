@@ -24,6 +24,9 @@ public class WebSocketSessionService {
     }
 
     public WebSocketSession updateWebSocketSession(WebSocketSession session) { return repository.save(session); }
+    public WebSocketSession findBySocketSessionId(String sessionId) {
+        return repository.findBySocketSessionId(sessionId);
+    };
 
     public WebSocketSession findByUserIdAndDeviceId(String userId, String deviceId) { return repository.findByUserIdAndSocketSessionId(userId, deviceId); }
 }

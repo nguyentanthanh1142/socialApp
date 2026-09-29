@@ -1,0 +1,65 @@
+/* src/components/Spinner.css */
+
+.spinner-overlay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  min-height: 120px;
+}
+
+.spinner-overlay--fullpage {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 17, 25, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 9999;
+}
+
+.spinner-ring {
+  --spinner-size: 44px;
+  --spinner-border: 4px;
+  --spinner-color: #6c63ff;
+  --spinner-track: rgba(108, 99, 255, 0.18);
+
+  display: inline-block;
+  width: var(--spinner-size);
+  height: var(--spinner-size);
+  border-radius: 50%;
+  border: var(--spinner-border) solid var(--spinner-track);
+  border-top-color: var(--spinner-color);
+  animation: spinner-rotate 0.75s linear infinite;
+  will-change: transform;
+}
+
+.spinner-ring--sm {
+  --spinner-size: 22px;
+  --spinner-border: 3px;
+}
+
+.spinner-ring--md {
+  --spinner-size: 44px;
+  --spinner-border: 4px;
+}
+
+.spinner-ring--lg {
+  --spinner-size: 72px;
+  --spinner-border: 6px;
+}
+
+.spinner-label {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.875rem;
+  color: #9ca3af;
+  letter-spacing: 0.02em;
+  user-select: none;
+}
+
+@keyframes spinner-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}

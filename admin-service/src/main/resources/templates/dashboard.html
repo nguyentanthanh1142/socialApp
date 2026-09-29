@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title th:text="${pageTitle} + ' | Admin'">Dashboard | Admin</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.3/css/bootstrap.min.css}"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
+    <link rel="stylesheet" th:href="@{/css/admin.css}"/>
+</head>
+<body>
+<div class="d-flex" id="wrapper">
+    <nav th:replace="~{fragments/sidebar :: sidebar}"></nav>
+    <div id="page-content" class="flex-grow-1">
+        <header th:replace="~{fragments/navbar :: navbar}"></header>
+        <main class="container-fluid p-4">
+            <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+                <span th:text="${success}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Users</div>
+                        <div class="stat-value" th:text="${stats.totalUsers}">0</div>
+                        <div class="stat-sub text-success">
+                            <span th:text="${stats.activeUsers}">0</span> active
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stat-card">
+                        <div class="stat-label">Banned Users</div>
+                        <div class="stat-value text-danger" th:text="${stats.bannedUsers}">0</div>
+                        <div class="stat-sub text-muted">Moderation status</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Posts</div>
+                        <div class="stat-value" th:text="${stats.totalPosts}">0</div>
+                        <div class="stat-sub">
+                            <span class="text-success" th:text="${stats.activePosts}">0</span> active ·
+                            <span class="text-secondary" th:text="${stats.deletedPosts}">0</span> deleted
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h2 class="h5 mb-0">Recent Admin Actions</h2>
+                    <a class="btn btn-sm btn-outline-primary" th:href="@{/users}">Manage Users</a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light">
+                        <tr>
+                            <th>When</th>
+                            <th>Admin</th>
+                            <th>Action</th>
+                            <th>Target</th>
+                            <th>Result</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:if="${#lists.isEmpty(recentAudits)}">
+                            <td colspan="5" class="text-center text-muted py-4">No audit entries yet</td>
+                        </tr>
+                        <tr th:each="log : ${recentAudits}">
+                            <td th:text="${#temporals.format(log.timestamp, 'yyyy-MM-dd HH:mm:ss')}">time</td>
+                            <td th:text="${log.adminUsername}">admin</td>
+                            <td><span class="badge text-bg-secondary" th:text="${log.action}">ACTION</span></td>
+                            <td>
+                                <span th:text="${log.targetType}">TYPE</span>
+                                <code th:text="${log.targetId}">id</code>
+                            </td>
+                            <td>
+                                <span th:if="${log.success}" class="badge text-bg-success">Success</span>
+                                <span th:unless="${log.success}" class="badge text-bg-danger">Failed</span>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+<script th:src="@{/webjars/bootstrap/5.3.3/js/bootstrap.bundle.min.js}"></script>
+</body>
+</html>

@@ -7,6 +7,15 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 
 
 public interface PostRepository extends MongoRepository<Post, String> {
-    Page<Post> findAllByUserId(String userId, Pageable pageable);
-    Post getPostsById(String postId);
+    Page<Post> findAllByUserIdAndDeletedFalse(String userId, Pageable pageable);
+
+    Page<Post> findAllByDeletedFalse(Pageable pageable);
+
+    Page<Post> findAllByOrderByCreateDateDesc(Pageable pageable);
+
+    Post getPostsByIdAndDeletedFalse(String postId);
+
+    long countByDeletedTrue();
+
+    long countByDeletedFalse();
 }

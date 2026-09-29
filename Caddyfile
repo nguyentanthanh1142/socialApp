@@ -1,0 +1,12 @@
+social.thanhbuilds.me {
+	reverse_proxy nginx-frontend:80
+}
+
+api.social.thanhbuilds.me {
+	reverse_proxy api-gateway:8080
+}
+
+socket.social.thanhbuilds.me {
+	# Netty Socket.IO (websocket được Caddy proxy tự động)
+	reverse_proxy socket-service:8999
+}

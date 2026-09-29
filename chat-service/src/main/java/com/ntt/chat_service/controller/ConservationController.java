@@ -31,4 +31,12 @@ public class ConservationController {
                 .result(conversationService.myConversations())
                 .build();
     }
+
+    @PostMapping("/create-or-get")
+    ApiResponse<ConversationResponse> getOrCreateConversation(@Valid @RequestBody ConversationRequest request) {
+        return ApiResponse.<ConversationResponse>builder()
+                .result(conversationService.getOrCreateConservation(request))
+                .build();
+    }
 }
+

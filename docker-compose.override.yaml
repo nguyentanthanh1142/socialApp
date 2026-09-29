@@ -1,4 +1,22 @@
+# =====================================================================
+# OVERRIDE (LOCAL): chỉ thêm ports, environment, limit cho máy dev.
+# Tự động merge khi chạy `docker compose up` ở local.
+# Mọi service Spring nghe cổng 8080 trong container (riêng socket 8999)
+# để khớp healthcheck ở file base.
+# =====================================================================
+
+x-deploy-app: &deploy-app
+  resources:
+    limits:
+      memory: 512M
+      cpus: "1.0"
+
+x-spring-env: &spring-env
+  SPRING_PROFILES_ACTIVE: docker
+  SERVER_PORT: 8080
+
 services:
+  # ============== APP SERVICES - LOCAL PORTS ==============
   nginx-frontend:
     ports:
       - "3000:80"
@@ -12,22 +30,22 @@ services:
     ports:
       - "8888:8080"
     environment:
-      SPRING_PROFILES_ACTIVE: docker
+      <<: *spring-env
       DBMS_CONNECTION: ${DBMS_CONNECTION}
       MYSQL_USERNAME: ${MYSQL_USERNAME}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       IDENTITY_SERVICE_URL: ${IDENTITY_SERVICE_URL}
-      SERVER_PORT: 8080
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: "1.0"
+      PROFILE_SERVICE_URL: ${PROFILE_SERVICE_URL}
+      FILE_SERVICE_URL: ${FILE_SERVICE_URL}
+      CHAT_SERVICE_URL: ${CHAT_SERVICE_URL}
+      POST_SERVICE_URL: ${POST_SERVICE_URL}
+    deploy: *deploy-app
 
   identity-service:
     ports:
       - "8080:8080"
     environment:
-      SPRING_PROFILES_ACTIVE: docker
+      <<: *spring-env
       DBMS_CONNECTION: ${DBMS_CONNECTION}
       MYSQL_USERNAME: ${MYSQL_USERNAME}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
@@ -35,82 +53,103 @@ services:
       AUTH_REDIRECT_URL: ${AUTH_REDIRECT_URL}
       CLIENT_ID: ${CLIENT_ID}
       SECRET_KEY: ${SECRET_KEY}
+      JWT_SIGNER_KEY: ${JWT_SIGNER_KEY}
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: "1.0"
+    deploy: *deploy-app
 
   post-service:
     ports:
       - "8083:8080"
     environment:
-      SPRING_PROFILES_ACTIVE: docker
+      <<: *spring-env
       MONGO_URI_POST_SERVICE: ${MONGO_URI_POST_SERVICE}
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: "1.0"
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    deploy: *deploy-app
 
   profile-service:
     ports:
       - "8081:8080"
     environment:
-      SPRING_PROFILES_ACTIVE: docker
+      <<: *spring-env
       NEO4J_URI: ${NEO4J_URI}
       NEO4J_USERNAME: ${NEO4J_USERNAME}
       NEO4J_PASSWORD: ${NEO4J_PASSWORD}
       FILE_SERVICE_URL: ${FILE_SERVICE_URL}
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: "1.0"
+    deploy: *deploy-app
 
   file-service:
     ports:
       - "8084:8080"
     environment:
-      SPRING_PROFILES_ACTIVE: docker
+      <<: *spring-env
       MONGO_URI_FILE_SERVICE: ${MONGO_URI_FILE_SERVICE}
       FILE_STORAGE_DIR: ${FILE_STORAGE_DIR}
       DOWNLOAD_PREFIX: ${DOWNLOAD_PREFIX}
     volumes:
       - ./uploads:/app/uploads
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: "1.0"
+    deploy: *deploy-app
 
   chat-service:
     ports:
-      - "8085:8080"
+      - "8085:8080"          # bỏ 8999 (trùng với socket-service)
+    environment:
+      <<: *spring-env
+      MONGO_URI_CHAT_SERVICE: ${MONGO_URI_CHAT_SERVICE}
+      MONGO_USERNAME: ${MONGO_USERNAME}
+      MONGO_PASSWORD: ${MONGO_PASSWORD}
+      PROFILE_SERVICE_URL: ${PROFILE_SERVICE_URL}
+      IDENTITY_SERVICE_URL: ${IDENTITY_SERVICE_URL}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    deploy: *deploy-app
+
+  socket-service:
+    ports:
       - "8999:8999"
     environment:
       SPRING_PROFILES_ACTIVE: docker
       MONGO_URI_CHAT_SERVICE: ${MONGO_URI_CHAT_SERVICE}
       MONGO_USERNAME: ${MONGO_USERNAME}
       MONGO_PASSWORD: ${MONGO_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       PROFILE_SERVICE_URL: ${PROFILE_SERVICE_URL}
       IDENTITY_SERVICE_URL: ${IDENTITY_SERVICE_URL}
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: "1.0"
+    deploy: *deploy-app
 
-  zookeeper:
+  admin-service:
+    ports:
+      - "8090:8080"          # trước: 8090:8090 (lệch với healthcheck 8080)
     environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-    healthcheck:
-      test: ["CMD", "echo", "ruok", "|", "nc", "localhost", "2181"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      <<: *spring-env
+      MONGO_URI_ADMIN_SERVICE: ${MONGO_URI_ADMIN_SERVICE}
+      IDENTITY_SERVICE_URL: ${IDENTITY_SERVICE_URL}
+      POST_SERVICE_URL: ${POST_SERVICE_URL}
+    deploy: *deploy-app
+
+  relation-service:
+    ports:
+      - "8086:8080"          # trước: 8086:8086
+    environment:
+      <<: *spring-env
+      MONGO_URI_RELATION_SERVICE: ${MONGO_URI_RELATION_SERVICE}
+      MONGO_USERNAME: ${MONGO_USERNAME}
+      MONGO_PASSWORD: ${MONGO_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      PROFILE_SERVICE_URL: ${PROFILE_SERVICE_URL}
+      JWT_SIGNER_KEY: ${JWT_SIGNER_KEY}
+    deploy: *deploy-app
+
+  # ============== INFRA SERVICES - LOCAL ==============
+  zookeeper:
+    ports:
+      - "2181:2181"
+    environment:
+      KAFKA_HEAP_OPTS: "-Xmx128m -Xms128m"
     deploy:
       resources:
         limits:
@@ -122,18 +161,10 @@ services:
       - "9092:9092"
       - "9094:9094"
     environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      # thêm listener cho client chạy trên máy host (IDE...)
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9094
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-    healthcheck:
-      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 60s
+      KAFKA_HEAP_OPTS: "-Xmx256m -Xms256m"
     deploy:
       resources:
         limits:
@@ -144,9 +175,7 @@ services:
     ports:
       - "9000:8080"
     environment:
-      - KAFKA_CLUSTERS_0_NAME=local
-      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
-      - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
+      KAFKA_CLUSTERS_0_NAME: local
     deploy:
       resources:
         limits:
@@ -156,77 +185,21 @@ services:
   mysql:
     ports:
       - "3306:3306"
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
-      MYSQL_DATABASE: identity_db
-    volumes:
-      - mysql_data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: "1.0"
 
   mongodb:
     ports:
       - "27017:27017"
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
-    volumes:
-      - mongo_data:/data/db
-    healthcheck:
-      test: >
-        mongosh --quiet \
-        -u ${MONGO_USERNAME} \
-        -p ${MONGO_PASSWORD} \
-        --authenticationDatabase admin \
-        --eval "db.runCommand('ping').ok"
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: "1.0"
 
   neo4j:
     ports:
       - "7474:7474"
       - "7687:7687"
-    environment:
-      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD}
-    volumes:
-      - neo4j_data:/data
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:7474"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
   redis:
     ports:
       - "6379:6379"
-    networks:
-      - app-network
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
     deploy:
       resources:
         limits:
           memory: 256M
           cpus: "0.5"
-
-volumes:
-  mysql_data:
-  mongo_data:
-  neo4j_data:

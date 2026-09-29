@@ -4,6 +4,8 @@ package com.ntt.relation_service.dto.response;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.util.List;
+
 @Data
 @Builder
 @AllArgsConstructor
@@ -11,6 +13,15 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class SuggestionResponse {
     private String userId;
-    private String username;
-    private String avatar;
+    String username;
+    String fullName;
+    String avatarUrl;
+
+
+    int mutualFriendsCount;
+    List<String> mutualFriendNames;
+
+    String headline;
+    String suggestionReason;
+
 }

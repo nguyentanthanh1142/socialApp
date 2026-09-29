@@ -18,7 +18,9 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     private static final String[] PUBLIC_ENDPOINTS = {
-            "/internal/users", "/internal/users/**", "/relation/followers/**"
+            "/internal/users", "/internal/users/**", "/relation/followers/**",
+            "/actuator/**",
+            "/profile/actuator/**"
     };
 
     private static final String[] SWAGGER_ENDPOINTS = {

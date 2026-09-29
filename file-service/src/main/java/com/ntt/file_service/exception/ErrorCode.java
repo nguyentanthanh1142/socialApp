@@ -1,34 +1,31 @@
 package com.ntt.file_service.exception;
 
-import lombok.Getter;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 
+import lombok.Getter;
+
 @Getter
 public enum ErrorCode {
-    INVALID_KEY("Invalid message", 10001, HttpStatus.INTERNAL_SERVER_ERROR),
-    UNCATEGORIZED_EXCEPTION("Uncategorized error", 999, HttpStatus.BAD_REQUEST),
-    USER_EXISTED("User existed", 1002, HttpStatus.BAD_REQUEST),
-    USERNAME_INVALID("Username must be at least {min} characters", 1003, HttpStatus.BAD_REQUEST),
-    PASSWORD_INVALID("Password must be at least {min} characters", 1004, HttpStatus.BAD_REQUEST),
-    USER_NOT_EXISTED("Username not existed", 1005, HttpStatus.NOT_FOUND),
-    UNAUTHENTICATED("Unauthenticated", 1006, HttpStatus.UNAUTHORIZED),
-    UNAUTHORIZED("You do not have permission", 1007, HttpStatus.FORBIDDEN),
-    CANNOT_SEND_EMAIL("Can not send email", 1007, HttpStatus.FORBIDDEN),
-    INVALID_DOB("Your age must be at least {min}", 1008, HttpStatus.BAD_REQUEST),
+    UNCATEGORIZED_EXCEPTION(70000, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
+    INVALID_KEY(70001, "Invalid message key", HttpStatus.BAD_REQUEST),
 
-    FILE_NOT_FOUND("Can not get file", 4001, HttpStatus.NOT_FOUND),
-    FILE_UPLOAD_FAILED("Failed to upload file to cloud storage", 4002, HttpStatus.INTERNAL_SERVER_ERROR),
-    INVALID_FILE_FORMAT("Invalid file format or extension", 4003, HttpStatus.BAD_REQUEST),
-    FILE_SIZE_EXCEEDED("File size exceeds the allowable limit", 4004, HttpStatus.BAD_REQUEST);
+    UNAUTHENTICATED(70100, "Unauthenticated", HttpStatus.UNAUTHORIZED),
+    UNAUTHORIZED(70200, "You do not have permission to access or modify this file", HttpStatus.FORBIDDEN),
+
+    FILE_NOT_FOUND(70400, "Cannot get file or file not found", HttpStatus.NOT_FOUND),
+    FILE_UPLOAD_FAILED(70401, "Failed to upload file to cloud storage", HttpStatus.INTERNAL_SERVER_ERROR),
+    INVALID_FILE_FORMAT(70402, "Invalid file format or extension", HttpStatus.BAD_REQUEST),
+    FILE_SIZE_EXCEEDED(70403, "File size exceeds the allowable limit", HttpStatus.BAD_REQUEST),
     ;
-    ErrorCode(String message, int code, HttpStatusCode statusCode) {
-        this.message = message;
+
+    ErrorCode(int code, String message, HttpStatusCode statusCode) {
         this.code = code;
+        this.message = message;
         this.statusCode = statusCode;
     }
 
-    private int code;
-    private String message;
-    private HttpStatusCode statusCode;
+    private final int code;
+    private final String message;
+    private final HttpStatusCode statusCode;
 }

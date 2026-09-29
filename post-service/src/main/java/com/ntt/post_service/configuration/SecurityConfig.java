@@ -18,12 +18,14 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     private final String[] publicEndpoints = {
-        "/email/send",
-            "/*"
+            "/email/send",
+            "/*",
+            "/actuator/**",
+            "/post/actuator/**"
     };
 
     private final String[] swaggerEndpoints = {
-        "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html"
+            "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html"
     };
 
     private final CustomerJwtDecoder customerJwtDecoder;
@@ -36,10 +38,10 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
 
         httpSecurity
-//                .cors().and()
                 .authorizeHttpRequests(request -> request
-                    .requestMatchers(swaggerEndpoints).permitAll()
-                    .anyRequest().authenticated());
+                        .requestMatchers(publicEndpoints).permitAll()
+                        .requestMatchers(swaggerEndpoints).permitAll()
+                        .anyRequest().authenticated());
 
         httpSecurity.oauth2ResourceServer(oauth2 -> oauth2.jwt(jwtConfigurer -> jwtConfigurer
                         .decoder(customerJwtDecoder)

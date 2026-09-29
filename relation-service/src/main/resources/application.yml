@@ -7,14 +7,21 @@ spring:
     name: relation-service
   data:
     mongodb:
-      uri: mongodb://root:root@localhost:27017/relation-service?authSource=admin
-      username: ${MONGO_USERNAME:root}
-      password: ${MONGO_PASSWORD:root}
+      uri: ${MONGO_URI_RELATION_SERVICE:mongodb://root:root@localhost:27017/relation-service?authSource=admin}
       auto-index-creation: true
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9094}
+    consumer:
+      group-id: relation-service-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
 app:
   services:
     profile:
-      url: http://localhost:8081/profile
+      url: ${PROFILE_SERVICE_URL:http://localhost:8081/profile}
 jwt:
   signerKey: ${JWT_SIGNER_KEY:K25adN3cmQsGmXDPQCpIbluXGC5cTdXwOU1TSOkm/h9Cj6FBuMExdcvkkxTzIRsM}
   valid-duration: 3600 #seconds
@@ -24,3 +31,12 @@ springdoc:
     path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: always

@@ -34,10 +34,12 @@ public class SecurityConfig {
 
     private static final String[] PUBLIC_ENDPOINTS = {
             "/internal/users", "/internal/users/**",
+            "/actuator/**",
+            "/relation/actuator/**"
     };
 
     private static final String[] swaggerEndpoints = {
-        "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html"
+            "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html"
     };
 
     @Value("${jwt.signerKey}")
@@ -47,26 +49,25 @@ public class SecurityConfig {
     public SecurityConfig(CustomerJwtDecoder customerJwtDecoder) {
         this.customerJwtDecoder = customerJwtDecoder;
     }
+
     @Bean
     public JwtDecoder jwtDecoder() {
-        SecretKeySpec serviceKey  = new SecretKeySpec(signerKey.getBytes(), "HmacSHA256");
-        JwtDecoder serviceDecoder =  NimbusJwtDecoder.withSecretKey(serviceKey)
+        SecretKeySpec serviceKey = new SecretKeySpec(signerKey.getBytes(), "HmacSHA256");
+        JwtDecoder serviceDecoder = NimbusJwtDecoder.withSecretKey(serviceKey)
                 .macAlgorithm(MacAlgorithm.HS256)
                 .build();
 
 
         SecretKeySpec userKey = new SecretKeySpec(signerKey.getBytes(), "HmacSHA512");
-        JwtDecoder userDecoder =  NimbusJwtDecoder.withSecretKey(userKey)
+        JwtDecoder userDecoder = NimbusJwtDecoder.withSecretKey(userKey)
                 .macAlgorithm(MacAlgorithm.HS512)
                 .build();
 
 
         return token -> {
             try {
-                // Thử decode service token
                 return serviceDecoder.decode(token);
             } catch (Exception ex1) {
-                // Nếu fail, thử decode user token
                 return userDecoder.decode(token);
             }
         };
@@ -78,8 +79,9 @@ public class SecurityConfig {
         httpSecurity
 //                .cors().and()
                 .authorizeHttpRequests(request -> request
-                    .requestMatchers(swaggerEndpoints).permitAll()
-                    .anyRequest().authenticated());
+                        .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
+                        .requestMatchers(swaggerEndpoints).permitAll()
+                        .anyRequest().authenticated());
 
         httpSecurity.oauth2ResourceServer(oauth2 -> oauth2.jwt(jwtConfigurer -> jwtConfigurer
                         .decoder(jwtDecoder())
@@ -105,14 +107,13 @@ public class SecurityConfig {
             Object scopeObj = jwt.getClaims().get("scope");
             if (scopeObj instanceof String scopeStr) {
                 for (String s : scopeStr.split(" ")) {
-                    if(!s.isBlank())
-                    {
+                    if (!s.isBlank()) {
                         authorities.add(new SimpleGrantedAuthority(s));
                     }
                 }
             } else if (scopeObj instanceof List<?> scopeList) {
                 scopeList.forEach(s -> {
-                    if(s != null && !s.toString().isBlank()) {
+                    if (s != null && !s.toString().isBlank()) {
                         authorities.add(new SimpleGrantedAuthority(s.toString()));
                     }
                 });

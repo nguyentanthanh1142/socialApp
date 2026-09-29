@@ -1,27 +1,17 @@
-# Ignore target build output (will be rebuilt inside container)
-target
-
-# Ignore other services when building specific service
-nginx-frontend/
-
-# IDE and project files
-.idea
-.vscode
+**/target/
+**/build/
+**/bin/
+**/out/
+.idea/
+.vscode/
 *.iml
-
-# Git
-.git
+.git/
 .gitignore
-
-# Logs and temp files
 *.log
-logs
-tmp
-*.swp
-
-# Node modules if you mix JS build
-node_modules
-
-# Mac and Windows system files
+logs/
+tmp/
+**/node_modules/
+**/dist/
 .DS_Store
 Thumbs.db
+*.md

@@ -6,12 +6,15 @@ package com.ntt.profile_service.entity;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.neo4j.core.schema.GeneratedValue;
 import org.springframework.data.neo4j.core.schema.Id;
 import org.springframework.data.neo4j.core.schema.Node;
 import org.springframework.data.neo4j.core.schema.Property;
 import org.springframework.data.neo4j.core.support.UUIDStringGenerator;
 
+import java.time.Instant;
 import java.time.LocalDate;
 
 
@@ -28,13 +31,24 @@ public class UserProfile {
     String id;
     @Property("userId")
     String userId;
-    String avatar;
-    String email;
-    String lastname;
     String username;
-    String firstname;
+    String firstName;
+    String lastName;
+
+    String avatarUrl;
+    String coverUrl;
+    String bio;
+
+    String currentCity;
+    String hometown;
+    String country;
+
+    String preferredTheme;
     LocalDate birthday;
-    String city;
 
+    @CreatedDate
+    Instant createdAt;
 
+    @LastModifiedDate
+    Instant updatedAt;
 }

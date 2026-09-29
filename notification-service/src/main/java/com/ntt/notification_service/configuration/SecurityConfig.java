@@ -19,6 +19,8 @@ public class SecurityConfig {
 
     private final String[] publicEndpoints = {
         "/email/send",
+        "/actuator/**",
+        "/notification/actuator/**"
     };
     private static final String[] swaggerEndpoints = {
             "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html"

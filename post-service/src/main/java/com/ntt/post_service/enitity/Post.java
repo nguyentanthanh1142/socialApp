@@ -23,7 +23,14 @@ public class Post {
     String content;
     Instant createDate;
     Instant modifiedDate;
+
+    @Builder.Default
     Set<String> likes = new HashSet<>();
 
+    @Builder.Default
+    boolean deleted = false;
 
+    Instant deletedAt;
+
+    String deletedBy;
 }

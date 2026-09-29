@@ -38,7 +38,6 @@ public class ChatMessageSocketService {
         sessions.forEach(session  -> {
             var client = socketIOServer.getClient(UUID.fromString(session.getSocketSessionId()));
             if (client != null && client.isChannelOpen() ) {
-                String message = "";
                 try {
                     boolean isMe = session.getUserId().equals(event.getPayload().getSender().getId());
                     event.getPayload().setMe(isMe);
