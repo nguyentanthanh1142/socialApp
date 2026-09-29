@@ -1,9 +1,8 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:8888/api/v1/admin',
+  baseURL: process.env.REACT_APP_API_BASE_URL || 'https://api.social.thanhbuilds.me/api/v1/admin',
 });
-
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('jwtToken');
   if (token) {
