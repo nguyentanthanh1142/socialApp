@@ -25,8 +25,8 @@ public class ChatMessageController {
                 .result(chatMessageService.create(request))
                 .build();
     }
-    @GetMapping
-    ApiResponse<List<ChatMessageResponse>> createChatMessage(@RequestParam("conversationId") String conversationId) {
+    @GetMapping("/get")
+    ApiResponse<List<ChatMessageResponse>> getMessage(@RequestParam("conversationId") String conversationId) {
         return ApiResponse.<List<ChatMessageResponse>>builder()
                 .result(chatMessageService.getMessages(conversationId))
                 .build();

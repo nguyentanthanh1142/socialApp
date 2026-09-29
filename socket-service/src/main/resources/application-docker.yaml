@@ -1,0 +1,43 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /ws
+spring:
+  application:
+    name: socket-service
+  data:
+    mongodb:
+      uri: ${MONGO_URI_CHAT_SERVICE:mongodb://my-mongo:27017/chat-service?authSource=admin}
+      username: ${MONGO_USERNAME:root}
+      password: ${MONGO_PASSWORD:root}
+      auto-index-creation: true
+    redis:
+      host: ${REDIS_HOST:redis}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 60000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
+    consumer:
+      group-id: notification-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+app:
+  services:
+    profile:
+      url: ${PROFILE_SERVICE_URL:http://profile-service:8080/profile}
+    identity:
+      url: ${IDENTITY_SERVICE_URL:http://identity-service:8080/identity}
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html

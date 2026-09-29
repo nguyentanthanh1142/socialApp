@@ -32,7 +32,12 @@ public class FeedCache {
         List<String> followers = getFollowers(userId);
         double score = cachedPostDTO.getCreatedAt().toEpochMilli();
 
-        for(String follower : followers) {
+        List<String> targetUsers = new java.util.ArrayList<>(followers);
+        if (!targetUsers.contains(userId)) {
+            targetUsers.add(userId);
+        }
+
+        for(String follower : targetUsers) {
             String feedKey = FEED_KEY_PREFIX + follower;
             redisTemplate.opsForZSet().add(feedKey, cachedPostDTO.getId(), score);
 

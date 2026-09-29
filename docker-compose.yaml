@@ -1,6 +1,122 @@
+# =====================================================================
+# BASE: chỉ chứa thứ dùng chung (build, profile, network, depends_on,
+# healthcheck, cấu hình infra). KHÔNG có ports / env app / limit.
+#   - local: tự merge với docker-compose.override.yaml
+#   - prod : dùng riêng docker-compose.prod.yml (không dùng file này)
+# Chạy local: docker compose --profile infra --profile app up -d
+# Yêu cầu Docker Engine 25+ / Compose 2.20+ (do start_interval)
+# =====================================================================
+
+x-healthcheck-root: &healthcheck-root
+  test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1"]
+  interval: 30s
+  timeout: 5s
+  retries: 3
+  start_period: 90s
+  start_interval: 3s
+
+x-healthcheck-identity: &healthcheck-identity
+  test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/identity/actuator/health || exit 1"]
+  interval: 30s
+  timeout: 5s
+  retries: 3
+  start_period: 90s
+  start_interval: 3s
+
+x-healthcheck-profile: &healthcheck-profile
+  test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/profile/actuator/health || exit 1"]
+  interval: 30s
+  timeout: 5s
+  retries: 3
+  start_period: 90s
+  start_interval: 3s
+
+x-healthcheck-notification: &healthcheck-notification
+  test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/notification/actuator/health || exit 1"]
+  interval: 30s
+  timeout: 5s
+  retries: 3
+  start_period: 90s
+  start_interval: 3s
+
+x-healthcheck-post: &healthcheck-post
+  test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/post/actuator/health || exit 1"]
+  interval: 30s
+  timeout: 5s
+  retries: 3
+  start_period: 90s
+  start_interval: 3s
+
+x-healthcheck-file: &healthcheck-file
+  test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/file/actuator/health || exit 1"]
+  interval: 30s
+  timeout: 5s
+  retries: 3
+  start_period: 90s
+  start_interval: 3s
+
+x-healthcheck-chat: &healthcheck-chat
+  test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/chat/actuator/health || exit 1"]
+  interval: 30s
+  timeout: 5s
+  retries: 3
+  start_period: 90s
+  start_interval: 3s
+
+x-healthcheck-relation: &healthcheck-relation
+  test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/relation/actuator/health || exit 1"]
+  interval: 30s
+  timeout: 5s
+  retries: 3
+  start_period: 90s
+  start_interval: 3s
+
+x-healthcheck-feed: &healthcheck-feed
+  test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/feed/actuator/health || exit 1"]
+  interval: 30s
+  timeout: 5s
+  retries: 3
+  start_period: 90s
+  start_interval: 3s
+
+x-healthcheck-ws: &healthcheck-ws
+  test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/ws/actuator/health || exit 1"]
+  interval: 30s
+  timeout: 5s
+  retries: 3
+  start_period: 90s
+  start_interval: 3s
+
+x-healthcheck-admin: &healthcheck-admin
+  test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/admin/actuator/health || exit 1"]
+  interval: 30s
+  timeout: 5s
+  retries: 3
+  start_period: 90s
+  start_interval: 3s
+
+x-healthcheck-socket: &healthcheck-socket
+  test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8999/actuator/health || exit 1"]
+  interval: 30s
+  timeout: 5s
+  retries: 3
+  start_period: 90s
+  start_interval: 3s
+
+x-app: &app
+  profiles: ["app"]
+  restart: unless-stopped
+  networks:
+    - app-network
+  healthcheck: *healthcheck-root
+
 services:
+  # ============== APP SERVICES ==============
   nginx-frontend:
-    profiles: ["app"]
+    profiles: [ "app" ]
+    restart: unless-stopped
+    networks:
+      - app-network
     build:
       context: nginx-frontend
       dockerfile: Dockerfile
@@ -8,38 +124,27 @@ services:
         REACT_APP_API_GATEWAY: ${REACT_APP_API_GATEWAY}
         REACT_APP_CLIENT_ID: ${REACT_APP_CLIENT_ID}
         REACT_APP_AUTH_REDIRECT_URL: ${REACT_APP_AUTH_REDIRECT_URL}
+        REACT_APP_SOCKET_URL: ${REACT_APP_SOCKET_URL}
     image: nonono000/nginx-frontend:${VERSION}
-    depends_on:
-      - api-gateway
-    networks:
-      - app-network
-    restart: unless-stopped
 
   api-gateway:
-    profiles: ["app"]
+    <<: *app
     build:
       context: .
       dockerfile: Dockerfile
       args:
         MODULE: api-gateway
     image: nonono000/api-gateway:${VERSION}
-    networks:
-      - app-network
-    restart: unless-stopped
-    depends_on:
-      identity-service:
-        condition: service_started
-      profile-service:
-        condition: service_started
-      file-service:
-        condition: service_started
-      chat-service:
-        condition: service_started
-      post-service:
-        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 90s
+      start_interval: 3s
 
   identity-service:
-    profiles: ["app"]
+    <<: *app
     build:
       context: .
       dockerfile: Dockerfile
@@ -49,13 +154,17 @@ services:
     networks:
       - app-network
       - kafka-net
-    restart: unless-stopped
     depends_on:
       mysql:
         condition: service_healthy
+      kafka:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+    healthcheck: *healthcheck-identity
 
   post-service:
-    profiles: ["app"]
+    <<: *app
     build:
       context: .
       dockerfile: Dockerfile
@@ -64,76 +173,186 @@ services:
     image: nonono000/post-service:${VERSION}
     networks:
       - app-network
-    restart: unless-stopped
+      - kafka-net
     depends_on:
-      mysql:
+      mongodb:
         condition: service_healthy
+      kafka:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+    healthcheck: *healthcheck-post
 
   profile-service:
-    profiles: ["app"]
+    <<: *app
     build:
       context: .
       dockerfile: Dockerfile
       args:
         MODULE: profile-service
     image: nonono000/profile-service:${VERSION}
-    networks:
-      - app-network
-    restart: unless-stopped
     depends_on:
-      mysql:
+      neo4j:
         condition: service_healthy
+    healthcheck: *healthcheck-profile
 
   file-service:
-    profiles: ["app"]
+    <<: *app
     build:
       context: .
       dockerfile: Dockerfile
       args:
         MODULE: file-service
     image: nonono000/file-service:${VERSION}
-    networks:
-      - app-network
-    restart: unless-stopped
     depends_on:
       mongodb:
         condition: service_healthy
+    healthcheck: *healthcheck-file
 
   chat-service:
-    profiles: ["app"]
+    <<: *app
     build:
       context: .
       dockerfile: Dockerfile
       args:
         MODULE: chat-service
     image: nonono000/chat-service:${VERSION}
-    networks:
-      - app-network
-    restart: unless-stopped
     depends_on:
+      mongodb:
+        condition: service_healthy
       redis:
         condition: service_healthy
+    healthcheck: *healthcheck-chat
 
+  socket-service:
+    <<: *app
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: socket-service
+    image: nonono000/socket-service:${VERSION}
+    networks:
+      - app-network
+      - kafka-net
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+    healthcheck: *healthcheck-ws
+
+  admin-service:
+    <<: *app
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: admin-service
+    image: nonono000/admin-service:${VERSION}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    healthcheck: *healthcheck-admin
+
+  relation-service:
+    <<: *app
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: relation-service
+    image: nonono000/relation-service:${VERSION}
+    networks:
+      - app-network
+      - kafka-net
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+    healthcheck: *healthcheck-relation
+
+  # ============== INFRASTRUCTURE SERVICES ==============
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
     container_name: zookeeper
-    profiles: ["infra"]
+    profiles: [ "infra" ]
     networks:
       - kafka-net
     restart: unless-stopped
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_4LW_COMMANDS_WHITELIST: "*"
+    healthcheck:
+      test: [ "CMD", "cub", "zk-ready", "localhost:2181", "5" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+      start_interval: 3s
 
   kafka:
     image: confluentinc/cp-kafka:7.5.0
     container_name: kafka
     profiles: ["infra"]
     depends_on:
-      - zookeeper
+      zookeeper:
+        condition: service_healthy
     networks:
       - kafka-net
     restart: unless-stopped
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 90s
+      start_interval: 5s
+
+  kafka-init:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka-init
+    profiles: [ "infra" ]
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - kafka-net
+    volumes:
+      - ./init-topics.sh:/init-topics.sh
+    command: [ "bash", "/init-topics.sh" ]
+    restart: "no"
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:v0.7.2
+    container_name: kafka-ui
+    profiles: ["infra"]
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - kafka-net
+    restart: unless-stopped
+    environment:
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
 
   mysql:
-    image: mysql:9.1.0
+    image: mysql:8.0
     container_name: mysql-app
     profiles: ["infra"]
     networks:
@@ -141,6 +360,24 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
     restart: unless-stopped
+    command:
+      - --default-authentication-plugin=mysql_native_password
+      - --skip-name-resolve
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: identity_db
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 120s
+      start_interval: 3s
 
   mongodb:
     image: mongo:7.0
@@ -151,6 +388,16 @@ services:
     volumes:
       - mongo_data:/data/db
     restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh -u \"$$MONGO_INITDB_ROOT_USERNAME\" -p \"$$MONGO_INITDB_ROOT_PASSWORD\" --authenticationDatabase admin --quiet --eval 'db.adminCommand(\"ping\").ok' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+      start_interval: 3s
 
   neo4j:
     image: neo4j:5.20-community
@@ -161,6 +408,15 @@ services:
     volumes:
       - neo4j_data:/data
     restart: unless-stopped
+    environment:
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD}
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:7474 || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 60s
+      start_interval: 3s
 
   redis:
     image: redis:7.2-alpine
@@ -169,18 +425,21 @@ services:
     networks:
       - app-network
     restart: unless-stopped
-
-  kafka-ui:
-    image: provectuslabs/kafka-ui:latest
-    profiles: ["infra"]
-    depends_on:
-      - kafka
-    networks:
-      - kafka-net
-    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+      start_interval: 2s
 
 networks:
   app-network:
     driver: bridge
   kafka-net:
     driver: bridge
+
+volumes:
+  mysql_data:
+  mongo_data:
+  neo4j_data:

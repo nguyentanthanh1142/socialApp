@@ -1,3 +1,5 @@
+docker compose -f docker-compose.yaml -f docker-compose.override.yaml --profile "infra" --profile "app" up -d --build
+
 # Social App Project
 
 ## Overview

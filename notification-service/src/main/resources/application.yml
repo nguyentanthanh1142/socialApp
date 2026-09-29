@@ -10,9 +10,11 @@ spring:
       host: localhost
       port: 6379
     mongodb:
-      uri: mongodb://root:root@localhost:27017/notification-service?authSource=admin
+      uri: ${MONGO_URI_NOTIFICATION_SERVICE:mongodb://localhost:27017/notification-service?authSource=admin}
+      username: ${MONGO_USERNAME:root}
+      password: ${MONGO_PASSWORD:root}
   kafka:
-    bootstrap-servers: localhost:9094
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9094}
     consumer:
       group-id: notification-group
       auto-offset-reset: earliest

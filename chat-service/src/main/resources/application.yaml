@@ -8,8 +8,6 @@ spring:
   data:
     mongodb:
       uri: ${MONGO_URI_CHAT_SERVICE:mongodb://root:root@localhost:27017/chat-service?authSource=admin}
-      username: ${MONGO_USERNAME:root}
-      password: ${MONGO_PASSWORD:root}
       auto-index-creation: true
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9094}
@@ -39,3 +37,12 @@ logging:
     org.springframework.security: DEBUG
     org.springframework.web: DEBUG
     org.springframework.boot.autoconfigure: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: always

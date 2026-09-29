@@ -3,12 +3,10 @@ package com.ntt.identity_service.controller;
 import java.util.List;
 
 import com.ntt.common_lib.dto.ApiResponse;
-import jakarta.validation.Valid;
 
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import com.ntt.identity_service.dto.request.UserCreationRequest;
 import com.ntt.identity_service.dto.request.UserUpdateRequest;
 import com.ntt.identity_service.dto.response.UserResponse;
 import com.ntt.identity_service.service.UserService;
@@ -26,23 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 public class UserController {
     UserService userService;
 
-    @PostMapping("/registration")
-    ApiResponse<UserResponse> createUser(@RequestBody @Valid UserCreationRequest request) {
-        log.info("Controller: Creating user: ");
-        ApiResponse<UserResponse> apiResponse = new ApiResponse<>();
-        apiResponse.setResult(userService.createUser(request));
-        return apiResponse;
-    }
-
-//    @PostMapping("/create-password")
-//    ApiResponse<Void> createPassword(@RequestBody @Valid UserCreationRequest request) {
-//
-//        return  ApiResponse.builder()
-//                .result()
-//                .build();
-//    }
-
-    @GetMapping
+    @PostMapping
     ApiResponse<List<UserResponse>> getUsers() {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
         log.info("Username : " + authentication.getName());
@@ -74,5 +56,11 @@ public class UserController {
         return ApiResponse.<UserResponse>builder()
                 .result(userService.getMyInfo())
                 .build();
+    }
+
+    @PutMapping("/me/complete-onboarding")
+    ApiResponse<Void> completeOnboarding() {
+        userService.completeOnboarding();
+        return ApiResponse.<Void>builder().build();
     }
 }

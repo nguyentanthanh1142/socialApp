@@ -1,0 +1,46 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /feed
+
+spring:
+  datasource:
+    url: ${FEED_DBMS_CONNECTION:jdbc:mysql://mysql-app:3306/feed_service}
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD:123}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  data:
+    redis:
+      host: ${REDIS_HOST:redis}
+      port: 6379
+  kafka:
+    consumer:
+      bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
+      group-id: feed-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+    properties:
+      spring.json.trusted.packages: com.ntt.common_lib.event,com.ntt.post_service.dto.request,com.ntt.common_lib.dto
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+app:
+  services:
+    token: REDACTED_JWT
+    relation:
+      url: ${RELATION_SERVICE_URL:http://relation-service:8080/relation}
+    profile:
+      url: ${PROFILE_SERVICE_URL:http://profile-service:8080/profile}
+    post:
+      url: ${POST_SERVICE_URL:http://post-service:8080/post}
+jwt:
+  signerKey: ${JWT_SIGNER_KEY:REDACTED_SIGNER_KEY}
+  valid-duration: 3600 #seconds
+  refresh-duration: 36000  #seconds

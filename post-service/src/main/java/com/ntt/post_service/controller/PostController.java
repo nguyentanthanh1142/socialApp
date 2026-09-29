@@ -11,6 +11,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -22,27 +23,32 @@ public class PostController {
     PostService postService;
     LikeService likeService;
 
-    @PostMapping("/create")
-        ApiResponse<PostResponse> createPost(@RequestParam("content") String content, @RequestParam(value = "files", required = false)MultipartFile[] files) {
-           PostRequest postRequest = new PostRequest();
-            postRequest.setContent(content);
-            postRequest.setFiles(files);
-            return ApiResponse.<PostResponse>builder()
-                    .result(postService.createPost(postRequest))
-                    .build();
-    }
-    @GetMapping("/my-posts")
-    ApiResponse<PageResponse<PostResponse>> getMyPosts(
-            @RequestParam(value = "page",required = false, defaultValue = "1") int page,
-            @RequestParam(value = "size", required = false, defaultValue = "10") int size
-            ) {
-        return ApiResponse.<PageResponse<PostResponse>>builder()
-                .result(postService.getMyPosts(page,size))
+    @PostMapping(
+            path = "/create",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    ApiResponse<PostResponse> createPost(@RequestParam("content") String content,
+                                         @RequestPart(value = "files", required = false) MultipartFile[] files) {
+        PostRequest postRequest = new PostRequest();
+        postRequest.setContent(content);
+        postRequest.setFiles(files);
+        return ApiResponse.<PostResponse>builder()
+                .result(postService.createPost(postRequest))
                 .build();
     }
+
+    @GetMapping("/my-posts")
+    ApiResponse<PageResponse<PostResponse>> getMyPosts(
+            @RequestParam(value = "page", required = false, defaultValue = "1") int page,
+            @RequestParam(value = "size", required = false, defaultValue = "10") int size
+    ) {
+        return ApiResponse.<PageResponse<PostResponse>>builder()
+                .result(postService.getMyPosts(page, size))
+                .build();
+    }
+
     @PostMapping("/{postId}/like")
-    ApiResponse<PostLikeResponse> likePost(@PathVariable String postId )
-    {
+    ApiResponse<PostLikeResponse> likePost(@PathVariable String postId) {
         return ApiResponse.<PostLikeResponse>builder()
                 .result(PostLikeResponse.builder()
                         .postId(postId)
@@ -51,9 +57,9 @@ public class PostController {
                         .build())
                 .build();
     }
+
     @GetMapping("/{postId}")
-    ApiResponse<PostResponse> getPost(@PathVariable String postId)
-    {
+    ApiResponse<PostResponse> getPost(@PathVariable String postId) {
         return ApiResponse.<PostResponse>builder()
                 .result(postService.getPost(postId))
                 .build();

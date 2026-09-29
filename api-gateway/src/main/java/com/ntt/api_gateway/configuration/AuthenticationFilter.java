@@ -36,9 +36,13 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
 
     @NonFinal
     String[] publicEndpoints = {
-            "/identity/auth/.*","/identity/users/registration",
+            "/identity/auth/.*", "/identity/users/registration",
             "/notification/email/send",
             "/file/media/download/.*",
+            "/admin/login",
+            "/admin/css/.*",
+            "/admin/webjars/.*",
+            "/admin/auth/.*",
 
             "/.*/v3/api-docs.*",
             "/.*/swagger-ui/.*",
@@ -49,29 +53,42 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
     @NonFinal
     String appApiPrefix;
 
-
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         log.info("Authentication Filter");
-        if(isPublicEndpoint(exchange.getRequest()))
-        {
-           return chain.filter(exchange);
+        if (isPublicEndpoint(exchange.getRequest())) {
+            return chain.filter(exchange);
         }
+
+        String token = null;
 
         List<String> authHeader = exchange.getRequest().getHeaders().get(HttpHeaders.AUTHORIZATION);
-        if(CollectionUtils.isEmpty(authHeader)) {
-            return unauthicated(exchange.getResponse());
+        if (!CollectionUtils.isEmpty(authHeader)) {
+            String bearerToken = authHeader.getFirst();
+            if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+                token = bearerToken.replace("Bearer ", "");
+                log.info("token from header: " + token);
+            }
         }
-        String token = authHeader.getFirst().replace("Bearer ", "");
-        log.info("token: " + token);
 
-        return identityService.introspect(token).flatMap(introspectResponse ->{
-            if(introspectResponse.getResult().isValid())
-            {
+        if (token == null && exchange.getRequest().getCookies().containsKey("ADMIN_TOKEN")) {
+            var cookie = exchange.getRequest().getCookies().getFirst("ADMIN_TOKEN");
+            if (cookie != null) {
+                token = cookie.getValue();
+                log.info("token from cookie: " + token);
+            }
+        }
+
+        if (token == null || token.isBlank()) {
+            return unauthenticated(exchange.getResponse());
+        }
+
+        return identityService.introspect(token).flatMap(introspectResponse -> {
+            if (introspectResponse.getResult().isValid()) {
                 return chain.filter(exchange);
             }
-            return unauthicated(exchange.getResponse());
-        }).onErrorResume(throwable -> unauthicated(exchange.getResponse()));
+            return unauthenticated(exchange.getResponse());
+        }).onErrorResume(throwable -> unauthenticated(exchange.getResponse()));
     }
 
     @Override
@@ -83,14 +100,14 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
         return Arrays.stream(publicEndpoints).anyMatch(endpoint -> request.getURI().getPath().matches(appApiPrefix + endpoint));
     }
 
-    Mono<Void> unauthicated(ServerHttpResponse  response) {
+    Mono<Void> unauthenticated(ServerHttpResponse response) {
         String body = null;
-        ApiResponse<?> apiResponse= ApiResponse.builder()
+        ApiResponse<?> apiResponse = ApiResponse.builder()
                 .code(1401)
                 .message("Unauthenticated").build();
-        try{
+        try {
             body = mapper.writeValueAsString(apiResponse);
-        } catch(JsonProcessingException e){
+        } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
 

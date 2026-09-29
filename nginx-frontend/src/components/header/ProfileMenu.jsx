@@ -1,18 +1,26 @@
-import React from "react";
+import React, { useContext } from "react";
 import { Menu, MenuItem } from "@mui/material";
-import { logOut } from "../../services/authenticationService";
+import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../../context/AuthContext";
+import { logOut } from "../../features/auth/services/authenticationService";
 
 export default function ProfileMenu({ anchorEl, open, onClose }) {
+  const navigate = useNavigate();
+  const { logout } = useContext(AuthContext);
 
   const handleLogout = () => {
     onClose();
-    logOut();
-    window.location.href = "/login";
+    if (typeof logout === "function") {
+      logout();
+    } else {
+      logOut();
+    }
+    navigate("/login");
   };
 
   const handleOpenProfile = () => {
     onClose();
-    window.location.href = "/profile";
+    navigate("/profile");
   };
 
   return (

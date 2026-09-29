@@ -1,0 +1,33 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /relation
+spring:
+  application:
+    name: relation-service
+  data:
+    mongodb:
+      uri: ${MONGO_URI_RELATION_SERVICE:mongodb://root:root@my-mongo:27017/relation-service?authSource=admin}
+      auto-index-creation: true
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
+    consumer:
+      group-id: relation-service-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+app:
+  services:
+    profile:
+      url: ${PROFILE_SERVICE_URL:http://profile-service:8080/profile}
+jwt:
+  signerKey: ${JWT_SIGNER_KEY:REDACTED_SIGNER_KEY}
+  valid-duration: 3600 #seconds
+  refresh-duration: 36000  #seconds
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html

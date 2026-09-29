@@ -14,6 +14,5 @@ public interface UserProfileRespository extends Neo4jRepository<UserProfile, Str
     Optional<UserProfile> findByUserId(String userId);
     Optional<UserProfile> findByUsername(String username);
     List<UserProfile> findAllByUsernameLike(String username);
-
-    List<UserProfile> findTop20ByCity(String city);
+    List<UserProfile> findTop20ByCurrentCity(String city);
 }

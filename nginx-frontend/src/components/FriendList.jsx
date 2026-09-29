@@ -1,194 +1,62 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React from "react";
 import RefreshIcon from "@mui/icons-material/Refresh";
-
 import Divider from "@mui/material/Divider";
 import List from "@mui/material/List";
-import ListItem from "@mui/material/ListItem";
-import ListItemButton from "@mui/material/ListItemButton";
-import ListItemText from "@mui/material/ListItemText";
-import { useChat } from "../providers/ChatProvider";
-
-import {
-  Box,
-  Typography,
-  IconButton,
-  Avatar,
-  Badge,
-  CircularProgress,
-  Alert,
-} from "@mui/material";
-
-import {
-  getMessages,
-  createConversation,
-  createMessage,
-} from "../services/chatService";
+import { Box, Typography, IconButton, CircularProgress, Alert } from "@mui/material";
 
 import ChatBox from "./ChatBox";
+import MinimizedChatList from "./MinimizedChatList";
+import { FriendListItem } from "./FriendListItem";
+import { useFriendChat } from "../features/chat/hooks/useFriendChat";
+import { PresenceProvider } from "../providers/PresenceProvider";
+import { getCurrentUserId } from "../features/auth/services/authenticationService";
 
 export default function FriendList() {
   const {
-    conversations,
-    setConversations,
-    messagesMap,
-    setMessagesMap,
+    contacts,
+    loading,
+    error,
+    loadingMore,
+    lastElementRef,
+    openedChats,
+    minimizedChats,
     loadConversations,
-  } = useChat();
+    openChatBox,
+    closeChatBox,
+    handleMinimize,
+    handleRestoreChat,
+  } = useFriendChat();
 
-  const socketRef = useRef(null);
+  const currentUserId = getCurrentUserId();
 
-  const [selectedConversation, setSelectedConversation] = useState(null);
-
-  const [openedChats, setOpenedChats] = useState([]);
-  const [minimizedChats, setMinimizedChats] = useState([]);
-
-  const [message, setMessage] = useState("");
-
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  // =========================
-  // LocalStorage restore
-  // =========================
-
-  useEffect(() => {
-    const storedChats = localStorage.getItem("openedChats");
-    const minimizeChats = localStorage.getItem("minimizeChats");
-
-    if (storedChats) {
-      setOpenedChats(JSON.parse(storedChats));
-    }
-
-    if (minimizeChats) {
-      setMinimizedChats(JSON.parse(minimizeChats));
-    }
-  }, []);
-
-  // =========================
-  // Open chat box
-  // =========================
-
-  const openChatBox = (conversation) => {
-    setOpenedChats((prev) => {
-      const exists = prev.find((c) => c.id === conversation.id);
-      if (exists) return prev;
-
-      const newChats = [...prev, conversation];
-
-      localStorage.setItem("openedChats", JSON.stringify(newChats));
-
-      return newChats;
-    });
-
-    setMinimizedChats((prev) =>
-      prev.filter((c) => c.id !== conversation.id)
-    );
-
-    setConversations((prev) =>
-      prev.map((c) =>
-        c.id === conversation.id ? { ...c, unread: 0 } : c
-      )
-    );
-  };
-
-  // =========================
-  // Close chat
-  // =========================
-
-  const closeChatBox = (id) => {
-    setOpenedChats((prev) => {
-      const newChats = prev.filter((c) => c.id !== id);
-
-      localStorage.setItem("openedChats", JSON.stringify(newChats));
-
-      return newChats;
-    });
-  };
-
-  // =========================
-  // Minimize
-  // =========================
-
-  const handleMinimize = (chat) => {
-    setOpenedChats((prev) =>
-      prev.filter((c) => c.id !== chat.id)
-    );
-
-    setMinimizedChats((prev) => {
-      const exists = prev.find((c) => c.id === chat.id);
-      if (exists) return prev;
-
-      const newChats = [...prev, chat];
-
-      localStorage.setItem("minimizeChats", JSON.stringify(newChats));
-
-      return newChats;
-    });
-  };
-
-  // =========================
-  // Restore minimized
-  // =========================
-
-  const handleRestoreChat = (chat) => {
-    setMinimizedChats((prev) =>
-      prev.filter((c) => c.id !== chat.id)
-    );
-
-    setOpenedChats((prev) => {
-      const exists = prev.find((c) => c.id === chat.id);
-      if (exists) return prev;
-
-      const newChats = [...prev, chat];
-
-      localStorage.setItem("openedChats", JSON.stringify(newChats));
-
-      return newChats;
-    });
-  };
-
-  // =========================
-  // Fetch messages
-  // =========================
-
-  useEffect(() => {
-    const fetchMessages = async (conversationId) => {
-      if (messagesMap[conversationId]) return;
-
-      try {
-        const res = await getMessages(conversationId);
-
-        const msgs = res?.data?.result || [];
-
-        const sorted = msgs.sort(
-          (a, b) => new Date(a.createdDate) - new Date(b.createdDate)
+  const userIds = React.useMemo(() => {
+    if (!contacts) return [];
+    return contacts
+      .map((contact) => {
+        const target = contact.participants?.find(
+          (participant) => String(participant.userId) !== String(currentUserId)
         );
-
-        setMessagesMap((prev) => ({
-          ...prev,
-          [conversationId]: sorted,
-        }));
-      } catch (err) {
-        console.error(err);
-      }
-    };
-
-    if (selectedConversation?.id) {
-      fetchMessages(selectedConversation.id);
-    }
-  }, [selectedConversation]);
-
-  // =========================
-  // UI
-  // =========================
+        return target?.userId || contact.userId || contact.friendId || null;
+      })
+      .filter(Boolean);
+  }, [contacts, currentUserId]);
 
   return (
-    <>
-      {/* Đã xóa thẻ <Toolbar /> ở đây để tránh bị đẩy xuống quá sâu */}
-      <List sx={{ pt: 2, width: "100%" }}>
-        <Typography sx={{ pl: 2, fontWeight: "bold", color: "text.secondary" }}>
-          Contacts
-        </Typography>
+    <PresenceProvider userIds={userIds}>
+      <Box sx={{ pt: 2, pb: 1, width: "100%" }}>
+        <Box sx={{ px: 2, pb: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Typography
+            sx={{
+              fontWeight: 700,
+              color: "text.secondary",
+              letterSpacing: 0.5,
+              textTransform: "uppercase",
+              fontSize: "0.8rem",
+            }}
+          >
+            Contacts
+          </Typography>
+        </Box>
 
         {loading ? (
           <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
@@ -199,7 +67,7 @@ export default function FriendList() {
             <Alert
               severity="error"
               action={
-                <IconButton onClick={loadConversations}>
+                <IconButton onClick={loadConversations} aria-label="retry">
                   <RefreshIcon />
                 </IconButton>
               }
@@ -207,43 +75,35 @@ export default function FriendList() {
               {error}
             </Alert>
           </Box>
-        ) : conversations?.length === 0 ? (
-          <Box sx={{ p: 2 }}>
-            <Typography color="text.secondary">No conversations yet</Typography>
+        ) : !contacts || contacts.length === 0 ? (
+          <Box sx={{ px: 2, py: 2.5, textAlign: "center" }}>
+            <Typography variant="body2" color="text.secondary">
+              No contacts yet
+            </Typography>
           </Box>
         ) : (
-          <List sx={{ width: "100%" }}>
-            {conversations.map((conversation) => (
-              <ListItem key={conversation.id} disablePadding>
-                <ListItemButton onClick={() => openChatBox(conversation)}>
-                  <Badge
-                    color="error"
-                    badgeContent={conversation.unread}
-                    invisible={conversation.unread === 0}
-                  >
-                    <Avatar src={conversation.conversationAvatar} />
-                  </Badge>
+          <List sx={{ width: "100%", p: 0 }}>
+            {contacts.map((contact, index) => {
+              const isLast = index === contacts.length - 1;
+              return (
+                <FriendListItem
+                  key={contact.id}
+                  conversation={contact}
+                  onClick={() => openChatBox(contact)}
+                  lastElementRef={isLast ? lastElementRef : null}
+                />
+              );
+            })}
 
-                  <ListItemText
-                    primary={conversation.conversationName}
-                    secondary={
-                      messagesMap[conversation.id]?.length
-                        ? messagesMap[conversation.id].slice(-1)[0].message
-                        : "No messages"
-                    }
-                    primaryTypographyProps={{ pl: 3, fontSize: 14 }}
-                    secondaryTypographyProps={{ pl: 3, fontSize: 12 }}
-                  />
-                </ListItemButton>
-              </ListItem>
-            ))}
+            {loadingMore && (
+              <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}>
+                <CircularProgress size={20} />
+              </Box>
+            )}
           </List>
         )}
-      </List>
+      </Box>
 
-      <Divider />
-
-      {/* CHAT BOX */}
       <Box
         sx={{
           position: "fixed",
@@ -257,46 +117,30 @@ export default function FriendList() {
         }}
       >
         {openedChats.map((chat, index) => (
-          <ChatBox
+          <Box
             key={chat.id}
-            conversation={chat}
-            onClose={() => closeChatBox(chat.id)}
-            onMinimize={() => handleMinimize(chat)}
             sx={{
               position: "fixed",
               bottom: 70,
               right: 20 + index * 340,
               width: 320,
+              zIndex: 1300,
             }}
-          />
+          >
+            <ChatBox
+              conversation={chat}
+              onClose={() => closeChatBox(chat.id)}
+              onMinimize={() => handleMinimize(chat)}
+            />
+          </Box>
         ))}
       </Box>
 
-      {/* MINIMIZED */}
-      <Box
-        sx={{
-          position: "fixed",
-          bottom: 0,
-          right: 0,
-          display: "flex",
-          gap: 1,
-          p: 1,
-        }}
-      >
-        {minimizedChats.map((chat) => (
-          <Avatar
-            key={chat.id}
-            src={chat.conversationAvatar}
-            sx={{
-              width: 56,
-              height: 56,
-              cursor: "pointer",
-              border: "2px solid #1976d2",
-            }}
-            onClick={() => handleRestoreChat(chat)}
-          />
-        ))}
-      </Box>
-    </>
+      <MinimizedChatList
+        minimizedChats={minimizedChats}
+        onRestore={handleRestoreChat}
+        onClose={(id) => closeChatBox(id)}
+      />
+    </PresenceProvider>
   );
 }

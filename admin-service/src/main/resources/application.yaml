@@ -1,0 +1,43 @@
+server:
+  port: 8090
+  servlet:
+    context-path: /admin
+
+spring:
+  application:
+    name: admin-service
+  data:
+    mongodb:
+      uri: ${MONGO_URI_ADMIN_SERVICE:mongodb://root:root@localhost:27017/admin-service?authSource=admin}
+      username: ${MONGO_USERNAME:root}
+      password: ${MONGO_PASSWORD:root}
+  thymeleaf:
+    cache: false
+    prefix: classpath:/templates/
+    suffix: .html
+
+app:
+  services:
+    identity: ${IDENTITY_SERVICE_URL:http://localhost:8080/identity}
+    post: ${POST_SERVICE_URL:http://localhost:8083/post}
+  jwt:
+    cookie-name: ADMIN_TOKEN
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+feign:
+  httpclient:
+    hc5:
+      enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: always

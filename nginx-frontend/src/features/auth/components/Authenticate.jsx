@@ -1,1 +1,1 @@
-export { default } from "../../../components/header/Authenticate";
+export { default } from "../pages/Authenticate";

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ntt.chat_service.dto.repuest.ChatMessageRequest;
 import com.ntt.chat_service.dto.response.ChatMessageResponse;
 import com.ntt.chat_service.entity.ChatMessage;
+import com.ntt.chat_service.entity.Conversation;
 import com.ntt.chat_service.entity.ParticipantInfo;
 import com.ntt.chat_service.exception.AppException;
 import com.ntt.chat_service.exception.ErrorCode;
@@ -64,14 +65,62 @@ public class ChatMessageService {
         String userId = SecurityContextHolder.getContext().getAuthentication().getName();
         log.info("Creating chat message for user: {}", userId);
         log.info("request: {}", request);
-        var conversation = conversationRepository.findById(request.getConversationId())
-                .orElseThrow(() ->
-                        new AppException(ErrorCode.CONVERSATION_NOT_FOUND));
+
+        Conversation conversation = null;
+
+        if (request.getConversationId() != null && !request.getConversationId().trim().isEmpty()) {
+            conversation = conversationRepository.findById(request.getConversationId())
+                    .orElseThrow(() -> new AppException(ErrorCode.CONVERSATION_NOT_FOUND));
+        } else if (request.getRecipientId() != null && !request.getRecipientId().trim().isEmpty()) {
+            String recipientId = request.getRecipientId();
+
+            if (userId.equals(recipientId)) {
+                throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+            }
+
+            String participantsHash = generateParticipantsHash(userId, recipientId);
+
+            conversation = conversationRepository.findByParticipantsHash(participantsHash)
+                    .orElseGet(() -> {
+                        // Nếu chưa có -> Tự động tạo mới phòng chat 1-1 ngay tại đây
+                        log.info("Creating new direct conversation between {} and {}", userId, recipientId);
+
+                        var senderProfile = profileClient.getProfile(userId).getResult();
+                        var recipientProfile = profileClient.getProfile(recipientId).getResult();
+
+                        var newConversation = Conversation.builder()
+                                .participantsHash(participantsHash)
+                                .participants(List.of(
+                                        ParticipantInfo.builder()
+                                                .userId(senderProfile.getUserId())
+                                                .username(senderProfile.getUsername())
+                                                .firstname(senderProfile.getFirstname())
+                                                .lastname(senderProfile.getLastname())
+                                                .avatar(senderProfile.getAvatar())
+                                                .build(),
+                                        ParticipantInfo.builder()
+                                                .userId(recipientProfile.getUserId())
+                                                .username(recipientProfile.getUsername())
+                                                .firstname(recipientProfile.getFirstname())
+                                                .lastname(recipientProfile.getLastname())
+                                                .avatar(recipientProfile.getAvatar())
+                                                .build()
+                                ))
+                                .createdDate(Instant.now())
+                                .build();
+
+                        return conversationRepository.save(newConversation);
+                    });
+        } else {
+            throw new AppException(ErrorCode.CONVERSATION_NOT_FOUND);
+        }
+
         log.info("conversation: {}", conversation);
+
         conversation.getParticipants().stream()
                 .filter(participant -> userId.equals(participant.getUserId()))
                 .findAny().orElseThrow(() -> new AppException(ErrorCode.CONVERSATION_NOT_FOUND));
-        log.info("participants: {}", conversation);
+
         var userResponse = profileClient.getProfile(userId);
         log.info("userResponse: {}", userResponse);
         if (Objects.isNull(userResponse)) {
@@ -79,6 +128,8 @@ public class ChatMessageService {
         }
 
         var userInfo = userResponse.getResult();
+
+        request.setConversationId(conversation.getId());
 
         ChatMessage chatmessage = chatMessageMapper.toChatMessage(request);
         chatmessage.setSender(ParticipantInfo.builder()
@@ -91,13 +142,9 @@ public class ChatMessageService {
         chatmessage.setCreatedDate(Instant.now());
         chatmessage = repository.save(chatmessage);
 
-
-
         List<String> participantIds = conversation.getParticipants().stream()
                 .map(ParticipantInfo::getUserId)
                 .toList();
-
-
 
         ChatMessagePayload messagePayload = ChatMessagePayload.builder()
                 .id(chatmessage.getId())
@@ -119,28 +166,13 @@ public class ChatMessageService {
                 .build();
 
         kafkaTemplate.send("chat-topic", chatMessageEvent);
-//        Map<String, WebSocketSession> webSocketSessions =
-//                webSocketSessionRepository.findAllByUserIdIn(participantIds)
-//                        .stream()
-//                        .collect(Collectors.toMap(WebSocketSession::getSocketSessionId, Function.identity()));
-
-        ChatMessageResponse chatMessageResponse = chatMessageMapper.toChatMessageResponse(chatmessage);
-//        socketIOServer.getAllClients().forEach(client -> {
-//            var webSocketSessionIds = webSocketSessions.get(client.getSessionId().toString());
-//
-//            if (Objects.nonNull(webSocketSessionIds)) {
-//                String message = "";
-//                try {
-//                    chatMessageResponse.setMe(webSocketSessionIds.getUserId().equals(userId));
-//                    message = objectMapper.writeValueAsString(chatMessageResponse);
-//                    client.sendEvent("message", message);
-//                } catch (JsonProcessingException e) {
-//                    throw new RuntimeException(e);
-//                }
-//            }
-//        });
 
         return toChatMessageResponse(chatmessage);
+    }
+
+    private String generateParticipantsHash(String userId1, String userId2) {
+        List<String> sortedIds = List.of(userId1, userId2).stream().sorted().toList();
+        return String.join("-", sortedIds);
     }
 
     private ChatMessageResponse toChatMessageResponse(ChatMessage chatMessage) {

@@ -1,7 +1,6 @@
 package com.ntt.feed_service.repository.httpClient;
 
 import com.ntt.common_lib.dto.ApiResponse;
-//import com.ntt.feed_service.configuration.AuthenticationRequestInterceptor;
 import com.ntt.feed_service.configuration.AuthenticationRequestInterceptor;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;

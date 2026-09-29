@@ -13,6 +13,7 @@ public class SocketIOConfig {
         config.setPort(8999);
         config.setHostname("0.0.0.0");
         config.setOrigin("*");
+//        config.setContext("/ws");
         return new SocketIOServer(config);
     }
 }

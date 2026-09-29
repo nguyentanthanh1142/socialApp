@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title th:text="${pageTitle} + ' | Admin'">Users | Admin</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.3/css/bootstrap.min.css}"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
+    <link rel="stylesheet" th:href="@{/css/admin.css}"/>
+</head>
+<body>
+<div class="d-flex" id="wrapper">
+    <nav th:replace="~{fragments/sidebar :: sidebar}"></nav>
+    <div id="page-content" class="flex-grow-1">
+        <header th:replace="~{fragments/navbar :: navbar}"></header>
+        <main class="container-fluid p-4">
+            <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+                <span th:text="${success}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h2 class="h5 mb-0">User Management</h2>
+                    <span class="text-muted small"
+                          th:text="'Page ' + ${users.currentPage} + ' of ' + ${users.totalPages}"></span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light">
+                        <tr>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Status</th>
+                            <th>Verified</th>
+                            <th>Roles</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:if="${users == null or #lists.isEmpty(users.data)}">
+                            <td colspan="6" class="text-center text-muted py-4">No users found</td>
+                        </tr>
+                        <tr th:each="user : ${users.data}">
+                            <td>
+                                <div class="fw-semibold" th:text="${user.username}">user</div>
+                                <div class="small text-muted" th:text="${user.id}">id</div>
+                            </td>
+                            <td th:text="${user.email}">email</td>
+                            <td>
+                                <span th:if="${user.status == 'ACTIVE'}" class="badge text-bg-success">ACTIVE</span>
+                                <span th:if="${user.status == 'BANNED'}" class="badge text-bg-danger">BANNED</span>
+                                <span th:if="${user.status != 'ACTIVE' and user.status != 'BANNED'}"
+                                      class="badge text-bg-secondary" th:text="${user.status}">STATUS</span>
+                            </td>
+                            <td>
+                                <i th:if="${user.emailVerified}" class="bi bi-check-circle-fill text-success"></i>
+                                <i th:unless="${user.emailVerified}" class="bi bi-x-circle text-muted"></i>
+                            </td>
+                            <td>
+                                <span th:each="role : ${user.roles}" class="badge text-bg-light border me-1"
+                                      th:text="${role.name}">USER</span>
+                            </td>
+                            <td class="text-end">
+                                <form th:if="${user.status != 'BANNED'}"
+                                      th:action="@{/users/{id}/ban(id=${user.id})}" method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                                            onclick="return confirm('Ban this user?')">
+                                        <i class="bi bi-slash-circle"></i> Ban
+                                    </button>
+                                </form>
+                                <form th:if="${user.status == 'BANNED'}"
+                                      th:action="@{/users/{id}/unban(id=${user.id})}" method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-success"
+                                            onclick="return confirm('Unban this user?')">
+                                        <i class="bi bi-unlock"></i> Unban
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer bg-white" th:if="${users != null and users.totalPages > 1}">
+                    <nav>
+                        <ul class="pagination pagination-sm mb-0 justify-content-end">
+                            <li class="page-item" th:classappend="${currentPage <= 1} ? 'disabled'">
+                                <a class="page-link"
+                                   th:href="@{/users(page=${currentPage - 1}, size=${pageSize})}">Previous</a>
+                            </li>
+                            <li class="page-item"
+                                th:each="p : ${#numbers.sequence(1, users.totalPages)}"
+                                th:classappend="${p == currentPage} ? 'active'">
+                                <a class="page-link" th:href="@{/users(page=${p}, size=${pageSize})}" th:text="${p}">1</a>
+                            </li>
+                            <li class="page-item" th:classappend="${currentPage >= users.totalPages} ? 'disabled'">
+                                <a class="page-link"
+                                   th:href="@{/users(page=${currentPage + 1}, size=${pageSize})}">Next</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+<script th:src="@{/webjars/bootstrap/5.3.3/js/bootstrap.bundle.min.js}"></script>
+</body>
+</html>

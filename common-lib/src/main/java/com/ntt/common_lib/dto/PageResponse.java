@@ -17,6 +17,8 @@ public class PageResponse<T> {
     int pageSize;
     long totalElements;
 
+    boolean hasNext;
+
     @Builder.Default
     private List<T> data = Collections.emptyList();
 }

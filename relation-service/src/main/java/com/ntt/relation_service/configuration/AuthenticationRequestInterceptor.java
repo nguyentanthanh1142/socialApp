@@ -12,12 +12,14 @@ public class AuthenticationRequestInterceptor implements RequestInterceptor {
     @Override
     public void apply(RequestTemplate requestTemplate) {
         ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attributes == null) {
+            log.warn("[Feign Interceptor] Không tìm thấy RequestAttributes hiện tại (RequestContextHolder là null).");
+            return;
+        }
+
         var authHeader = attributes.getRequest().getHeader("Authorization");
-        log.info("authHeader: " + authHeader);
         if(StringUtils.hasText(authHeader)) {
             requestTemplate.header("Authorization", authHeader);
         }
-
-
     }
 }

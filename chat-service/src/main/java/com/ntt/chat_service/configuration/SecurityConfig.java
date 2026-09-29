@@ -21,7 +21,9 @@ public class SecurityConfig {
             "/v3/api-docs/**",
             "/swagger-ui/**",
             "/swagger-ui.html",
-            "/chat/v3/api-docs/**"
+            "/chat/v3/api-docs/**",
+            "/actuator/**",
+            "/chat/actuator/**"
     };
 
     private final CustomerJwtDecoder customerJwtDecoder;

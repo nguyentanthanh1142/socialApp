@@ -39,9 +39,21 @@ public class ConversationService {
         return conservations.stream().map(this::toConservationResponse).toList();
     }
 
-    public ConversationResponse createConservation(ConversationRequest request) {
+    public ConversationResponse getOrCreateConservation(ConversationRequest request) {
         String userId = SecurityContextHolder.getContext().getAuthentication().getName();
         log.info(userId);
+
+        if (request == null || request.getParticipantIds() == null || request.getParticipantIds().isEmpty()) {
+            throw new AppException(ErrorCode.INVALID_REQUEST);
+        }
+
+        // 2. Lấy phần tử đầu tiên một cách an toàn
+        String targetParticipantId = request.getParticipantIds().getFirst();
+        if (targetParticipantId == null || targetParticipantId.trim().isEmpty()) {
+            throw new AppException(ErrorCode.INVALID_REQUEST);
+        }
+
+        log.info("ParticipantId: {}", targetParticipantId);
         var userProfileResponse = profileClient.getProfile(userId);
         var participantInfoResponse = profileClient.getProfile(request.getParticipantIds().getFirst());
         log.info("ParticipantId" + request.getParticipantIds().getFirst());
@@ -92,6 +104,13 @@ public class ConversationService {
         return toConservationResponse(conversation);
 
     }
+
+    public ConversationResponse createConservation(ConversationRequest request) {
+        return getOrCreateConservation(request);
+    }
+
+
+
     private String generateConservationHash(List<String> userIds) {
 
         return String.join("-", userIds);

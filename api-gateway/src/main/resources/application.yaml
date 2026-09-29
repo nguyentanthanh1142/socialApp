@@ -74,10 +74,21 @@ spring:
             - Path=${app.api-prefix}/feed/**
           filters:
             - StripPrefix=2
-        - id: socket_service
+        - id: socket_io_service
+          uri: ws://localhost:8999
+          predicates:
+            - Path=/socket.io/**
+
+        - id: socket_service_api
           uri: http://localhost:8089
           predicates:
             - Path=${app.api-prefix}/ws/**
+          filters:
+            - StripPrefix=2
+        - id: admin_service
+          uri: http://localhost:8090
+          predicates:
+            - Path=${app.api-prefix}/admin/**
           filters:
             - StripPrefix=2
   webflux:
@@ -106,3 +117,14 @@ springdoc:
         url: /api/v1/feed/v3/api-docs
       - name: Socket Service
         url: /api/v1/ws/v3/api-docs
+      - name: Admin Service
+        url: /api/v1/admin/v3/api-docs
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: always

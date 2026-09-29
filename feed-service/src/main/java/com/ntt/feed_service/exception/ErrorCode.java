@@ -1,30 +1,31 @@
 package com.ntt.feed_service.exception;
 
-import lombok.Getter;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 
+import lombok.Getter;
+
 @Getter
 public enum ErrorCode {
-    INVALID_KEY("Invalid message", 10001, HttpStatus.INTERNAL_SERVER_ERROR),
-    UNCATEGORIZED_EXCEPTION("Uncategorized error", 999, HttpStatus.BAD_REQUEST),
-    USER_EXISTED("User existed", 1002, HttpStatus.BAD_REQUEST),
-    USERNAME_INVALID("Username must be at least {min} characters", 1003, HttpStatus.BAD_REQUEST),
-    PASSWORD_INVALID("Password must be at least {min} characters", 1004, HttpStatus.BAD_REQUEST),
-    USER_NOT_EXISTED("Username not existed", 1005, HttpStatus.NOT_FOUND),
-    UNAUTHENTICATED("Unauthenticated", 1006, HttpStatus.UNAUTHORIZED),
-    UNAUTHORIZED("You do not have permission", 1007, HttpStatus.FORBIDDEN),
-    CANNOT_SEND_EMAIL("Can not send email", 1007, HttpStatus.FORBIDDEN),
-    CONVERSATION_NOT_FOUND("Chat conversation not found", 1009, HttpStatus.NOT_FOUND),
-    INVALID_DOB("Your age must be at least {min}", 1008, HttpStatus.BAD_REQUEST);
+    UNCATEGORIZED_EXCEPTION(60000, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
+    INVALID_KEY(60001, "Invalid message key", HttpStatus.BAD_REQUEST),
+    INVALID_REQUEST(60002, "Invalid request data", HttpStatus.BAD_REQUEST),
 
-    ErrorCode(String message, int code, HttpStatusCode statusCode) {
-        this.message = message;
+    UNAUTHENTICATED(60100, "Unauthenticated", HttpStatus.UNAUTHORIZED),
+    UNAUTHORIZED(60200, "You do not have permission to perform this action", HttpStatus.FORBIDDEN),
+
+    POST_NOT_FOUND(60400, "Post not found", HttpStatus.NOT_FOUND),
+    COMMENT_NOT_FOUND(60401, "Comment not found", HttpStatus.NOT_FOUND),
+    USER_NOT_EXISTED(60402, "User does not exist", HttpStatus.NOT_FOUND),
+    ;
+
+    ErrorCode(int code, String message, HttpStatusCode statusCode) {
         this.code = code;
+        this.message = message;
         this.statusCode = statusCode;
     }
 
-    private int code;
-    private String message;
-    private HttpStatusCode statusCode;
+    private final int code;
+    private final String message;
+    private final HttpStatusCode statusCode;
 }

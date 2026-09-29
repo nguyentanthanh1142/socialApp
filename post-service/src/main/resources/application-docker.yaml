@@ -6,9 +6,32 @@ spring:
   application:
     name: post-service
   data:
+    redis:
+      host: ${REDIS_HOST:redis}
+      port: ${REDIS_PORT:6379}
     mongodb:
-      uri: ${MONGO_URI_POST_SERVICE:mongodb://root:root@localhost:27017/post-service?authSource=admin}
+      uri: ${MONGO_URI_POST_SERVICE:mongodb://root:root@my-mongo:27017/post-service?authSource=admin}
+      auto-index-creation: true
+kafka:
+  bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
+  producer:
+    key-serializer: org.apache.kafka.common.serialization.StringSerializer
+    value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+  consumer:
+    group-id: file-post-group
+    key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 200MB
 app:
   services:
     profile:
-      url: ${PROFILE_SERVICE_URL:http://localhost:8081/profile}
+      url: ${PROFILE_SERVICE_URL:http://profile-service:8080/profile}
+    file:
+      url: ${FILE_SERVICE_URL:http://file-service:8080/file}
+feign:
+  httpclient:
+    hc5:
+      enabled: true

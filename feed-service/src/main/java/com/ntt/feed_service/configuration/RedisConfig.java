@@ -74,8 +74,7 @@ public class RedisConfig {
         template.setConnectionFactory(connectionFactory);
 
         Jackson2JsonRedisSerializer<CachedPostDTO> serializer =
-                new Jackson2JsonRedisSerializer<>(CachedPostDTO.class);
-        serializer.setObjectMapper(objectMapper);
+                new Jackson2JsonRedisSerializer<>(objectMapper, CachedPostDTO.class);
 
         template.setKeySerializer(new StringRedisSerializer());
         template.setHashKeySerializer(new StringRedisSerializer());

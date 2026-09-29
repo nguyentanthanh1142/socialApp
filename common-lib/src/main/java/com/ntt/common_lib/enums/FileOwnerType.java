@@ -4,5 +4,6 @@ public enum FileOwnerType {
     AVATAR,
     POST,
     MESSAGE,
+    VIDEO,
     OTHER
 }

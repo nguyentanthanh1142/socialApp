@@ -1,6 +1,7 @@
 package com.ntt.profile_service.controller;
 
 import com.ntt.common_lib.dto.ApiResponse;
+import com.ntt.profile_service.dto.request.OnboardingRequest;
 import com.ntt.profile_service.dto.request.SearchUserRequest;
 import com.ntt.profile_service.dto.request.UpdateProfileRequest;
 import com.ntt.profile_service.dto.response.UserProfileResponse;
@@ -10,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestClient;
+import jakarta.validation.Valid;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -63,6 +65,13 @@ public class UserProfileController {
     ApiResponse<UserProfileResponse> getProfile(@PathVariable String username) {
         return ApiResponse.<UserProfileResponse>builder()
                 .result(userProfileService.getProfilesByUsername(username))
+                .build();
+    }
+
+    @PutMapping("/users/onboarding")
+    ApiResponse<UserProfileResponse> completeOnboarding(@Valid @RequestBody OnboardingRequest request) {
+        return ApiResponse.<UserProfileResponse>builder()
+                .result(userProfileService.completeOnboarding(request))
                 .build();
     }
 }

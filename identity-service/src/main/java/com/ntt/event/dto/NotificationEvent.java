@@ -11,7 +11,7 @@ import java.util.Map;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class NotificationEvent {
-    String chanel;
+    String channel;
     String recipient;
     String templateCode;
     Long templateId;

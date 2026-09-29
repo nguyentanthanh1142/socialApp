@@ -1,38 +1,33 @@
+// src/components/header/Header.jsx
 import * as React from "react";
-
-import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
-import Toolbar from "@mui/material/Toolbar";
 import IconButton from "@mui/material/IconButton";
-
 import Badge from "@mui/material/Badge";
-import MenuItem from "@mui/material/MenuItem";
-import Menu from "@mui/material/Menu";
-
 import AccountCircle from "@mui/icons-material/AccountCircle";
+import Avatar from "@mui/material/Avatar";
 import MailIcon from "@mui/icons-material/Mail";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import MoreIcon from "@mui/icons-material/MoreVert";
-import { logOut } from "../../services/authenticationService";
-import NotificationMenu from "../../components/notifications/NotificationMenu";
+import LightModeIcon from "@mui/icons-material/LightMode";
+import DarkModeIcon from "@mui/icons-material/DarkMode";
+import Tooltip from "@mui/material/Tooltip";
+
+import NotificationMenu from "../../features/notifications/components/NotificationMenu";
+import MessageMenu from "../../features/chat/components/MessageMenu";
 import SearchBar from "./SearchBar";
 import ProfileMenu from "./ProfileMenu";
 import MobileMenu from "./MobileMenu";
-
-
-
-
-
+import { useUser } from "../../providers/UserProvider";
+import { useColorMode } from "../../context/ColorModeContext";
 
 export default function Header() {
   const [profileAnchor, setProfileAnchor] = React.useState(null);
   const [mobileMoreAnchorEl, setMobileMoreAnchorEl] = React.useState(null);
   const [notificationAnchorEl, setNotificationAnchorEl] = React.useState(null);
-  
-  // const isNotificationOpen = Boolean(notificationAnchorEl);
-  // const isMenuOpen = Boolean(profileAnchor);
-  // const isMobileMenuOpen = Boolean(mobileMoreAnchorEl);
+  const [messageAnchorEl, setMessageAnchorEl] = React.useState(null);
 
+  const { currentUser } = useUser();
+  const { mode, toggleColorMode } = useColorMode();
 
   const handleNotificationOpen = (event) => {
     setNotificationAnchorEl(event.currentTarget);
@@ -42,13 +37,16 @@ export default function Header() {
     setNotificationAnchorEl(null);
   };
 
-  const handleProfileMenuOpen = (event) => {
-    setProfileAnchor(event.currentTarget);
+  const handleMessageOpen = (event) => {
+    setMessageAnchorEl(event.currentTarget);
   };
 
-  const handleProfileMenuMenuClose = () => {
-    setProfileAnchor(null);
-    handleMobileMenuClose();
+  const handleMessageClose = () => {
+    setMessageAnchorEl(null);
+  };
+
+  const handleProfileMenuOpen = (event) => {
+    setProfileAnchor(event.currentTarget);
   };
 
   const handleMobileMenuOpen = (event) => {
@@ -59,169 +57,91 @@ export default function Header() {
     setMobileMoreAnchorEl(null);
   };
 
-
-  // const menuId = "primary-search-account-menu";
-  // const mobileMenuId = "primary-search-account-menu-mobile";    
-
-  
-
-  // <NotificationMenu
-  //   anchorEl={notificationAnchorEl}
-  //   open={isNotificationOpen}
-  //   onClose={handleNotificationClose}
-  // />
-  // const notifications = [
-  //   { id: 1, text: "Nguyễn Văn A đã thích bài viết của bạn", time: "2 phút trước" },
-  //   { id: 2, text: "Trần Thị B đã bình luận: 'Tuyệt vời!'", time: "5 phút trước" },
-  //   { id: 3, text: "Bạn có 3 lời mời kết bạn mới", time: "10 phút trước" },
-  //   { id: 4, text: "Hệ thống: Tính năng mới đã được cập nhật!", time: "1 giờ trước" },
-  // ];
-  // const renderNotificationMenu = (
-  //   <Menu
-  //     anchorEl={notificationAnchorEl}
-  //     open={isNotificationOpen}
-  //     onClose={handleNotificationClose}
-  //     PaperProps={{
-  //       elevation: 3,
-  //       sx: {
-  //         mt: 1.5,
-  //         minWidth: 320,
-  //         maxHeight: 400,
-  //         overflowY: "auto",
-  //         "&::-webkit-scrollbar": { width: "6px" },
-  //         "&::-webkit-scrollbar-thumb": {
-  //           backgroundColor: "#ccc",
-  //           borderRadius: "3px",
-  //         },
-  //       },
-  //     }}
-  //     anchorOrigin={{
-  //       vertical: "bottom",
-  //       horizontal: "right",
-  //     }}
-  //     transformOrigin={{
-  //       vertical: "top",
-  //       horizontal: "right",
-  //     }}
-  //   >
-  //     <Box sx={{ px: 2, py: 1 }}>
-  //       <strong>Notifications</strong>
-  //     </Box>
-  //     {notifications.length === 0 ? (
-  //       <MenuItem disabled>Không có thông báo nào</MenuItem>
-  //     ) : (
-  //       notifications.map((noti) => (
-  //         <MenuItem
-  //           key={noti.id}
-  //           onClick={handleNotificationClose}
-  //           sx={{
-  //             whiteSpace: "normal",
-  //             alignItems: "flex-start",
-  //             flexDirection: "column",
-  //             py: 1,
-  //             "&:hover": { backgroundColor: "rgba(0,0,0,0.05)" },
-  //           }}
-  //         >
-  //           <Box sx={{ fontSize: 14 }}>{noti.text}</Box>
-  //           <Box sx={{ fontSize: 12, color: "gray" }}>{noti.time}</Box>
-  //         </MenuItem>
-  //       ))
-  //     )}
-  //     <Box
-  //       sx={{
-  //         textAlign: "center",
-  //         py: 1,
-  //         borderTop: "1px solid #eee",
-  //         cursor: "pointer",
-  //         "&:hover": { backgroundColor: "rgba(0,0,0,0.04)" },
-  //       }}
-  //       onClick={() => {
-  //         handleNotificationClose();
-  //         window.location.href = "/notifications";
-  //       }}
-  //     >
-  //       See previous notifications
-  //     </Box>
-  //   </Menu>
-  // );
   return (
-    <Box sx={{ flexGrow: 1 }}>
-      <AppBar position="fixed">
-        <Toolbar>
+    <Box sx={{ flexGrow: 1, display: "flex", alignItems: "center" }}>
+      <IconButton size="large" edge="start" color="inherit" aria-label="logo" sx={{ mr: 1 }}>
+        <Box
+          component="img"
+          sx={{ width: 35, height: 35, borderRadius: 1 }}
+          src="/logo/social-logo.png"
+          alt="logo"
+        />
+      </IconButton>
+      <SearchBar />
+      <Box sx={{ flexGrow: 1 }} />
+
+      {/* ── Desktop action buttons ─────────────────────────────────────── */}
+      <Box sx={{ display: { xs: "none", md: "flex" }, alignItems: "center" }}>
+        {/* Dark / Light mode toggle */}
+        <Tooltip title={mode === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}>
           <IconButton
+            id="header-theme-toggle"
             size="large"
-            edge="start"
+            aria-label="toggle colour mode"
             color="inherit"
-            aria-label="open drawer"
-            sx={{ mr: 2 }}
+            onClick={toggleColorMode}
           >
-            <Box
-              component={"img"}
-              style={{
-                width: "35px",
-                height: "35px",
-                borderRadius: 6,
-              }}
-              src="/logo/social-logo.png"
-            ></Box>
+            {mode === "dark" ? (
+              <LightModeIcon sx={{ color: "#f5a623" }} />
+            ) : (
+              <DarkModeIcon sx={{ color: "#7986cb" }} />
+            )}
           </IconButton>
-          <SearchBar />
-          {/* <Search>
-            <SearchIconWrapper>
-              <SearchIcon />
-            </SearchIconWrapper>
-            <StyledInputBase
-              placeholder="Search…"
-              inputProps={{ "aria-label": "search" }}
+        </Tooltip>
+
+        <IconButton size="large" aria-label="messages" color="inherit" onClick={handleMessageOpen}>
+          <Badge color="error">
+            <MailIcon />
+          </Badge>
+        </IconButton>
+        <IconButton
+          size="large"
+          aria-label="notifications"
+          color="inherit"
+          onClick={handleNotificationOpen}
+        >
+          <Badge color="error">
+            <NotificationsIcon />
+          </Badge>
+        </IconButton>
+        <IconButton
+          size="small"
+          edge="end"
+          aria-label="account"
+          aria-haspopup="true"
+          onClick={handleProfileMenuOpen}
+          color="inherit"
+          sx={{ ml: 1 }}
+        >
+          {currentUser?.avatarUrl || currentUser?.avatar ? (
+            <Avatar
+              src={currentUser.avatarUrl || currentUser.avatar}
+              alt={currentUser.name}
+              sx={{ width: 34, height: 34 }}
             />
-          </Search> */}
-          <Box sx={{ flexGrow: 1 }} />
-          <Box sx={{ display: { xs: "none", md: "flex" } }}>
-            <IconButton
-              size="large"
-              aria-label="show 4 new mails"
-              color="inherit"
-            >
-              <Badge badgeContent={4} color="error">
-                <MailIcon />
-              </Badge>
-            </IconButton>
-            <IconButton
-              size="large"
-              aria-label="show 17 new notifications"
-              color="inherit"
-              onClick={handleNotificationOpen}
-            >
-              <Badge badgeContent={17} color="error">
-                <NotificationsIcon />
-              </Badge>
-            </IconButton>
-            <IconButton
-              size="large"
-              edge="end"
-              aria-label="account of current user"
-              // aria-controls={menuId}
-              aria-haspopup="true"
-              onClick={handleProfileMenuOpen}
-              color="inherit"
-            >
-              <AccountCircle />
-            </IconButton>
-          </Box>
-          <Box sx={{ display: { xs: "flex", md: "none" } }}>
-            <IconButton
-              size="large"
-              aria-label="show more"
-              // aria-controls={mobileMenuId}
-              aria-haspopup="true"
-              onClick={handleMobileMenuOpen}
-              color="inherit"
-            >
-              <MoreIcon />
-            </IconButton>
-          </Box>
-        </Toolbar>
-      </AppBar>
+          ) : currentUser?.name ? (
+            <Avatar sx={{ width: 34, height: 34, bgcolor: "secondary.main", fontSize: 14 }}>
+              {currentUser.name[0]}
+            </Avatar>
+          ) : (
+            <AccountCircle sx={{ fontSize: 32 }} />
+          )}
+        </IconButton>
+      </Box>
+
+      {/* ── Mobile "more" button ───────────────────────────────────────── */}
+      <Box sx={{ display: { xs: "flex", md: "none" } }}>
+        <IconButton
+          size="large"
+          aria-label="more"
+          aria-haspopup="true"
+          onClick={handleMobileMenuOpen}
+          color="inherit"
+        >
+          <MoreIcon />
+        </IconButton>
+      </Box>
+
       <MobileMenu
         anchorEl={mobileMoreAnchorEl}
         open={Boolean(mobileMoreAnchorEl)}
@@ -234,11 +154,15 @@ export default function Header() {
         open={Boolean(profileAnchor)}
         onClose={() => setProfileAnchor(null)}
       />
-      {/* {renderNotificationMenu} */}
       <NotificationMenu
         anchorEl={notificationAnchorEl}
         open={Boolean(notificationAnchorEl)}
         onClose={handleNotificationClose}
+      />
+      <MessageMenu
+        anchorEl={messageAnchorEl}
+        open={Boolean(messageAnchorEl)}
+        onClose={handleMessageClose}
       />
     </Box>
   );

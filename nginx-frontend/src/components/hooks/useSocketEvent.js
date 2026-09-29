@@ -1,16 +1,23 @@
-import { useEffect } from "react";
-import { useSocket } from "../../providers/";
+import { useEffect, useRef } from "react";
+import { useSocket } from "../../providers/SocketProvider";
 
-export default function useSocketEvent(event, handler) {
-    const {socket} = useSocket();
+export default function useSocketEvent(eventName, handler) {
+  const { subscribe } = useSocket();
+  const handlerRef = useRef(handler);
 
-    useEffect(() => {
-    if (!socket || !eventName || !handler) return;
+  useEffect(() => {
+    handlerRef.current = handler;
+  }, [handler]);
 
-    socket.on(eventName, handler);
+  useEffect(() => {
+    if (!eventName) return undefined;
+
+    const unsubscribe = subscribe(eventName, (payload) => {
+      handlerRef.current?.(payload);
+    });
 
     return () => {
-      socket.off(eventName, handler);
+      if (typeof unsubscribe === "function") unsubscribe();
     };
-  }, [socket, eventName, handler]);
+  }, [eventName, subscribe]);
 }
