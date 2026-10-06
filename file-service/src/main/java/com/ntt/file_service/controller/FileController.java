@@ -59,4 +59,11 @@ public class FileController {
                 .message("File deleted successfully")
                 .build();
     }
+    @GetMapping("/media/{referenceId}")
+    ApiResponse<List<FileResponse>> getFilesByReferenceId(@PathVariable("referenceId") String referenceId,
+                                                          @RequestParam(required = false) FileOwnerType type) {
+        return ApiResponse.<List<FileResponse>>builder()
+                .result(fileService.getFilesByReference(referenceId, type))
+                .build();
+    }
 }

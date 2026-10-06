@@ -1,6 +1,7 @@
 import React from "react";
 import { ListItem, ListItemButton, ListItemText, Avatar, Badge, styled } from "@mui/material";
 import { useFriendPresence } from "../features/chat/hooks/useFriendPresence";
+import { getAvatarUrl } from "../utils/avatarUtils";
 
 const StyledBadge = styled(Badge)(({ theme }) => ({
   "& .MuiBadge-badge": {
@@ -38,7 +39,7 @@ export const FriendListItem = ({ conversation, onClick, lastElementRef }) => {
             anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
             variant="dot"
           >
-            <Avatar src={conversation.conversationAvatar} />
+            <Avatar src={getAvatarUrl(conversation.conversationAvatar, conversation.gender)} />
           </StyledBadge>
         ) : (
           <Badge
@@ -46,7 +47,7 @@ export const FriendListItem = ({ conversation, onClick, lastElementRef }) => {
             badgeContent={conversation.unread}
             invisible={conversation.unread === 0}
           >
-            <Avatar src={conversation.conversationAvatar} />
+            <Avatar src={getAvatarUrl(conversation.conversationAvatar, conversation.gender)} />
           </Badge>
         )}
 

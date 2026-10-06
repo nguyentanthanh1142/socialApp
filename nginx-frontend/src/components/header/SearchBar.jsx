@@ -18,6 +18,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import ClearIcon from "@mui/icons-material/Clear";
 import { useNavigate } from "react-router-dom";
 import { search } from "../../features/profile/services/userService";
+import { getAvatarUrl } from "../../utils/avatarUtils";
 
 const SearchContainer = styled("div")(({ theme }) => ({
   position: "relative",
@@ -189,7 +190,7 @@ export default function SearchBar() {
                     [user.firstname, user.lastname].filter(Boolean).join(" ").trim() ||
                     user.name ||
                     user.username;
-                  const avatarSrc = user.avatarUrl || user.avatar || "";
+                  const avatarSrc = getAvatarUrl(user.avatarUrl || user.avatar, user.gender);
 
                   return (
                     <ListItem
@@ -208,7 +209,7 @@ export default function SearchBar() {
                     >
                       <ListItemAvatar>
                         <Avatar src={avatarSrc} alt={fullName}>
-                          {fullName?.[0]}
+                          {!user.avatarUrl && !user.avatar && !user.gender && fullName?.[0]}
                         </Avatar>
                       </ListItemAvatar>
                       <ListItemText

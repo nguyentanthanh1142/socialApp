@@ -25,4 +25,5 @@ public class FileManagement {
     String md5Checksum;
     String path;
     String url;
+    String originalName;
 }

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Box, Avatar, Badge, IconButton, styled } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
+import { getAvatarUrl } from "../utils/avatarUtils";
 
 const StyledBadge = styled(Badge)(({ theme }) => ({
   "& .MuiBadge-badge": {
@@ -77,13 +78,13 @@ export default function MinimizedChatList({
                   variant="dot"
                 >
                   <Avatar
-                    src={chat.conversationAvatar}
+                    src={getAvatarUrl(chat.conversationAvatar, chat.gender)}
                     sx={{ width: 44, height: 44, border: "2px solid #1976d2" }}
                   />
                 </StyledBadge>
               ) : (
                 <Avatar
-                  src={chat.conversationAvatar}
+                  src={getAvatarUrl(chat.conversationAvatar, chat.gender)}
                   sx={{ width: 44, height: 44, border: "2px solid #1976d2" }}
                 />
               )}

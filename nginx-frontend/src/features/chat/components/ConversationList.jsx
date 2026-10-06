@@ -17,6 +17,10 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import NewChatPopover from "./NewChatPopover";
+import { getAvatarUrl } from "../../../utils/avatarUtils";
+import { formatLocaleDate } from "../../../utils/dateUtils";
+import EmptyState from "../../../components/EmptyState";
+import ChatBubbleOutlineOutlinedIcon from "@mui/icons-material/ChatBubbleOutlineOutlined";
 
 export default function ConversationList({
   conversations,
@@ -91,11 +95,13 @@ export default function ConversationList({
             </Alert>
           </Box>
         ) : !conversations || conversations.length === 0 ? (
-          <Box sx={{ p: 2, textAlign: "center" }}>
-            <Typography color="text.secondary">
-              No conversations yet. Start a new chat to begin.
-            </Typography>
-          </Box>
+          <EmptyState
+            icon={ChatBubbleOutlineOutlinedIcon}
+            title="No conversations yet"
+            description="Pick someone to message or start a new chat from the button above."
+            primaryLabel="New chat"
+            primaryOnClick={onNewChatClick}
+          />
         ) : (
           <List sx={{ width: "100%" }}>
             {conversations.map((conversation) => (
@@ -119,7 +125,7 @@ export default function ConversationList({
                       invisible={conversation.unread === 0}
                       overlap="circular"
                     >
-                      <Avatar src={conversation.conversationAvatar || ""} />
+                      <Avatar src={getAvatarUrl(conversation.conversationAvatar, conversation.gender)} />
                     </Badge>
                   </ListItemAvatar>
                   <ListItemText
@@ -145,14 +151,15 @@ export default function ConversationList({
                           color="text.secondary"
                           sx={{ display: "inline", fontSize: "0.7rem" }}
                         >
-                          {new Date(conversation.modifiedDate).toLocaleDateString(
-                            "en-US",
+                          {formatLocaleDate(
+                            conversation.modifiedDate,
                             {
                               year: "numeric",
                               month: "short",
                               day: "numeric",
-                            }
-                          )}
+                            },
+                            ""
+                          ) || "—"}
                         </Typography>
                       </Stack>
                     }

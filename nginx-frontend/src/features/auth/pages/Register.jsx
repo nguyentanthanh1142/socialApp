@@ -9,11 +9,9 @@ export default function Register() {
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [city, setCity] = useState("");
-  const [firstname, setFirstName] = useState("");
-  const [lastname, setLastName] = useState("");
   const [email, setEmail] = useState("");
-  const [birthday, setBirthDay] = useState("");
+  const [loading, setLoading] = useState(false);
+
   const [snackBarOpen, setSnackBarOpen] = useState(false);
   const [snackBarMessage, setSnackBarMessage] = useState("");
   const [snackBarSeverity, setSnackBarSeverity] = useState("success");
@@ -32,16 +30,10 @@ export default function Register() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    setLoading(true);
     try {
-      const response = await register(
-        username,
-        password,
-        firstname,
-        lastname,
-        city,
-        email,
-        birthday
-      );
+      // Chỉ gửi các trường cần thiết, các thông tin khác sẽ bổ sung ở Onboarding
+      const response = await register(username, password, "", "", "", email, "");
       if (response.status === 201 || response.status === 200) {
         setSnackBarMessage("Registration successful");
         setSnackBarSeverity("success");
@@ -60,6 +52,8 @@ export default function Register() {
       setSnackBarMessage(errorResponse?.message || "Registration failed");
       setSnackBarSeverity("error");
       setSnackBarOpen(true);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -69,21 +63,14 @@ export default function Register() {
       setUsername={setUsername}
       password={password}
       setPassword={setPassword}
-      city={city}
-      setCity={setCity}
-      firstname={firstname}
-      setFirstName={setFirstName}
-      lastname={lastname}
-      setLastName={setLastName}
       email={email}
       setEmail={setEmail}
-      birthday={birthday}
-      setBirthDay={setBirthDay}
       snackBarOpen={snackBarOpen}
       snackBarMessage={snackBarMessage}
       snackBarSeverity={snackBarSeverity}
       handleCloseSnackBar={handleCloseSnackBar}
       handleSubmit={handleSubmit}
+      loading={loading}
     />
   );
 }

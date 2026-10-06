@@ -17,7 +17,6 @@ export default function Chat() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // 🚀 Lấy toàn bộ state và hàm xử lý từ Global ChatProvider
   const {
     conversations,
     messagesMap,
@@ -99,7 +98,7 @@ export default function Chat() {
           onSelectConversation={setSelectedConversation}
           loading={loading}
           error={error}
-          onRefresh={() => {}} // Provider đã tự load sẵn lúc khởi động
+          onRefresh={() => { }}
           newChatAnchorEl={newChatAnchorEl}
           onNewChatClick={handleNewChatClick}
           onCloseNewChat={handleCloseNewChat}

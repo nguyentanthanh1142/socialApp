@@ -59,17 +59,14 @@ export const logOut = () => {
 
 export const isAuthenticated = () => isTokenValid();
 
-/** Kiểm tra cờ first-login lưu tại LocalStorage */
 export const isFirstLoginFromStorage = () => getFirstLogin();
 
-/** Dọn dẹp cờ sau khi hoàn tất Onboarding */
 export const clearFirstLoginFlag = () => removeFirstLogin();
 
-/** Gọi API /identity/auth/check-auth tới Backend */
 export const checkAuthApi = async () => {
   const response = await httpClient.get(API.CHECK_AUTH);
-  return response.data; // Trả về { code: 1000, result: { authenticated, isFirstLogin, user } }
-};
+  return response.data;
+}
 
 export const getCurrentUserId = () => {
   const token = getToken();

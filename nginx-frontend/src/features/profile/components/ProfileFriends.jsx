@@ -2,6 +2,7 @@ import React from "react";
 import { Grid, Card, CardContent, Avatar, Typography, Box } from "@mui/material";
 import PeopleIcon from "@mui/icons-material/People";
 import { Link } from "react-router-dom";
+import { getAvatarUrl } from "../../../utils/avatarUtils";
 
 export default function ProfileFriends({ user }) {
   const friends = user?.friends || [];
@@ -40,8 +41,8 @@ export default function ProfileFriends({ user }) {
               }}
             >
               <CardContent sx={{ textAlign: "center" }}>
-                <Avatar src={f.avatarUrl || f.avatar || ""} sx={{ width: 80, height: 80, mx: "auto" }}>
-                  {name?.[0]}
+                <Avatar src={getAvatarUrl(f.avatarUrl || f.avatar, f.gender)} sx={{ width: 80, height: 80, mx: "auto" }}>
+                  {!f.avatarUrl && !f.avatar && !f.gender && name?.[0]}
                 </Avatar>
                 <Typography fontWeight="bold" sx={{ mt: 1, color: "text.primary" }} noWrap>
                   {name}

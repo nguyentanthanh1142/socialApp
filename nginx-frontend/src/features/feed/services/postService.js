@@ -3,6 +3,9 @@ import { API } from "../../../configurations/configuration";
 import {
   createMockFeedPost,
   toggleMockPostLike,
+  deleteMockPost,
+  updateMockPost,
+  updateMockPostPrivacy,
 } from "../../../shared/mockData";
 
 const USE_MOCK = window._env_?.REACT_APP_USE_MOCK === "true";
@@ -16,6 +19,14 @@ const executeApi = async (operation, request, fallback) => {
     return await request();
   } catch (error) {
     console.warn(`[postService] ${operation} failed`, error);
+    // If backend endpoint is not yet implemented or fails, use fallback if available
+    if (fallback) {
+      try {
+        return fallback();
+      } catch (fbError) {
+        throw error;
+      }
+    }
     throw error;
   }
 };
@@ -30,9 +41,12 @@ export const getMyPosts = async (page) =>
     () => ({ data: { result: [] } })
   );
 
-export const createPost = async (content, files = []) => {
+export const createPost = async (content, files = [], privacy = "PUBLIC") => {
   const formData = new FormData();
   formData.append("content", content);
+  if (privacy) {
+    formData.append("privacy", privacy);
+  }
   files.forEach((file) => {
     formData.append("files", file, file.name);
   });
@@ -45,7 +59,7 @@ export const createPost = async (content, files = []) => {
       }),
     () => ({
       data: {
-        result: createMockFeedPost(content, files),
+        result: createMockFeedPost(content, files, privacy),
       },
     })
   );
@@ -70,4 +84,58 @@ export const likePost = async (postId) =>
         result: toggleMockPostLike(postId),
       },
     })
+  );
+
+export const deletePost = async (postId) =>
+  executeApi(
+    "deletePost",
+    () => httpClient.delete(API.DELETE_POST(postId)),
+    () => ({
+      data: {
+        result: deleteMockPost(postId),
+      },
+    })
+  );
+
+export const updatePost = async (postId, data) =>
+  executeApi(
+    "updatePost",
+    () => httpClient.put(API.UPDATE_POST(postId), data),
+    () => ({
+      data: {
+        result: updateMockPost(postId, data),
+      },
+    })
+  );
+
+export const updatePostPrivacy = async (postId, privacy) =>
+  executeApi(
+    "updatePostPrivacy",
+    () => httpClient.put(API.UPDATE_POST_PRIVACY(postId), { privacy }),
+    () => ({
+      data: {
+        result: updateMockPostPrivacy(postId, privacy),
+      },
+    })
+  );
+
+export const hidePost = async (postId) =>
+  executeApi(
+    "hidePost",
+    () => httpClient.post(`/post/${postId}/hide`, {}),
+    () => ({ data: { result: { postId, hidden: true } } })
+  );
+
+export const reportPost = async (postId, reason = "") =>
+  executeApi(
+    "reportPost",
+    () => httpClient.post(`/post/${postId}/report`, { reason }),
+    () => ({ data: { result: { postId, reported: true } } })
+  );
+
+export const savePost = async (postId) =>
+  executeApi(
+    "savePost",
+    () => httpClient.post(`/post/${postId}/save`, {}),
+    () => ({ data: { result: { postId, saved: true } } })
   );

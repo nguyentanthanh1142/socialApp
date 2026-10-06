@@ -3,6 +3,7 @@ package com.ntt.post_service.controller;
 import com.ntt.common_lib.dto.ApiResponse;
 import com.ntt.post_service.dto.PageResponse;
 import com.ntt.post_service.dto.request.PostRequest;
+import com.ntt.post_service.dto.request.PostUpdateRequest;
 import com.ntt.post_service.dto.response.PostLikeResponse;
 import com.ntt.post_service.dto.response.PostResponse;
 import com.ntt.post_service.service.LikeService;
@@ -23,15 +24,8 @@ public class PostController {
     PostService postService;
     LikeService likeService;
 
-    @PostMapping(
-            path = "/create",
-            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
-    )
-    ApiResponse<PostResponse> createPost(@RequestParam("content") String content,
-                                         @RequestPart(value = "files", required = false) MultipartFile[] files) {
-        PostRequest postRequest = new PostRequest();
-        postRequest.setContent(content);
-        postRequest.setFiles(files);
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    ApiResponse<PostResponse> createPost(@ModelAttribute PostRequest postRequest) {
         return ApiResponse.<PostResponse>builder()
                 .result(postService.createPost(postRequest))
                 .build();
@@ -63,5 +57,21 @@ public class PostController {
         return ApiResponse.<PostResponse>builder()
                 .result(postService.getPost(postId))
                 .build();
+    }
+
+    @PutMapping(value = "/{postId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    ApiResponse<PostResponse> updatePost(@PathVariable String postId,
+                                         @ModelAttribute PostUpdateRequest request)
+    {
+        request.setPostId(postId);
+        return ApiResponse.<PostResponse>builder()
+                .result(postService.updatePost(request))
+                .build();
+    }
+
+    @DeleteMapping("/{postId}")
+    ApiResponse<Void> deletePost(@PathVariable String postId) {
+        postService.deletePost(postId);
+        return ApiResponse.<Void>builder().build();
     }
 }

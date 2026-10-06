@@ -1,6 +1,5 @@
 package com.ntt.notification_service.service;
 
-import com.ntt.common_lib.cache.PostCache;
 import com.ntt.common_lib.dto.ActorDTO;
 import com.ntt.common_lib.dto.CachedPostDTO;
 import com.ntt.common_lib.dto.EntityDTO;
@@ -9,7 +8,6 @@ import com.ntt.common_lib.enums.NotificationType;
 import com.ntt.common_lib.event.DomainNotificationEvent;
 import com.ntt.notification_service.cache.PostCacheService;
 import com.ntt.notification_service.cache.UserProfileCacheImpl;
-import com.ntt.notification_service.dto.Actor;
 import com.ntt.notification_service.dto.response.NotificationResponse;
 import com.ntt.notification_service.entity.Notification;
 import com.ntt.notification_service.mapper.NotificationMapper;
@@ -22,7 +20,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 

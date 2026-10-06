@@ -16,7 +16,7 @@ import { useSocket } from "../providers/SocketProvider";
 
 const drawerWidth = 300;
 
-function Scene({ sideMenu, children }) {
+function Scene({ sideMenu, hideSideMenu = false, children }) {
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [isClosing, setIsClosing] = React.useState(false);
 
@@ -71,6 +71,9 @@ function Scene({ sideMenu, children }) {
   }, [subscribe]);
 
   const isHome = location.pathname === "/";
+  const isProfileRoute =
+    location.pathname === "/profile" || location.pathname.startsWith("/u/");
+  const showSideMenu = Boolean(sideMenu) && !hideSideMenu && !isProfileRoute;
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column" }}>
@@ -81,64 +84,70 @@ function Scene({ sideMenu, children }) {
         }}
       >
         <Toolbar>
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            edge="start"
-            onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { sm: "none" } }}
-          >
-            <MenuIcon />
-          </IconButton>
+          {showSideMenu && (
+            <IconButton
+              color="inherit"
+              aria-label="open drawer"
+              edge="start"
+              onClick={handleDrawerToggle}
+              sx={{ mr: 2, display: { sm: "none" } }}
+            >
+              <MenuIcon />
+            </IconButton>
+          )}
           <Header />
         </Toolbar>
       </AppBar>
       <Box sx={{ display: "flex", flexDirection: "row" }}>
-        <Box
-          component="nav"
-          sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
-          aria-label="mailbox folders"
-        >
-          <Drawer
-            variant="temporary"
-            open={mobileOpen}
-            onTransitionEnd={handleDrawerTransitionEnd}
-            onClose={handleDrawerClose}
-            ModalProps={{ keepMounted: true }}
-            sx={{
-              display: { xs: "block", sm: "none" },
-              "& .MuiDrawer-paper": {
-                boxSizing: "border-box",
-                width: drawerWidth,
-              },
-            }}
+        {showSideMenu && (
+          <Box
+            component="nav"
+            sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
+            aria-label="mailbox folders"
           >
-            {sideMenu}
-          </Drawer>
-          <Drawer
-            variant="permanent"
-            sx={{
-              display: { xs: "none", sm: "block" },
-              "& .MuiDrawer-paper": {
-                boxSizing: "border-box",
-                width: drawerWidth,
-              },
-            }}
-            open
-          >
-            {sideMenu}
-          </Drawer>
-        </Box>
+            <Drawer
+              variant="temporary"
+              open={mobileOpen}
+              onTransitionEnd={handleDrawerTransitionEnd}
+              onClose={handleDrawerClose}
+              ModalProps={{ keepMounted: true }}
+              sx={{
+                display: { xs: "block", sm: "none" },
+                "& .MuiDrawer-paper": {
+                  boxSizing: "border-box",
+                  width: drawerWidth,
+                },
+              }}
+            >
+              {sideMenu}
+            </Drawer>
+            <Drawer
+              variant="permanent"
+              sx={{
+                display: { xs: "none", sm: "block" },
+                "& .MuiDrawer-paper": {
+                  boxSizing: "border-box",
+                  width: drawerWidth,
+                },
+              }}
+              open
+            >
+              {sideMenu}
+            </Drawer>
+          </Box>
+        )}
         <Box
           component="main"
           sx={{
             flexGrow: 1,
             width: {
               xs: "100%",
-              sm: `calc(100% - ${drawerWidth}px)`,
-              md: isHome
-                ? `calc(100% - ${drawerWidth * 2}px)`
-                : `calc(100% - ${drawerWidth}px)`,
+              sm: showSideMenu ? `calc(100% - ${drawerWidth}px)` : "100%",
+              md: showSideMenu
+                ? isHome
+                  ? `calc(100% - ${drawerWidth * 2}px)`
+                  : `calc(100% - ${drawerWidth}px)`
+                : "100%",
             },
           }}
         >

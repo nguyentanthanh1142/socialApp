@@ -1,5 +1,12 @@
 import httpClient from "../../../api/httpClient";
 import { API } from "../../../configurations/configuration";
+import { getCurrentUserId } from "../../auth/services/authenticationService";
+
+export function buildParticipantsHash(targetUserId) {
+  const currentUserId = getCurrentUserId();
+  if (!currentUserId || !targetUserId) return null;
+  return [String(currentUserId), String(targetUserId)].sort().join("-");
+}
 
 const executeApi = async (operation, request) => {
     try {
@@ -39,3 +46,30 @@ export const sendBatchFriendRequests = async (friendIds) =>
         status: "PENDING",
         participantIds: friendIds,
     }));
+
+export const getRelationshipStatus = async (targetUserId) =>
+    executeApi("getRelationshipStatus", () => httpClient.get(API.RELATION_STATUS(targetUserId)));
+
+export const acceptFriendByTarget = async (targetUserId) => {
+    const hash = buildParticipantsHash(targetUserId);
+    return executeApi("acceptFriendByTarget", () => httpClient.put(`${API.ACCEPT_FRIENDS}/${hash}`, {}));
+};
+
+export const rejectFriendByTarget = async (targetUserId) => {
+    const hash = buildParticipantsHash(targetUserId);
+    return executeApi("rejectFriendByTarget", () => httpClient.put(`${API.REFUSE_FRIEND}/${hash}`, {}));
+};
+
+export const cancelFriendRequestByTarget = async (targetUserId) =>
+    executeApi("cancelFriendRequestByTarget", () => httpClient.put(API.CANCEL_FRIEND_REQUEST(targetUserId), {}));
+
+export const unfriendUser = async (targetUserId) =>
+    executeApi("unfriendUser", () => httpClient.put(API.UNFRIEND_USER(targetUserId), {}));
+
+export const blockUser = async (targetUserId) =>
+    executeApi("blockUser", () => httpClient.post(API.BLOCK_USER, {
+        participantIds: [targetUserId],
+    }));
+
+export const unblockUser = async (targetUserId) =>
+    executeApi("unblockUser", () => httpClient.put(API.UNBLOCK_USER(targetUserId), {}));

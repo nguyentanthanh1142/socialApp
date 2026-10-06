@@ -258,10 +258,8 @@ public class AuthenticationService {
         var userInfo = outboundUserClient.exchangeToken("json", response.getAccessToken());
         log.info("User Info: {}", userInfo);
 
-        // 1. Tìm User theo EMAIL (Không tìm theo username nữa)
         User user = userRepository.findByEmail(userInfo.getEmail()).orElse(null);
 
-        // 2. Nếu User chưa tồn tại -> Khởi tạo User mới với handling Race Condition
         if (user == null) {
             Set<Role> roles = new HashSet<>();
             roles.add(Role.builder().name(PredefindRole.USER).build());

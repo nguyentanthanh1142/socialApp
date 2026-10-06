@@ -13,12 +13,13 @@ import {
   IconButton,
   ImageList,
   ImageListItem,
+  Typography,
 } from "@mui/material";
 import Draggable from "react-draggable";
-import EmojiInput from "components/EmojiInput";
 import DeleteIcon from "@mui/icons-material/Delete";
 
 import { useUser } from "../../../providers/UserProvider";
+import PostPrivacySelector from "./PostPrivacySelector";
 
 const PaperComponent = React.forwardRef(function PaperComponent(props, ref) {
   const nodeRef = React.useRef(null);
@@ -45,6 +46,7 @@ export default function DialogCreatePost({
   currentUser: propCurrentUser,
 }) {
   const [selectedVideos, setSelectedVideos] = useState([]);
+  const [privacy, setPrivacy] = useState("PUBLIC");
 
   const { currentUser: contextUser } = useUser();
   const currentUser = propCurrentUser || contextUser;
@@ -96,9 +98,11 @@ export default function DialogCreatePost({
       ...selectedImages.map((i) => i.file),
       ...selectedVideos.map((v) => v.file),
     ];
-    onPost(newPostContent, files);
+    onPost(newPostContent, files, privacy);
+    setNewPostContent("");
     setSelectedImages([]);
     setSelectedVideos([]);
+    setPrivacy("PUBLIC");
   };
 
   return (
@@ -132,9 +136,23 @@ export default function DialogCreatePost({
         </DialogTitle>
 
         <DialogContent dividers>
-          <Stack direction="row" spacing={2} alignItems="center" mb={2}>
-            <Avatar alt={displayName} src={avatarSrc} />
-            <strong>{displayName}</strong>
+          <Stack direction="row" spacing={1.5} alignItems="center" mb={2}>
+            <Avatar alt={displayName} src={avatarSrc} sx={{ width: 44, height: 44 }}>
+              {displayName?.[0]}
+            </Avatar>
+            <Box>
+              <Typography variant="subtitle1" fontWeight={700} lineHeight={1.2}>
+                {displayName}
+              </Typography>
+              <Box sx={{ mt: 0.5 }}>
+                <PostPrivacySelector
+                  privacy={privacy}
+                  isOwner={true}
+                  onChange={(newPrivacy) => setPrivacy(newPrivacy)}
+                  variant="selector"
+                />
+              </Box>
+            </Box>
           </Stack>
 
           {/* Ô nhập nội dung (có thể thay thế TextField bằng EmojiInput nếu muốn tích hợp emoji) */}

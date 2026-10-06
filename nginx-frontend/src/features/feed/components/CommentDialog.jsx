@@ -2,6 +2,9 @@ import { useState, useEffect } from "react";
 import { Box, Dialog, Typography, Avatar, Button, CircularProgress } from "@mui/material";
 import { getMockCommentsByPostId, addMockComment } from "../../../shared/mockData";
 import { useUser } from "../../../providers/UserProvider";
+import { getAvatarUrl } from "../../../utils/avatarUtils";
+import ChatOutlinedIcon from "@mui/icons-material/ChatOutlined";
+import EmptyState from "../../../components/EmptyState";
 
 export default function CommentDialog({ open, onClose, selectedPost, onCommentAdded, currentUser: propCurrentUser }) {
   const { currentUser: contextUser } = useUser();
@@ -54,7 +57,7 @@ export default function CommentDialog({ open, onClose, selectedPost, onCommentAd
       [currentUser?.firstname, currentUser?.lastname].filter(Boolean).join(" ") ||
       currentUser?.username ||
       "You";
-    const avatar = currentUser?.avatarUrl || currentUser?.avatar || "";
+    const avatar = getAvatarUrl(currentUser?.avatarUrl || currentUser?.avatar, currentUser?.gender);
 
     const optimisticComment = {
       commentId: `temp-${Date.now()}`,
@@ -98,13 +101,16 @@ export default function CommentDialog({ open, onClose, selectedPost, onCommentAd
 
           <Box sx={{ flex: 1, overflowY: "auto", p: 2, display: "flex", flexDirection: "column", gap: 2 }}>
             {comments.length === 0 && !isLoadingComments ? (
-              <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 4 }}>
-                No comments yet. Be the first to comment!
-              </Typography>
+              <EmptyState
+                icon={ChatOutlinedIcon}
+                title="No comments yet"
+                description="Share your thoughts — be the first to comment on this post."
+                sx={{ mt: 2, py: 2 }}
+              />
             ) : (
               comments.map((comment) => (
                 <Box key={comment.commentId} sx={{ display: "flex", gap: 1.5, alignItems: "flex-start" }}>
-                  <Avatar src={comment.avatar} alt={comment.authorName} sx={{ width: 32, height: 32 }} />
+                  <Avatar src={getAvatarUrl(comment.avatar, comment.gender)} alt={comment.authorName} sx={{ width: 32, height: 32 }} />
                   <Box sx={{ backgroundColor: "#f0f2f5", p: 1.5, borderRadius: 2, flex: 1 }}>
                     <Typography variant="subtitle2" fontWeight="bold">{comment.authorName}</Typography>
                     <Typography variant="body2" sx={{ wordBreak: "break-word", mt: 0.5 }}>{comment.content}</Typography>

@@ -2,7 +2,7 @@ import { Box, Avatar, Typography } from "@mui/material";
 import React, { forwardRef } from 'react';
 
 const Post = forwardRef((props, ref) => {
-  const { avatar, username, created, content } = props.post;
+  const { avatar, username, created, content, gender } = props.post;
   return (
     <Box
       ref={ref}
@@ -21,7 +21,7 @@ const Post = forwardRef((props, ref) => {
           marginBottom: 2,
         }}
       >
-        <Avatar src={avatar} sx={{ marginRight: 2 }} />
+        <Avatar src={getAvatarUrl(avatar, gender)} sx={{ marginRight: 2 }} />
         <Box>
           <Box sx={{ display: "flex", flexDirection: "row", gap: "10px" }}>
             <Typography

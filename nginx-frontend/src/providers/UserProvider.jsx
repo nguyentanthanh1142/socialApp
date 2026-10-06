@@ -26,7 +26,7 @@ export const UserProvider = ({ children }) => {
       const rawUser = response?.data?.result || response?.result || response?.data;
       if (rawUser) {
         const displayName =
-          [rawUser.firstname, rawUser.lastname].filter(Boolean).join(" ").trim() ||
+          [rawUser.firstName, rawUser.lastName].filter(Boolean).join(" ").trim() ||
           rawUser.username ||
           "User";
         const avatarUrl = rawUser.avatar || rawUser.avatarUrl || "";
@@ -43,7 +43,6 @@ export const UserProvider = ({ children }) => {
       }
     } catch (error) {
       console.warn("Failed to fetch current user profile:", error);
-      // Fallback with minimal info from token if possible
       const fallbackId = getCurrentUserId();
       if (fallbackId) {
         setCurrentUser((prev) => prev || { id: fallbackId, userId: fallbackId, name: "User", avatar: "" });

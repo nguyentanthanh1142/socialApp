@@ -18,60 +18,63 @@ import java.io.IOException;
 import java.util.List;
 
 @RestController
+@RequestMapping("/users")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class UserProfileController {
     UserProfileService userProfileService;
     private final RestClient.Builder builder;
 
-    @GetMapping("/users")
-    List<UserProfileResponse> getAllProfiles()
-    {
-        return userProfileService.getAllProfiles();
-    }
 
-    @GetMapping("/users/my-profile")
+    @GetMapping("/my-profile")
     ApiResponse<UserProfileResponse> getMyProfile() {
         return ApiResponse.<UserProfileResponse>builder()
                 .result(userProfileService.getMyProfile())
                 .build();
     }
 
-    @PutMapping("/users/my-profile")
+    @PutMapping("/my-profile")
     ApiResponse<UserProfileResponse> updateMyProfile(@RequestBody UpdateProfileRequest request) {
         return ApiResponse.<UserProfileResponse>builder()
                 .result(userProfileService.updateMyProfile(request))
                 .build();
     }
-    @PutMapping("/users/avatar")
+    @PutMapping("/avatar")
     ApiResponse<UserProfileResponse> updateAvatar(@RequestParam MultipartFile[] file) throws IOException {
         return ApiResponse.<UserProfileResponse>builder()
                 .result(userProfileService.updateAvatar(file))
                 .build();
     }
-    @PostMapping("/users/search")
-    ApiResponse<List<UserProfileResponse>> search(@RequestBody SearchUserRequest request) {
-        return ApiResponse.<List<UserProfileResponse>>builder()
-                .result(userProfileService.search(request))
-                .build();
-    }
-    @GetMapping("/users/popular")
+
+    @GetMapping("/popular")
     ApiResponse<List<UserProfileResponse>> getPopularProfiles() {
         return ApiResponse.<List<UserProfileResponse>>builder()
                 .result(userProfileService.getPopularProfiles())
                 .build();
     }
-    @GetMapping("users/profile/{username}")
+    @GetMapping("/{username}")
     ApiResponse<UserProfileResponse> getProfile(@PathVariable String username) {
         return ApiResponse.<UserProfileResponse>builder()
                 .result(userProfileService.getProfilesByUsername(username))
                 .build();
     }
 
-    @PutMapping("/users/onboarding")
+    @PutMapping("/onboarding")
     ApiResponse<UserProfileResponse> completeOnboarding(@Valid @RequestBody OnboardingRequest request) {
         return ApiResponse.<UserProfileResponse>builder()
                 .result(userProfileService.completeOnboarding(request))
+                .build();
+    }
+
+    @GetMapping("/users")
+    List<UserProfileResponse> getAllProfiles()
+    {
+        return userProfileService.getAllProfiles();
+    }
+    @PostMapping("/users/search")
+    ApiResponse<List<UserProfileResponse>> search(@RequestBody SearchUserRequest request) {
+        return ApiResponse.<List<UserProfileResponse>>builder()
+                .result(userProfileService.search(request))
                 .build();
     }
 }

@@ -1,4 +1,5 @@
 package com.ntt.relation_service.entity;
+import com.ntt.relation_service.enums.RelationStatus;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.mongodb.core.index.Indexed;
@@ -20,13 +21,14 @@ public class Relation {
 
     @MongoId
     String id;
-    String ownerId; // User ID of the owner of the relation
-    String status; // e.g., "PENDING", "accepted", "blocked"
+    String ownerId;
+    RelationStatus status;
     @Indexed(unique = true)
     String participantsHash;
     List<ParticipantInfo> participants;
     Instant acceptedDate;
     Instant createdDate;
+
     @Indexed
     Instant modifiedDate;
 

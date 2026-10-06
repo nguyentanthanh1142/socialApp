@@ -101,6 +101,7 @@ public class AuthenticationController {
                 .message("Verification email has been sent")
                 .build();
     }
+
     @PostMapping("/registration")
     ApiResponse<UserResponse> createUser(@RequestBody @Valid UserCreationRequest request) {
         return ApiResponse.<UserResponse>builder()

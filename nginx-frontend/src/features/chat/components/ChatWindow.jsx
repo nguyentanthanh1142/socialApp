@@ -10,6 +10,7 @@ import {
   Stack,
 } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
+import { formatLocaleDateTime } from "../../../utils/dateUtils";
 
 export default function ChatWindow({
   selectedConversation,
@@ -145,7 +146,7 @@ export default function ChatWindow({
                           variant="caption"
                           sx={{ display: "block", textAlign: "right" }}
                         >
-                          {new Date(msg.createdDate).toLocaleString()}
+                          {formatLocaleDateTime(msg.createdDate, "Just now")}
                         </Typography>
                       </Stack>
                     </Paper>

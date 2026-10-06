@@ -12,6 +12,7 @@ import FeedList from "../components/FeedList";
 import CommentDialog from "../components/CommentDialog";
 import { useUser } from "../../../providers/UserProvider";
 import usePageTitle from "../../../hooks/usePageTitle";
+import { formatRelativeTime, parseValidDate } from "../../../utils/dateUtils";
 
 export default function Home() {
   usePageTitle("Home");
@@ -38,7 +39,6 @@ export default function Home() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const checkpointRef = useRef(null);
 
-  // Quản lý Dialog Bình luận
   const [commentDialogOpen, setCommentDialogOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);
 
@@ -50,6 +50,10 @@ export default function Home() {
 
   const normalizePost = (post) => {
     const images = post.images || post.files?.map((file) => file.url).filter(Boolean) || [];
+    const rawCreated =
+      post.createdDate || post.createDate || post.createdAt || new Date().toISOString();
+    const parsed = parseValidDate(rawCreated);
+    const createdDate = parsed ? parsed.toISOString() : new Date().toISOString();
     return {
       ...post,
       postId: post.postId ?? post.id,
@@ -57,16 +61,19 @@ export default function Home() {
       authorName: post.authorName || post.name || currentUser?.name || "User",
       avatarUrl: post.avatarUrl || post.avatar || currentUser?.avatarUrl || "",
       avatar: post.avatar || post.avatarUrl || currentUser?.avatarUrl || "",
-      createdDate: post.createdDate || new Date().toISOString(),
+      createdDate,
+      timestamp: formatRelativeTime(rawCreated),
       images,
       files: post.files?.length ? post.files : images.map((url) => ({ url })),
       likeCount: post.likeCount ?? 0,
       commentCount: post.commentCount ?? 0,
       liked: Boolean(post.liked),
+      privacy: post.privacy || "PUBLIC",
+      actions: post.actions || undefined,
     };
   };
 
-  const buildOptimisticPost = (content, imagePreviews = []) => {
+  const buildOptimisticPost = (content, imagePreviews = [], privacy = "PUBLIC") => {
     const list = Array.isArray(imagePreviews) ? imagePreviews : [imagePreviews];
 
     const files = list.map((item) => {
@@ -98,7 +105,6 @@ export default function Home() {
       authorName: currentUser?.name || "User",
       avatarUrl: currentUser?.avatarUrl || "",
       avatar: currentUser?.avatarUrl || "",
-      timestamp: "Just now",
       createdDate: new Date().toISOString(),
       content,
       images,
@@ -106,6 +112,7 @@ export default function Home() {
       likeCount: 0,
       commentCount: 0,
       liked: false,
+      privacy: privacy || "PUBLIC",
     });
   };
 
@@ -134,6 +141,32 @@ export default function Home() {
     );
 
     likePost(postId).catch((err) => console.error("Error liking post:", err));
+  };
+
+  const handleDeletePost = (postId) => {
+    setPosts((prevPosts) => prevPosts.filter((p) => p.postId !== postId));
+    setSnackbarMessage("Post deleted successfully!");
+    setSnackbarSeverity("success");
+    setSnackbarOpen(true);
+  };
+
+  const handleUpdatePost = (updatedPost) => {
+    setPosts((prevPosts) =>
+      prevPosts.map((p) => (p.postId === updatedPost.postId ? { ...p, ...updatedPost } : p))
+    );
+    setSnackbarMessage("Post updated successfully!");
+    setSnackbarSeverity("success");
+    setSnackbarOpen(true);
+  };
+
+  const handlePrivacyChange = (postId, privacy) => {
+    setPosts((prevPosts) =>
+      prevPosts.map((p) => (p.postId === postId ? { ...p, privacy } : p))
+    );
+  };
+
+  const handleHidePost = (postId) => {
+    setPosts((prevPosts) => prevPosts.filter((p) => p.postId !== postId));
   };
 
   const loadPosts = async (checkpoint) => {
@@ -232,15 +265,15 @@ export default function Home() {
                 setNewPostContent={setNewPostContent}
                 setSelectedImages={setSelectedImages}
                 selectedImages={selectedImages}
-                onPost={(content, files) => {
+                onPost={(content, files, privacy) => {
                   const tempId = `temp-${Date.now()}`;
-                  const optimisticPost = buildOptimisticPost(content, files);
+                  const optimisticPost = buildOptimisticPost(content, files, privacy);
                   optimisticPost.postId = tempId;
 
                   setPosts((prev) => [optimisticPost, ...prev]);
                   setDialogOpen(false);
 
-                  createPost(content, files)
+                  createPost(content, files, privacy)
                     .then((response) => {
                       const realPost = normalizePost(response?.data?.result || response?.data);
 
@@ -275,6 +308,11 @@ export default function Home() {
                 }}
                 lastPostElementRef={lastPostElementRef}
                 onRetry={() => loadPosts(checkpointRef.current)}
+                onCreatePost={() => setDialogOpen(true)}
+                onDeletePost={handleDeletePost}
+                onUpdatePost={handleUpdatePost}
+                onPrivacyChange={handlePrivacyChange}
+                onHidePost={handleHidePost}
               />
             </Card>
           </Box>

@@ -1,4 +1,6 @@
-package com.ntt.profile_service.dto.response;
+package com.ntt.relation_service.dto.response;
+import com.ntt.relation_service.enums.RelationAction;
+import com.ntt.relation_service.enums.RelationStatus;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -16,5 +18,5 @@ public class RelationStatusResponse {
     boolean isFollowing;
     boolean isBlocked;
     String updatedAt;
-    List<String> availableActions;
+    List<RelationAction> availableActions;
 }

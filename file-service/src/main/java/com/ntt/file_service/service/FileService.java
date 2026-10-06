@@ -23,6 +23,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -71,7 +72,7 @@ public class FileService {
                 publishFileUploaded(fileManagement.getId(), ownerId);
 
                 responses.add(FileResponse.builder()
-                        .fileId(fileManagement.getId()) // Đã có fileId chuẩn!
+                        .fileId(fileManagement.getId())
                         .url(secureUrl)
                         .originalName(multipartFile.getOriginalFilename())
                         .fileSize(multipartFile.getSize())
@@ -126,6 +127,12 @@ public class FileService {
         log.info("Successfully deleted file record in DB: {}", fileId);
     }
 
+    public List<FileResponse> getFilesByReference(String referenceId, FileOwnerType type )
+    {
+        List<FileManagement> fileManagements = fileManagementRepository.findByReferenceIdAndOwnerType(referenceId, type);
+        return fileManagements.stream().map(this::toFileRespone).collect(Collectors.toList());
+    }
+
     public FileInfo getFileInfo(String fileId) {
         FileManagement fileManagement = fileManagementRepository.findById(fileId)
                 .orElseThrow(() -> new AppException(ErrorCode.FILE_NOT_FOUND));
@@ -146,5 +153,15 @@ public class FileService {
 
     public void publishFileDeleted(String fileId) {
         kafkaTemplate.send(TOPIC_FILE_DELETED, fileId);
+    }
+
+    private FileResponse toFileRespone(FileManagement fileManagement){
+        return FileResponse.builder()
+                .fileId(fileManagement.getId())
+                .url(fileManagement.getUrl())
+                .fileSize(fileManagement.getSize())
+                .originalName(fileManagement.getOriginalName())
+                .status(FileStatus.READY)
+                .build();
     }
 }

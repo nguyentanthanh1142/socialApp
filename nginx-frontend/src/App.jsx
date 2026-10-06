@@ -20,17 +20,15 @@ import AdminProtectedRoute from "./routes/AdminProtectedRoute";
 import AppRoutes from "./routes/AppRoutes";
 
 // ── Admin pages — lazy-loaded for code splitting ──
-const AdminLogin      = lazy(() => import("./pages/admin/Login"));
-const AdminLayout     = lazy(() => import("./features/admin/pages/AdminLayout"));
-const Dashboard       = lazy(() => import("./pages/admin/Dashboard"));
-const UserManagement  = lazy(() => import("./pages/admin/UserManagement"));
-const PostManagement  = lazy(() => import("./pages/admin/PostManagement"));
-const AuditLogs       = lazy(() => import("./pages/admin/AuditLogs"));
+const AdminLogin = lazy(() => import("./pages/admin/Login"));
+const AdminLayout = lazy(() => import("./features/admin/pages/AdminLayout"));
+const Dashboard = lazy(() => import("./pages/admin/Dashboard"));
+const UserManagement = lazy(() => import("./pages/admin/UserManagement"));
+const PostManagement = lazy(() => import("./pages/admin/PostManagement"));
+const AuditLogs = lazy(() => import("./pages/admin/AuditLogs"));
 
 function App() {
   return (
-    // ThemeProviderWrapper must sit OUTSIDE BrowserRouter so CssBaseline
-    // applies before any route-dependent rendering starts.
     <ThemeProviderWrapper>
       <BrowserRouter>
         <AuthProvider>
@@ -38,7 +36,7 @@ function App() {
             <SocketProvider>
               <ChatProvider>
                 <Routes>
-                  {/* ── Bọc toàn bộ Admin Routes trong AdminAuthProvider & Suspense ── */}
+                  {/* ── Admin Routes ── */}
                   <Route
                     path="/admin"
                     element={

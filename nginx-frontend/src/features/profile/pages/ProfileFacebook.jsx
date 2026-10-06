@@ -14,7 +14,6 @@ import ProfileFriends from "../components/ProfileFriends";
 import ProfilePhotos from "../components/ProfilePhotos";
 import { getProfile } from "../services/userService";
 import Scene from "../../../components/Scene";
-import SideMenu from "../../../components/header/SideMenu";
 import usePageTitle from "../../../hooks/usePageTitle";
 
 export default function ProfileFacebook() {
@@ -61,8 +60,8 @@ export default function ProfileFacebook() {
   }, [username]);
 
   return (
-    <Scene sideMenu={<SideMenu />}>
-      <Container maxWidth="lg" sx={{ mt: 2, mb: 4 }}>
+    <Scene hideSideMenu>
+      <Container maxWidth="lg" disableGutters sx={{ mt: { xs: 0, sm: 2 }, mb: 4, px: { xs: 0, sm: 2 } }}>
         {loading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
             <CircularProgress />

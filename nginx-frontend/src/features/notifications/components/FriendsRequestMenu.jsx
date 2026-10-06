@@ -11,7 +11,8 @@ import {
 } from "@mui/material";
 import {
     getMyNotifications
-} from "../services/notificationService"
+} from "../services/notificationService";
+import { formatRelativeTime } from "../../../utils/dateUtils";
 
 
 export default function FriendsRequestMenu({ anchorEl, open, onClose }) {
@@ -90,14 +91,6 @@ export default function FriendsRequestMenu({ anchorEl, open, onClose }) {
         setHasMore(false);
     }, [hasMore]);
 
-    const formatTime = (isoString) => {
-        const date = new Date(isoString);
-        const diff = (Date.now() - date.getTime()) / 1000;
-        if (diff < 60) return "just now";
-        if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-        if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-        return date.toLocaleDateString("en-US");
-    };
         return (
         <Menu
             anchorEl={anchorEl}
@@ -190,7 +183,7 @@ export default function FriendsRequestMenu({ anchorEl, open, onClose }) {
                             )}
                         </Typography>
                         <Typography fontSize={12} color="gray">
-                            {formatTime(noti.createdAt)}
+                            {formatRelativeTime(noti.createdAt)}
                         </Typography>
                     </Box>
                 </MenuItem>
