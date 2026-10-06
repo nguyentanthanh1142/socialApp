@@ -1,6 +1,7 @@
 import React from "react";
 import { Card, CardContent, Typography, Box } from "@mui/material";
 import ArticleIcon from "@mui/icons-material/Article";
+import { formatLocaleDate } from "../../../utils/dateUtils";
 
 export default function ProfilePosts({ user }) {
   const posts = user?.posts || [];
@@ -23,18 +24,23 @@ export default function ProfilePosts({ user }) {
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-      {posts.map((post) => (
-        <Card key={post.id || post.postId} sx={{ borderRadius: 3, boxShadow: 2 }}>
-          <CardContent>
-            <Typography variant="body1">{post.content}</Typography>
-            {post.createdDate && (
-              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
-                {new Date(post.createdDate).toLocaleDateString()}
-              </Typography>
-            )}
-          </CardContent>
-        </Card>
-      ))}
+      {posts.map((post) => {
+        const dateLabel = formatLocaleDate(
+          post.createdDate || post.createDate || post.createdAt
+        );
+        return (
+          <Card key={post.id || post.postId} sx={{ borderRadius: 3, boxShadow: 2 }}>
+            <CardContent>
+              <Typography variant="body1">{post.content}</Typography>
+              {dateLabel && (
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
+                  {dateLabel}
+                </Typography>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })}
     </Box>
   );
 }

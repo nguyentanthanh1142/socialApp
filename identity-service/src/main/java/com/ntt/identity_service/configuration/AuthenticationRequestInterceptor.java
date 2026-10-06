@@ -17,7 +17,5 @@ public class AuthenticationRequestInterceptor implements RequestInterceptor {
         if(StringUtils.hasText(authHeader)) {
             requestTemplate.header("Authorization", authHeader);
         }
-
-
     }
 }

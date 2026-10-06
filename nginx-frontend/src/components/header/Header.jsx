@@ -19,6 +19,7 @@ import ProfileMenu from "./ProfileMenu";
 import MobileMenu from "./MobileMenu";
 import { useUser } from "../../providers/UserProvider";
 import { useColorMode } from "../../context/ColorModeContext";
+import { getAvatarUrl } from "../../utils/avatarUtils";
 
 export default function Header() {
   const [profileAnchor, setProfileAnchor] = React.useState(null);
@@ -113,15 +114,14 @@ export default function Header() {
           color="inherit"
           sx={{ ml: 1 }}
         >
-          {currentUser?.avatarUrl || currentUser?.avatar ? (
+          {currentUser?.avatarUrl || currentUser?.gender ? (
             <Avatar
-              src={currentUser.avatarUrl || currentUser.avatar}
+              src={getAvatarUrl(currentUser.avatarUrl , currentUser.gender)}
               alt={currentUser.name}
               sx={{ width: 34, height: 34 }}
             />
           ) : currentUser?.name ? (
-            <Avatar sx={{ width: 34, height: 34, bgcolor: "secondary.main", fontSize: 14 }}>
-              {currentUser.name[0]}
+            <Avatar sx={{ width: 34, height: 34, fontSize: 14 }}>
             </Avatar>
           ) : (
             <AccountCircle sx={{ fontSize: 32 }} />

@@ -1,5 +1,7 @@
-import { Box, CircularProgress, Typography, Alert, Button } from "@mui/material";
+import { Box, CircularProgress, Alert, Button } from "@mui/material";
+import DynamicFeedOutlinedIcon from "@mui/icons-material/DynamicFeedOutlined";
 import PostCard from "./PostCard";
+import EmptyState from "../../../components/EmptyState";
 
 export default function FeedList({
   posts,
@@ -11,6 +13,14 @@ export default function FeedList({
   onImageClick,
   lastPostElementRef,
   onRetry,
+  onCreatePost,
+  onDeletePost,
+  onUpdatePost,
+  onPrivacyChange,
+  onHidePost,
+  onReportPost,
+  onSavePost,
+  onSharePost,
 }) {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", gap: "10px" }}>
@@ -31,9 +41,14 @@ export default function FeedList({
       )}
 
       {!feedError && !loading && posts.length === 0 && (
-        <Box sx={{ p: 2, textAlign: "center", width: "100%" }}>
-          <Typography color="text.secondary">No posts available right now.</Typography>
-        </Box>
+        <EmptyState
+          icon={DynamicFeedOutlinedIcon}
+          title="Your feed is quiet"
+          description="When you or your friends share updates, they will show up here. Be the first to post something."
+          primaryLabel={onCreatePost ? "Create post" : undefined}
+          primaryOnClick={onCreatePost}
+          sx={{ width: "100%", py: 4 }}
+        />
       )}
 
       {posts.map((post, index) => {
@@ -52,6 +67,13 @@ export default function FeedList({
               onLike={onLike}
               onOpenComments={onOpenComments}
               onImageClick={onImageClick}
+              onDeletePost={onDeletePost}
+              onUpdatePost={onUpdatePost}
+              onPrivacyChange={onPrivacyChange}
+              onHidePost={onHidePost}
+              onReportPost={onReportPost}
+              onSavePost={onSavePost}
+              onSharePost={onSharePost}
             />
           </Box>
         );

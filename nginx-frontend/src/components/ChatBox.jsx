@@ -17,6 +17,8 @@ import CloseIcon from "@mui/icons-material/Close";
 import EmojiInput from "./EmojiInput";
 
 import { useChat } from "../providers/ChatProvider"; // Chỉ cần dùng useChat là đủ
+import { getAvatarUrl } from "../utils/avatarUtils";
+import { formatLocaleTime } from "../utils/dateUtils";
 
 
 
@@ -139,7 +141,7 @@ export default function ChatBox({ conversation, onClose, onMinimize }) {
       >
         <Box sx={{ display: "flex", alignItems: "center" }}>
           <Avatar
-            src={conversation.conversationAvatar || ""}
+            src={getAvatarUrl(conversation.conversationAvatar, conversation.gender)}
             alt={conversation.conversationName}
             sx={{ width: 32, height: 32, mr: 1 }}
           />
@@ -180,7 +182,7 @@ export default function ChatBox({ conversation, onClose, onMinimize }) {
             }}
           >
             <Avatar
-              src={conversation.conversationAvatar || ""}
+              src={getAvatarUrl(conversation.conversationAvatar, conversation.gender)}
               sx={{ width: 56, height: 56, mb: 1.5 }}
             />
             <Typography variant="subtitle2" fontWeight="bold">
@@ -208,7 +210,7 @@ export default function ChatBox({ conversation, onClose, onMinimize }) {
               >
                 {!msg.me && (
                   <Avatar
-                    src={msg.sender?.avatarUrl || msg.sender?.avatar}
+                    src={getAvatarUrl(msg.sender?.avatarUrl || msg.sender?.avatar, msg.sender?.gender)}
                     sx={{
                       mr: 1,
                       alignSelf: "flex-end",
@@ -246,13 +248,13 @@ export default function ChatBox({ conversation, onClose, onMinimize }) {
                       </Typography>
                     )}
                     <Typography variant="caption" sx={{ display: "block", textAlign: "right", fontSize: "10px" }}>
-                      {new Date(msg.createdDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {formatLocaleTime(msg.createdDate, { hour: "2-digit", minute: "2-digit" }, "Just now")}
                     </Typography>
                   </Stack>
                 </Paper>
                 {msg.me && (
                   <Avatar
-                    src={msg.sender?.avatarUrl || msg.sender?.avatar}
+                    src={getAvatarUrl(msg.sender?.avatarUrl || msg.sender?.avatar, msg.sender?.gender)}
                     sx={{
                       ml: 1,
                       alignSelf: "flex-end",

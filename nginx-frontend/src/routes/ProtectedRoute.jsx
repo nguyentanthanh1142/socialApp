@@ -15,7 +15,6 @@ export default function ProtectedRoute() {
   const hasValidToken = checkIsAuthenticated();
   const effectiveAuth = isAuthenticated || hasValidToken;
 
-  // 🟢 Kiểm tra 2 lớp: Context State HOẶC LocalStorage
   const effectiveFirstLogin = Boolean(isFirstLogin || isFirstLoginFromStorage());
 
   useEffect(() => {
@@ -24,26 +23,21 @@ export default function ProtectedRoute() {
     }
   }, [hasValidToken, isAuthenticated, refresh]);
 
-  // 1. Loading
   if (loading) {
     return <Spinner size="lg" label="Loading authentication..." />;
   }
 
-  // 2. Chưa đăng nhập
   if (!effectiveAuth) {
     return <Navigate to="/login" replace state={{ from: pathname }} />;
   }
 
-  // 3. User đăng nhập lần đầu -> Ép sang /onboarding
   if (effectiveFirstLogin && pathname !== "/onboarding") {
     return <Navigate to="/onboarding" replace />;
   }
 
-  // 4. Đã xong onboarding mà cố truy cập /onboarding -> Đẩy về Home
   if (!effectiveFirstLogin && pathname === "/onboarding") {
     return <Navigate to="/" replace />;
   }
 
-  // 5. Render child route
   return <Outlet />;
 }

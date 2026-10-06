@@ -216,21 +216,31 @@ const buildPost = (index) => {
   const authorName = buildAuthorName(index);
   const images = buildPostImages(random, index);
 
+  const isMine = index % 3 === 0;
+  const effectiveAuthorName = isMine ? mockCurrentUser.name : authorName;
+  const effectiveAvatar = isMine ? mockCurrentUser.avatarUrl : avatarForIndex(index);
+  const privacy = pick(random, ["PUBLIC", "FRIENDS", "PRIVATE"]);
+  const actions = isMine
+    ? ["EDIT", "DELETE", "SAVE", "SHARE"]
+    : ["HIDE", "REPORT", "SAVE", "SHARE"];
+
   return {
     postId: `post-${1000 + index}`,
-    authorName,
-    name: authorName,
-    avatar: avatarForIndex(index),
-    avatarUrl: avatarForIndex(index),
+    authorName: effectiveAuthorName,
+    name: effectiveAuthorName,
+    avatar: effectiveAvatar,
+    avatarUrl: effectiveAvatar,
     timestamp: formatTimeAgo(index * 2 + (index % 5)),
     createdDate: buildCreatedDate(index),
-    content: buildPostContent(random, authorName, pick(random, postTopics)),
+    content: buildPostContent(random, effectiveAuthorName, pick(random, postTopics)),
     images,
     files: createFilesFromImages(images),
     likeCount: randomInt(random, 0, 850),
     commentCount: randomInt(random, 0, 120),
     liked: random() > 0.5,
     score: 100000 - index,
+    privacy,
+    actions,
   };
 };
 
@@ -297,7 +307,7 @@ export const getMockFriendRequestSnapshot = () => friendRequestStore.map(cloneRe
 
 export const getMockFriendSuggestionSnapshot = () => friendSuggestionStore.map(cloneRequest);
 
-export const createMockFeedPost = (content, files = []) => {
+export const createMockFeedPost = (content, files = [], privacy = "PUBLIC") => {
   const images = files.map(resolveImageUrl).filter(Boolean);
   const post = {
     postId: createStorePostId(),
@@ -314,11 +324,33 @@ export const createMockFeedPost = (content, files = []) => {
     commentCount: 0,
     liked: false,
     score: Date.now(),
+    privacy: privacy || "PUBLIC",
+    actions: ["EDIT", "DELETE", "SAVE", "SHARE"],
   };
 
   feedStore = [post, ...feedStore];
 
   return clonePost(post);
+};
+
+export const deleteMockPost = (postId) => {
+  const deleted = feedStore.find((p) => p.postId === postId);
+  feedStore = feedStore.filter((p) => p.postId !== postId);
+  return deleted ? clonePost(deleted) : null;
+};
+
+export const updateMockPost = (postId, data) => {
+  let updated = null;
+  feedStore = feedStore.map((p) => {
+    if (p.postId !== postId) return p;
+    updated = { ...p, ...data };
+    return updated;
+  });
+  return updated ? clonePost(updated) : null;
+};
+
+export const updateMockPostPrivacy = (postId, privacy) => {
+  return updateMockPost(postId, { privacy });
 };
 
 export const toggleMockPostLike = (postId) => {

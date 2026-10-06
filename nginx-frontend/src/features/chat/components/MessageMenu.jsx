@@ -12,6 +12,8 @@ import {
 } from "@mui/material";
 import { useFriendChat } from "../hooks/useFriendChat";
 import { getCurrentUserId } from "../../auth/services/authenticationService";
+import { getAvatarUrl } from "../../../utils/avatarUtils";
+import { formatRelativeTime } from "../../../utils/dateUtils";
 
 export default function MessageMenu({ anchorEl, open, onClose }) {
   const {
@@ -31,16 +33,6 @@ export default function MessageMenu({ anchorEl, open, onClose }) {
     if (!open) return;
     loadConversations();
   }, [open, loadConversations]);
-
-  const formatTime = (isoString) => {
-    if (!isoString) return "";
-    const date = new Date(isoString);
-    const diff = (Date.now() - date.getTime()) / 1000;
-    if (diff < 60) return "just now";
-    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-    return date.toLocaleDateString();
-  };
 
   return (
     <Menu
@@ -93,7 +85,7 @@ export default function MessageMenu({ anchorEl, open, onClose }) {
         );
 
         const name = targetParticipant?.name || contact.name || "Chat";
-        const avatarUrl = targetParticipant?.avatarUrl || contact.avatarUrl || "";
+        const avatarUrl = getAvatarUrl(targetParticipant?.avatarUrl || contact.avatarUrl, targetParticipant?.gender || contact.gender);
         const lastMessage = contact.lastMessage?.content || "Say something to start chatting...";
         const updatedAt = contact.lastMessage?.createdAt || contact.updatedAt;
 
@@ -121,7 +113,7 @@ export default function MessageMenu({ anchorEl, open, onClose }) {
                   {name}
                 </Typography>
                 <Typography fontSize={11} color="gray" sx={{ ml: 1, flexShrink: 0 }}>
-                  {formatTime(updatedAt)}
+                  {formatRelativeTime(updatedAt, "")}
                 </Typography>
               </Box>
               <Typography fontSize={13} color="text.secondary" noWrap>

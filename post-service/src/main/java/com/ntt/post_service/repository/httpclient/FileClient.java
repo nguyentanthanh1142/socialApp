@@ -6,10 +6,7 @@ import com.ntt.common_lib.enums.FileOwnerType;
 import com.ntt.post_service.configuration.AuthenticationRequestInterceptor;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -18,6 +15,10 @@ import java.util.List;
 public interface FileClient {
     @PostMapping(value = "/media/upload/{fileOwnerType}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     ApiResponse<List<FileResponse>> uploadMedia(@RequestPart("files") MultipartFile[] files,
-                                                    @PathVariable("fileOwnerType") FileOwnerType fileOwnerType,
-                                                    @RequestParam(value = "referenceId", required = false) String referenceId);
+                                                @PathVariable("fileOwnerType") FileOwnerType fileOwnerType,
+                                                @RequestParam(value = "referenceId", required = false) String referenceId);
+
+    @GetMapping("/media/{referenceId}")
+    ApiResponse<List<FileResponse>> getFilesByReferenceId(@PathVariable("referenceId") String referenceId,
+                                                          @RequestParam(required = false) FileOwnerType type);
 }

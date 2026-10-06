@@ -18,6 +18,7 @@ import {
 import SearchIcon from "@mui/icons-material/Search";
 import ClearIcon from "@mui/icons-material/Clear";
 import { search as searchUsers } from "../../../services/userService";
+import { getAvatarUrl } from "../../../utils/avatarUtils";
 
 const NewChatPopover = ({ anchorEl, open, onClose, onSelectUser }) => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -167,7 +168,7 @@ const NewChatPopover = ({ anchorEl, open, onClose, onSelectUser }) => {
                 }}
               >
                 <ListItemAvatar>
-                  <Avatar src={user.avatarUrl || user.avatar || ""} alt={user.name} />
+                  <Avatar src={getAvatarUrl(user.avatarUrl || user.avatar, user.gender)} alt={user.name} />
                 </ListItemAvatar>
                 <ListItemText
                   primary={user.username}

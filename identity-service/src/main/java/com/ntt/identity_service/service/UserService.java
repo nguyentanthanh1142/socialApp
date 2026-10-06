@@ -60,7 +60,7 @@ public class UserService {
         HashSet<Role> roles = new HashSet<>();
         roleRepository.findById(PredefindRole.USER).ifPresent(roles::add);
         user.setRoles(roles);
-        user.setEmailVerified(false);
+        user.setEmailVerified(true);
         user.setStatus(UserStatus.ACTIVE);
         user.setFirstLogin(true);
         try {

@@ -1,6 +1,7 @@
 import React from "react";
+import { getAvatarUrl } from "../utils/avatarUtils";
 
-export default function NotificationToast({ avatarUrl, message }) {
+export default function NotificationToast({ avatarUrl, gender, message }) {
   return (
     <div
       style={{
@@ -15,7 +16,7 @@ export default function NotificationToast({ avatarUrl, message }) {
       }}
     >
       <img
-        src={avatarUrl}
+        src={getAvatarUrl(avatarUrl, gender)}
         alt="avatar"
         style={{ width: 40, height: 40, borderRadius: "50%" }}
       />

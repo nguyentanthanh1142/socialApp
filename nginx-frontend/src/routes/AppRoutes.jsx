@@ -11,10 +11,6 @@ const Login = lazy(() => import("../features/auth/pages/Login"));
 const Register = lazy(() => import("../features/auth/pages/Register"));
 const Authenticate = lazy(() => import("../features/auth/pages/Authenticate"));
 const VerifyEmailSent = lazy(() => import("../features/auth/pages/VerifyEmailSent"));
-// import Login from "../features/auth/pages/Login";
-// import Register from "../features/auth/pages/Register";
-// import Authenticate from "../features/auth/pages/Authenticate";
-// import VerifyEmailSent from "../features/auth/pages/VerifyEmailSent";
 
 // ── Authenticated user pages ──────────────────────────────────────────────────
 
@@ -24,11 +20,6 @@ const ProfileFacebook = lazy(() => import("../features/profile/pages/ProfileFace
 const Friends = lazy(() => import("../features/friends/pages/Friends"));
 const Chat = lazy(() => import("../features/chat/pages/Chat"));
 const UserOnboarding = lazy(() => import("../features/auth/pages/UserOnboarding"));
-// import Home from "../features/feed/pages/Home";
-// import Profile from "../features/profile/pages/Profile";
-// import ProfileFacebook from "../features/profile/pages/ProfileFacebook";
-// import Friends from "../features/friends/pages/Friends";
-// import Chat from "../features/chat/pages/Chat";
 
 
 const AppRoutes = () => {

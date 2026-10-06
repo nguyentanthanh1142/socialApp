@@ -1,6 +1,8 @@
 package com.ntt.feed_service.dto.response;
 
 import com.ntt.common_lib.dto.FileResponse;
+import com.ntt.common_lib.enums.PostAction;
+import com.ntt.common_lib.enums.PostPrivacy;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -19,10 +21,15 @@ public class FeedResponse {
     String name;
     String content;
     Instant createdAt;
+    PostPrivacy postPrivacy;
+
     boolean liked;
     Long likeCount;
+    boolean saved;
     boolean isRead = false;
     Double score;
     List<FileResponse> files;
+
+    List<PostAction> actions;
 }
 

@@ -30,14 +30,16 @@ import {
 } from "../services/userService";
 import { getMyPosts, likePost } from "../../feed/services/postService";
 import { isAuthenticated, logOut } from "../../auth/services/authenticationService";
-import SideMenu from "../../../components/header/SideMenu";
 import Scene from "../../../components/Scene";
+import ProfileCoverLayout from "../components/ProfileCoverLayout";
 import FeedList from "../../feed/components/FeedList";
 import CommentDialog from "../../feed/components/CommentDialog";
 import useInfiniteScroll from "../../../shared/hooks/useInfiniteScroll";
 import { useUser } from "../../../providers/UserProvider";
 import { AuthContext } from "../../../context/AuthContext";
 import usePageTitle from "../../../hooks/usePageTitle";
+import { getAvatarUrl } from "../../../utils/avatarUtils";
+import { formatRelativeTime, parseValidDate } from "../../../utils/dateUtils";
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -59,8 +61,8 @@ export default function Profile() {
   const profileTitle = loading
     ? "Loading Profile..."
     : userDetails
-    ? [userDetails.firstName || userDetails.firstname, userDetails.lastName || userDetails.lastname].filter(Boolean).join(" ").trim() || userDetails.username || "Profile"
-    : "Profile";
+      ? [userDetails.firstName || userDetails.firstname, userDetails.lastName || userDetails.lastname].filter(Boolean).join(" ").trim() || userDetails.username || "Profile"
+      : "Profile";
 
   usePageTitle(profileTitle);
   const [profileError, setProfileError] = useState(null);
@@ -88,7 +90,12 @@ export default function Profile() {
       [userDetails?.firstname, userDetails?.lastname].filter(Boolean).join(" ") ||
       userDetails?.username ||
       "User";
-    const userAvatar = post.avatarUrl || post.avatar || userDetails?.avatar || "";
+    const userAvatar = getAvatarUrl(post.avatarUrl || post.avatar || userDetails?.avatar, post.gender || userDetails?.gender);
+
+    const rawCreated =
+      post.createdDate || post.createDate || post.createdAt || new Date().toISOString();
+    const parsed = parseValidDate(rawCreated);
+    const createdDate = parsed ? parsed.toISOString() : new Date().toISOString();
 
     return {
       ...post,
@@ -97,12 +104,15 @@ export default function Profile() {
       authorName: displayName,
       avatarUrl: userAvatar,
       avatar: userAvatar,
-      createdDate: post.createdDate || post.createDate || post.createdAt || new Date().toISOString(),
+      createdDate,
+      timestamp: formatRelativeTime(rawCreated),
       images,
       files: post.files?.length ? post.files : images.map((url) => ({ url })),
       likeCount: post.likeCount ?? post.likesCount ?? 0,
       commentCount: post.commentCount ?? (post.comments ? post.comments.length : 0),
       liked: Boolean(post.liked || post.isLiked),
+      privacy: post.privacy || "PUBLIC",
+      actions: post.actions || ["EDIT", "DELETE", "SAVE", "SHARE"],
     };
   }, [userDetails]);
 
@@ -306,7 +316,7 @@ export default function Profile() {
   }, [navigate]);
 
   return (
-    <Scene sideMenu={<SideMenu />}>
+    <Scene hideSideMenu>
       <Snackbar
         open={snackbarOpen}
         autoHideDuration={6000}
@@ -346,125 +356,91 @@ export default function Profile() {
           </Alert>
         </Box>
       ) : userDetails ? (
-        <Box sx={{ maxWidth: 850, width: "100%", mx: "auto", pb: 5 }}>
-          {/* PROFILE HEADER */}
-          <Card sx={{ boxShadow: 3, borderRadius: 3, overflow: "hidden", mb: 3 }}>
-            <Box
-              sx={{
-                height: 220,
-                backgroundColor: "#1976d2",
-                backgroundImage: "linear-gradient(135deg, #1877f2 0%, #00c6ff 100%)",
-                position: "relative",
-              }}
-            />
+        <Box sx={{ maxWidth: 980, width: "100%", mx: "auto", pb: 5, px: { xs: 0, sm: 2 } }}>
+          <ProfileCoverLayout
+            coverUrl={userDetails.coverUrl}
+            avatarUrl={getAvatarUrl(userDetails.avatarUrl || userDetails.avatar, userDetails.gender)}
+            gender={userDetails.gender}
+            displayName={
+              userDetails.firstName || userDetails.lastName
+                ? `${userDetails.firstName || userDetails.firstname || ""} ${userDetails.lastName || userDetails.lastname || ""}`.trim()
+                : userDetails.username
+            }
+            subtitle={`@${userDetails.username} • ${userDetails.city || userDetails.currentCity || "City not set"}`}
+            avatarSlot={
+              <Tooltip title="Click to change avatar">
+                <Box sx={{ position: "relative" }}>
+                  <Avatar
+                    src={getAvatarUrl(userDetails.avatarUrl || userDetails.avatar, userDetails.gender)}
+                    sx={{
+                      width: { xs: 128, sm: 152, md: 168 },
+                      height: { xs: 128, sm: 152, md: 168 },
+                      fontSize: { xs: 40, md: 52 },
+                      bgcolor: "primary.main",
+                      border: "4px solid",
+                      borderColor: "background.paper",
+                      boxShadow: 2,
+                      cursor: "pointer",
+                      "&:hover": { opacity: 0.92 },
+                    }}
+                    onClick={handleAvatarClick}
+                  >
+                    {userDetails.firstname?.[0]}
+                    {userDetails.lastname?.[0]}
+                  </Avatar>
 
-            <Box
-              sx={{
-                px: 4,
-                pb: 3,
-                pt: 1,
-                position: "relative",
-                display: "flex",
-                flexDirection: { xs: "column", sm: "row" },
-                alignItems: { xs: "center", sm: "flex-end" },
-                justifyContent: "space-between",
-                mt: "-75px",
-              }}
-            >
-              <Box
-                sx={{
-                  display: "flex",
-                  flexDirection: { xs: "column", sm: "row" },
-                  alignItems: "center",
-                  gap: 3,
-                  textAlign: { xs: "center", sm: "left" },
-                }}
-              >
-                <Tooltip title="Click to change avatar">
-                  <Box sx={{ position: "relative" }}>
-                    <Avatar
-                      src={userDetails.avatarUrl || userDetails.avatar}
-                      sx={{
-                        width: 140,
-                        height: 140,
-                        fontSize: 48,
-                        bgcolor: "#fff",
-                        color: "#1976d2",
-                        border: "4px solid white",
-                        boxShadow: 3,
-                        cursor: "pointer",
-                        "&:hover": { opacity: 0.9 },
-                      }}
-                      onClick={handleAvatarClick}
-                    >
-                      {userDetails.firstname?.[0]}
-                      {userDetails.lastname?.[0]}
-                    </Avatar>
+                  <Box
+                    onClick={handleAvatarClick}
+                    sx={{
+                      position: "absolute",
+                      bottom: 8,
+                      right: 8,
+                      backgroundColor: "#f0f2f5",
+                      borderRadius: "50%",
+                      p: 1,
+                      boxShadow: 1,
+                      cursor: "pointer",
+                      "&:hover": { backgroundColor: "#e4e6eb" },
+                    }}
+                  >
+                    <PhotoCameraIcon sx={{ color: "#333", fontSize: 20 }} />
+                  </Box>
 
+                  {uploading && (
                     <Box
-                      onClick={handleAvatarClick}
                       sx={{
                         position: "absolute",
-                        bottom: 5,
-                        right: 5,
-                        backgroundColor: "#f0f2f5",
+                        inset: 0,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
                         borderRadius: "50%",
-                        p: 1,
-                        boxShadow: 1,
-                        cursor: "pointer",
-                        "&:hover": { backgroundColor: "#e4e6eb" },
+                        backgroundColor: "rgba(0, 0, 0, 0.4)",
                       }}
                     >
-                      <PhotoCameraIcon sx={{ color: "#333", fontSize: 20 }} />
+                      <CircularProgress size={36} sx={{ color: "white" }} />
                     </Box>
-
-                    {uploading && (
-                      <Box
-                        sx={{
-                          position: "absolute",
-                          inset: 0,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          borderRadius: "50%",
-                          backgroundColor: "rgba(0, 0, 0, 0.4)",
-                        }}
-                      >
-                        <CircularProgress size={36} sx={{ color: "white" }} />
-                      </Box>
-                    )}
-                  </Box>
-                </Tooltip>
-
-                <input
-                  type="file"
-                  accept="image/*"
-                  ref={fileInputRef}
-                  style={{ display: "none" }}
-                  onChange={handleFileSelect}
-                />
-
-                <Box sx={{ mt: { xs: 1, sm: "50px" } }}>
-                  <Typography variant="h5" fontWeight="bold">
-                    {userDetails.firstname || userDetails.lastname
-                      ? `${userDetails.firstname || ""} ${userDetails.lastname || ""}`.trim()
-                      : userDetails.username}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    @{userDetails.username} • {userDetails.city || "City not set"}
-                  </Typography>
+                  )}
                 </Box>
-              </Box>
-            </Box>
+              </Tooltip>
+            }
+          />
 
-            <Divider />
+          <input
+            type="file"
+            accept="image/*"
+            ref={fileInputRef}
+            style={{ display: "none" }}
+            onChange={handleFileSelect}
+          />
+
+          <Card sx={{ boxShadow: 1, borderRadius: 3, overflow: "hidden", mb: 3, border: "1px solid", borderColor: "divider" }}>
             <Tabs value={tabValue} onChange={handleTabChange} centered sx={{ bgcolor: "#fff" }}>
               <Tab icon={<ArticleIcon />} iconPosition="start" label="My Posts" />
               <Tab icon={<EditIcon />} iconPosition="start" label="Edit Profile" />
             </Tabs>
           </Card>
 
-          {/* TAB 0: HIỂN THỊ BÀI VIẾT KẾT HỢP INFINITE SCROLL */}
           {tabValue === 0 && (
             <FeedList
               posts={userPosts}
@@ -475,10 +451,22 @@ export default function Profile() {
               onOpenComments={handleOpenComments}
               onImageClick={handleImageClick}
               lastPostElementRef={lastElementRef}
+              onDeletePost={(postId) =>
+                setUserPosts((prev) => prev.filter((p) => p.postId !== postId))
+              }
+              onUpdatePost={(up) =>
+                setUserPosts((prev) =>
+                  prev.map((p) => (p.postId === up.postId ? { ...p, ...up } : p))
+                )
+              }
+              onPrivacyChange={(postId, privacy) =>
+                setUserPosts((prev) =>
+                  prev.map((p) => (p.postId === postId ? { ...p, privacy } : p))
+                )
+              }
             />
           )}
 
-          {/* TAB 1: FORM CHỈNH SỬA THÔNG TIN */}
           {tabValue === 1 && (
             <Card sx={{ p: 4, boxShadow: 3, borderRadius: 2 }}>
               <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ mb: 3 }}>
@@ -549,7 +537,6 @@ export default function Profile() {
         </Box>
       ) : null}
 
-      {/* Dialog phóng to ảnh */}
       <Dialog
         open={previewOpen}
         onClose={() => setPreviewOpen(false)}
@@ -572,7 +559,6 @@ export default function Profile() {
         )}
       </Dialog>
 
-      {/* Dialog Bình luận */}
       <CommentDialog
         open={commentDialogOpen}
         onClose={() => setCommentDialogOpen(false)}

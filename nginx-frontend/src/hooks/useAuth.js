@@ -21,7 +21,6 @@ import {
 export const useAuth = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(() => checkIsAuthenticated());
 
-  // 🟢 BƯỚC QUAN TRỌNG: Lấy cờ từ LocalStorage ngay từ lần render đầu tiên
   const [isFirstLogin, setIsFirstLogin] = useState(() => Boolean(isFirstLoginFromStorage()));
 
   const [userId, setUserId] = useState(null);

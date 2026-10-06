@@ -94,6 +94,7 @@ public class LikeService {
             log.info("No posts updated during sync.");
         }
     }
+
     @Scheduled(fixedRate = 300000)
     public void scheduledSyncLikes() {
         try {

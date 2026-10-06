@@ -41,12 +41,7 @@ public class FeedController {
 //                .result(feedService.getMyFeed(page,size))
 //                .build();
 //    }
-    @GetMapping("/zzz")
-    ApiResponse<List<String>> getMyFeed(){
-        return ApiResponse.<List<String>>builder()
-                .result(feedService.getMyFollowers())
-                .build();
-    }
+
     @PostMapping("/read")
     ApiResponse<Void> readFeed(@RequestBody List<String> postIds)
     {

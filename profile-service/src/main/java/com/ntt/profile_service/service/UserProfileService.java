@@ -6,10 +6,12 @@ import com.ntt.common_lib.enums.FileOwnerType;
 import com.ntt.common_lib.event.chat.UserAvatarUpdatedEvent;
 import com.ntt.profile_service.cache.UserProfileCacheImpl;
 import com.ntt.profile_service.dto.request.*;
+import com.ntt.profile_service.dto.response.PublicUserProfileResponse;
 import com.ntt.profile_service.dto.response.UserProfileResponse;
 import com.ntt.profile_service.entity.UserProfile;
 import com.ntt.profile_service.exception.AppException;
 import com.ntt.profile_service.exception.ErrorCode;
+import com.ntt.profile_service.mapper.PublicUserProfileMapper;
 import com.ntt.profile_service.mapper.UserProfileMapper;
 import com.ntt.profile_service.repository.UserProfileRespository;
 import com.ntt.profile_service.repository.httpclient.FileClient;
@@ -37,12 +39,14 @@ import java.util.stream.Collectors;
 @Slf4j
 public class UserProfileService {
     UserProfileRespository userProfileRepository;
+    PublicUserProfileMapper publicUserProfileMapper;
     UserProfileMapper userProfileMapper;
     FileClient fileClient;
     UserProfileCacheImpl userProfileCache;
     KafkaTemplate<String, Object> kafkaTemplate;
     IdentityClient identityClient;
     TransactionTemplate transactionTemplate;
+
 
 
     @Transactional
@@ -181,6 +185,25 @@ public class UserProfileService {
     public UserProfileResponse getProfilesByUsername(String username) {
         UserProfile userProfile = userProfileRepository.findByUsername(username).orElseThrow(() -> new AppException(ErrorCode.PROFILE_NOT_FOUND));
         return userProfileMapper.toUserProfileResponse(userProfile);
+    }
+
+    @Transactional(readOnly = true)
+    public PublicUserProfileResponse getPublicProfileByUsername(String username) {
+        UserProfile userProfile = userProfileRepository.findByUsername(username).orElseThrow(() -> new AppException(ErrorCode.PROFILE_NOT_FOUND));
+        var response = publicUserProfileMapper.toPublicUserProfileResponse(userProfile);
+
+        String userId = getCurrentUserId();
+
+        if (userId != null) {
+            response.setIsSelf(userId.equals(userProfile.getUserId()));
+
+
+        } else {
+            response.setIsSelf(false);
+            response.setIsFollowing(false);
+        }
+        
+        return response;
     }
 
     @Transactional

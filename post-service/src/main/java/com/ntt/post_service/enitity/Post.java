@@ -1,5 +1,7 @@
 package com.ntt.post_service.enitity;
 
+import com.ntt.common_lib.enums.PostPrivacy;
+import com.ntt.post_service.enums.PostStatus;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -27,10 +29,11 @@ public class Post {
     @Builder.Default
     Set<String> likes = new HashSet<>();
 
-    @Builder.Default
-    boolean deleted = false;
-
     Instant deletedAt;
+    @Builder.Default
+    PostStatus status = PostStatus.PUBLISHED;
 
     String deletedBy;
+    @Builder.Default
+    PostPrivacy privacy = PostPrivacy.PUBLIC;
 }

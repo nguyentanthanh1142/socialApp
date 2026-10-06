@@ -34,6 +34,7 @@ public class SecurityConfig {
 
     private static final String[] PUBLIC_ENDPOINTS = {
             "/internal/users", "/internal/users/**",
+            "/internal/relation", "/internal/relation/**",
             "/actuator/**",
             "/relation/actuator/**"
     };

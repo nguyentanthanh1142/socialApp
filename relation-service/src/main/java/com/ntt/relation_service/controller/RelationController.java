@@ -4,6 +4,7 @@ import com.ntt.common_lib.dto.ApiResponse;
 import com.ntt.common_lib.dto.PageResponse;
 import com.ntt.relation_service.dto.request.RelationRequest;
 import com.ntt.relation_service.dto.response.RelationReponse;
+import com.ntt.relation_service.dto.response.RelationStatusResponse;
 import com.ntt.relation_service.dto.response.SuggestionResponse;
 import com.ntt.relation_service.enums.RelationStatus;
 import com.ntt.relation_service.service.RelationService;
@@ -34,10 +35,38 @@ public class RelationController {
                 .result(relationService.updateRelationStatus(relationId, RelationStatus.ACCEPTED))
                 .build();
     }
-    @PutMapping("/block")
-    public ApiResponse<RelationReponse> blockUser(@PathVariable String relationId) {
+    @PostMapping("/block")
+    public ApiResponse<RelationReponse> blockUser(@RequestBody RelationRequest relation) {
         return ApiResponse.<RelationReponse>builder()
-                        .result(relationService.updateRelationStatus(relationId, RelationStatus.BLOCKED))
+                .result(relationService.createRelation(relation, RelationStatus.BLOCKED))
+                .build();
+    }
+
+    @PutMapping("/unblock/{targetUserId}")
+    public ApiResponse<RelationReponse> unblockUser(@PathVariable String targetUserId) {
+        return ApiResponse.<RelationReponse>builder()
+                .result(relationService.updateRelationWithTarget(targetUserId, RelationStatus.NONE))
+                .build();
+    }
+
+    @PutMapping("/unfriend/{targetUserId}")
+    public ApiResponse<RelationReponse> unfriendUser(@PathVariable String targetUserId) {
+        return ApiResponse.<RelationReponse>builder()
+                .result(relationService.updateRelationWithTarget(targetUserId, RelationStatus.NONE))
+                .build();
+    }
+
+    @PutMapping("/cancel/{targetUserId}")
+    public ApiResponse<RelationReponse> cancelFriendRequest(@PathVariable String targetUserId) {
+        return ApiResponse.<RelationReponse>builder()
+                .result(relationService.updateRelationWithTarget(targetUserId, RelationStatus.NONE))
+                .build();
+    }
+
+    @GetMapping("/status/{targetUserId}")
+    public ApiResponse<RelationStatusResponse> getRelationshipStatus(@PathVariable String targetUserId) {
+        return ApiResponse.<RelationStatusResponse>builder()
+                .result(relationService.getRelationshipStatusForCurrentUser(targetUserId))
                 .build();
     }
     @PutMapping("/refuse/{relationId}")

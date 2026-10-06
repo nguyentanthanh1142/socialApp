@@ -1,6 +1,8 @@
 package com.ntt.post_service.dto.response;
 
 import com.ntt.common_lib.dto.FileResponse;
+import com.ntt.common_lib.enums.PostAction;
+import com.ntt.common_lib.enums.PostPrivacy;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -23,4 +25,10 @@ public class PostResponse {
     List<FileResponse> files;
     boolean deleted;
     Instant deletedAt;
+
+    boolean isLiked;
+    boolean isSaved;
+    PostPrivacy privacy;
+    long likeCount;
+    List<PostAction> actions;
 }

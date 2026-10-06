@@ -27,29 +27,30 @@ import {
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import LightModeIcon    from "@mui/icons-material/LightMode";
-import DarkModeIcon     from "@mui/icons-material/DarkMode";
-import CheckCircleIcon  from "@mui/icons-material/CheckCircle";
-import PersonIcon       from "@mui/icons-material/Person";
-import PeopleIcon       from "@mui/icons-material/People";
-import PaletteIcon      from "@mui/icons-material/Palette";
-import CelebrationIcon  from "@mui/icons-material/Celebration";
-import PhotoCameraIcon  from "@mui/icons-material/PhotoCamera";
+import LightModeIcon from "@mui/icons-material/LightMode";
+import DarkModeIcon from "@mui/icons-material/DarkMode";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import PersonIcon from "@mui/icons-material/Person";
+import PeopleIcon from "@mui/icons-material/People";
+import PaletteIcon from "@mui/icons-material/Palette";
+import CelebrationIcon from "@mui/icons-material/Celebration";
+import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 import dayjs from "dayjs";
 
-import { AuthContext }          from "../../../context/AuthContext";
-import { useColorMode }         from "../../../context/ColorModeContext";
+import { AuthContext } from "../../../context/AuthContext";
+import { useColorMode } from "../../../context/ColorModeContext";
 import { completeOnboarding, saveProfileOnboarding } from "../services/onboardingService";
 import { getFriendsSuggestion, sendBatchFriendRequests } from "../../../features/friends/services/friendService";
 import { uploadAvatar } from "../../../features/profile/services/userService";
 import usePageTitle from "../../../hooks/usePageTitle";
+import { getAvatarUrl } from "../../../utils/avatarUtils";
 
 // ────────────────────────────────────────────────────────────────────────────
 const STEPS = [
-  { label: "Profile Setup",       icon: <PersonIcon /> },
-  { label: "Suggested Friends",  icon: <PeopleIcon /> },
-  { label: "Theme Preference",   icon: <PaletteIcon /> },
-  { label: "Welcome!",           icon: <CelebrationIcon /> },
+  { label: "Profile Setup", icon: <PersonIcon /> },
+  { label: "Suggested Friends", icon: <PeopleIcon /> },
+  { label: "Theme Preference", icon: <PaletteIcon /> },
+  { label: "Welcome!", icon: <CelebrationIcon /> },
 ];
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -91,7 +92,7 @@ function StepProfileSetup({ values, onChange, errors, onAvatarUpload, uploadingA
           <Tooltip title="Click to change avatar">
             <Box sx={{ position: "relative" }}>
               <Avatar
-                src={values.avatarUrl || undefined}
+                src={getAvatarUrl(values.avatarUrl, values.gender) || undefined}
                 sx={{
                   width: 100,
                   height: 100,
@@ -102,7 +103,7 @@ function StepProfileSetup({ values, onChange, errors, onAvatarUpload, uploadingA
                 }}
                 onClick={handleAvatarClick}
               >
-                {!values.avatarUrl && ((values.firstName?.[0] || values.lastName?.[0])?.toUpperCase() || "?")}
+                {!values.avatarUrl && !values.gender && ((values.firstName?.[0] || values.lastName?.[0])?.toUpperCase() || "?")}
               </Avatar>
 
               <Box
@@ -377,7 +378,7 @@ function StepSuggestedFriends({ onSkip, onNext, onGetNextHandler }) {
                 >
                   <CardContent sx={{ textAlign: 'center', p: 2 }}>
                     <Avatar
-                      src={user.avatarUrl || undefined}
+                      src={getAvatarUrl(user.avatarUrl, user.gender) || undefined}
                       sx={{
                         width: 56,
                         height: 56,
@@ -387,7 +388,7 @@ function StepSuggestedFriends({ onSkip, onNext, onGetNextHandler }) {
                         fontSize: '1.2rem',
                       }}
                     >
-                      {!user.avatarUrl && (user.fullName?.[0]?.toUpperCase() || '?')}
+                      {!user.avatarUrl && !user.gender && (user.fullName?.[0]?.toUpperCase() || '?')}
                     </Avatar>
                     <Typography
                       variant="body2"
@@ -487,7 +488,7 @@ function StepThemePreference({ selectedTheme, onSelect }) {
               border: "2px solid",
               borderColor: selectedTheme === "dark" ? "primary.main" : "divider",
               bgcolor: selectedTheme === "dark" ? "#2d2d2d" : "background.paper",
-              color:   selectedTheme === "dark" ? "#e4e6eb"  : "text.primary",
+              color: selectedTheme === "dark" ? "#e4e6eb" : "text.primary",
               transition: "all 0.2s ease",
               "&:hover": { borderColor: "primary.main" },
             }}
@@ -527,25 +528,25 @@ function StepWelcome({ firstName }) {
 export default function UserOnboarding() {
   usePageTitle("Complete Profile");
 
-  const navigate           = useNavigate();
+  const navigate = useNavigate();
   const { completeOnboardingFlag } = useContext(AuthContext);
-  const { mode, setMode }  = useColorMode();
+  const { mode, setMode } = useColorMode();
 
   const [activeStep, setActiveStep] = useState(0);
-  const [loading,    setLoading]    = useState(false);
-  const [apiError,   setApiError]   = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [apiError, setApiError] = useState(null);
 
   // Form values
   const [values, setValues] = useState({
-    firstName:    "",
-    lastName:     "",
-    phoneNumber:  "",
-    avatarUrl:    "",
-    bio:          "",
-    currentCity:  "",
-    hometown:     "",
-    country:      "",
-    birthday:     null,
+    firstName: "",
+    lastName: "",
+    phoneNumber: "",
+    avatarUrl: "",
+    bio: "",
+    currentCity: "",
+    hometown: "",
+    country: "",
+    birthday: null,
   });
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [errors, setErrors] = useState({});
@@ -589,7 +590,7 @@ export default function UserOnboarding() {
 
   const handleNext = async () => {
     if (activeStep === 0 && !validateStep1()) return;
-    
+
     // Step 1 -> Step 2: Save profile data incrementally
     if (activeStep === 0) {
       setLoading(true);
@@ -622,7 +623,7 @@ export default function UserOnboarding() {
         setLoading(false);
       }
     }
-    
+
     setActiveStep((s) => s + 1);
   };
 

@@ -3,6 +3,8 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import Divider from "@mui/material/Divider";
 import List from "@mui/material/List";
 import { Box, Typography, IconButton, CircularProgress, Alert } from "@mui/material";
+import ContactsOutlinedIcon from "@mui/icons-material/ContactsOutlined";
+import EmptyState from "./EmptyState";
 
 import ChatBox from "./ChatBox";
 import MinimizedChatList from "./MinimizedChatList";
@@ -76,11 +78,15 @@ export default function FriendList() {
             </Alert>
           </Box>
         ) : !contacts || contacts.length === 0 ? (
-          <Box sx={{ px: 2, py: 2.5, textAlign: "center" }}>
-            <Typography variant="body2" color="text.secondary">
-              No contacts yet
-            </Typography>
-          </Box>
+          <EmptyState
+            icon={ContactsOutlinedIcon}
+            title="No contacts yet"
+            description="Add friends to see them here and start conversations anytime."
+            primaryLabel="Add friend"
+            primaryTo="/friends?tab=suggestions"
+            secondaryLabel="Search people"
+            secondaryTo="/friends?tab=suggestions"
+          />
         ) : (
           <List sx={{ width: "100%", p: 0 }}>
             {contacts.map((contact, index) => {

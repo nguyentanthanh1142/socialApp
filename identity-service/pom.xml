@@ -40,7 +40,6 @@
             <groupId>io.github.openfeign</groupId>
             <artifactId>feign-hc5</artifactId>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/io.github.openfeign.form/feign-form-spring -->
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
