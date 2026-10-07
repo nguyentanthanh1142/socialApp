@@ -12,7 +12,7 @@ import lombok.experimental.FieldDefaults;
 public class ParticipantInfo {
     String userId;
     String username;
-    String firstname;
-    String lastname;
-    String avatar;
+    String firstName;
+    String lastName;
+    String avatarUrl;
 }

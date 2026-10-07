@@ -6,6 +6,7 @@ import java.time.Year;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
+import com.ntt.common_lib.event.UserCreationEvent;
 import com.ntt.event.dto.NotificationEvent;
 import com.ntt.identity_service.constant.PredefindRole;
 import com.ntt.identity_service.dto.request.*;
@@ -181,8 +182,6 @@ public class AuthenticationService {
         return AuthenticationResponse.builder().token(token).authenticated(true).build();
     }
 
-
-
     private SignedJWT verifyToken(String token, boolean isRefresh) throws JOSEException, ParseException {
         JWSVerifier verifier = new MACVerifier(signerKey.getBytes());
 
@@ -264,9 +263,11 @@ public class AuthenticationService {
             Set<Role> roles = new HashSet<>();
             roles.add(Role.builder().name(PredefindRole.USER).build());
 
+            String generatedUsername = userInfo.getEmail().split("@")[0];
+
             User newUser = User.builder()
                     .email(userInfo.getEmail())
-                    .username(null)
+                    .username(generatedUsername)
                     .emailVerified(true)
                     .isFirstLogin(true)
                     .roles(roles)
@@ -283,6 +284,7 @@ public class AuthenticationService {
                             .firstname(userInfo.getGivenName())
                             .lastname(userInfo.getFamilyName())
                             .avatar(userInfo.getPicture())
+                            .username(generatedUsername)
                             .build());
                     log.info("Profile created response: {}", profileResponse);
                 } catch (Exception e) {
@@ -350,7 +352,8 @@ public class AuthenticationService {
         var token = tokenService.generateVerificationToken(user.getId());
         log.info("Verification token generated for userId: {}", user.getId());
 
-        sendVerificationKafkaEvent(user, token);
+//        sendVerificationKafkaEvent(user, token);
+        sendUserCreationEvent(user);
         return userMapper.toUserResponse(user);
     }
 
@@ -393,5 +396,14 @@ public class AuthenticationService {
                 .build();
 
         kafkaTemplate.send("notification-delivery", notificationEvent);
+    }
+
+    private void sendUserCreationEvent(User user)
+    {
+        UserCreationEvent event = UserCreationEvent.builder()
+                .userId(user.getId())
+                .username(user.getUsername())
+                .build();
+        kafkaTemplate.send("user-creation", event);
     }
 }

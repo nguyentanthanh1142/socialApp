@@ -16,6 +16,6 @@ public interface ProfileClient {
     ApiResponse<UserProfileResponse> getProfile(@PathVariable String userId);
     @GetMapping("/users/popular")
     ApiResponse<List<UserProfileResponse>> getPopularProfiles();
-    @PostMapping("/users/profiles")
+    @PostMapping("/internal/users/profiles")
     ApiResponse<List<UserProfileResponse>> getProfiles(@RequestBody List<String> request);
 }

@@ -14,7 +14,6 @@ import {
   Stack,
   Tooltip,
 } from "@mui/material";
-import CloseIcon from "@mui/icons-material/Close";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import PostPrivacySelector from "./PostPrivacySelector";
 
@@ -34,7 +33,6 @@ export default function EditPostDialog({
       setContent(post.content || "");
       setPrivacy(post.privacy || "PUBLIC");
 
-      // Normalize media list from post
       const initialMedia = (post.files || []).map((file, idx) => {
         if (typeof file === "string") {
           return { id: idx, url: file, type: "image" };
@@ -92,36 +90,15 @@ export default function EditPostDialog({
       }}
     >
       <DialogTitle
-        id="edit-post-dialog-title"
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          pb: 1.5,
-          borderBottom: "1px solid",
-          borderColor: "divider",
-        }}
+        style={{ cursor: "move", textAlign: "center", fontWeight: "bold" }}
+        id="draggable-dialog-title"
       >
-        <Typography variant="h6" fontWeight={700}>
-          Edit post
-        </Typography>
-        <IconButton
-          onClick={onClose}
-          disabled={loading}
-          size="small"
-          aria-label="close"
-          sx={{
-            color: "text.secondary",
-            "&:hover": { backgroundColor: "action.hover" },
-          }}
-        >
-          <CloseIcon fontSize="small" />
-        </IconButton>
+        Edit post
       </DialogTitle>
 
-      <DialogContent sx={{ pt: 2.5, pb: 2 }}>
+      <DialogContent dividers>
         {/* Author Header with embedded Privacy Selector */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>
+        <Stack direction="row" spacing={1.5} alignItems="center" mb={2}>
           <Avatar src={authorAvatar} alt={authorName} sx={{ width: 44, height: 44 }}>
             {authorName?.[0]}
           </Avatar>
@@ -138,7 +115,7 @@ export default function EditPostDialog({
               />
             </Box>
           </Box>
-        </Box>
+        </Stack>
 
         {/* Post Text Input */}
         <TextField
@@ -147,17 +124,9 @@ export default function EditPostDialog({
           minRows={4}
           maxRows={10}
           placeholder="What's on your mind?"
-          variant="standard"
+          variant="outlined"
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          InputProps={{
-            disableUnderline: true,
-            sx: {
-              fontSize: "1rem",
-              lineHeight: 1.6,
-              px: 0.5,
-            },
-          }}
         />
 
         {/* Existing Media Thumbnails */}

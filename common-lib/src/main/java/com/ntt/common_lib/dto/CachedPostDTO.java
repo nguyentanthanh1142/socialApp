@@ -2,6 +2,7 @@ package com.ntt.common_lib.dto;
 
 
 import com.ntt.common_lib.enums.PostOwnerType;
+import com.ntt.common_lib.enums.PostPrivacy;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -19,7 +20,8 @@ public class CachedPostDTO {
     PostOwnerType postsOwnerType; // USER | GROUP
     String ownerId;
     AuthorDTO author;
-    GroupDTO group; // null nếu ownerType = USER
+    GroupDTO group;
     List<FileResponse> files;
     Instant createdAt;
+    PostPrivacy privacy;
 }

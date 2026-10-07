@@ -97,17 +97,29 @@ export const deletePost = async (postId) =>
     })
   );
 
-export const updatePost = async (postId, data) =>
-  executeApi(
+export const updatePost = async (postId, data) => {
+  const formData = new FormData();
+  formData.append("content", data.content);
+  if (data.privacy) {
+    formData.append("privacy", data.privacy);
+  }
+  data.files.forEach((file) => {
+    formData.append("files", file, file.name);
+  });
+
+  return executeApi(
     "updatePost",
-    () => httpClient.put(API.UPDATE_POST(postId), data),
+    () =>
+      httpClient.put(API.UPDATE_POST(postId), formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      }),
     () => ({
       data: {
         result: updateMockPost(postId, data),
       },
     })
   );
-
+}
 export const updatePostPrivacy = async (postId, privacy) =>
   executeApi(
     "updatePostPrivacy",

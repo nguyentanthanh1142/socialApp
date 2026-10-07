@@ -3,7 +3,7 @@ package com.ntt.relation_service.controller;
 import com.ntt.common_lib.dto.ApiResponse;
 import com.ntt.common_lib.dto.PageResponse;
 import com.ntt.relation_service.dto.request.RelationRequest;
-import com.ntt.relation_service.dto.response.RelationReponse;
+import com.ntt.relation_service.dto.response.RelationResponse;
 import com.ntt.relation_service.dto.response.RelationStatusResponse;
 import com.ntt.relation_service.dto.response.SuggestionResponse;
 import com.ntt.relation_service.enums.RelationStatus;
@@ -24,43 +24,40 @@ import java.util.List;
 public class RelationController {
     RelationService relationService;
     @PostMapping("/pending")
-    public ApiResponse<RelationReponse> sendFriendRequest(@RequestBody RelationRequest relation) {
-        return ApiResponse.<RelationReponse>builder()
+    public ApiResponse<RelationResponse> sendFriendRequest(@RequestBody RelationRequest relation) {
+        return ApiResponse.<RelationResponse>builder()
                 .result(relationService.createRelation(relation, RelationStatus.PENDING))
                 .build();
     }
     @PutMapping("/accept/{relationId}")
-    public ApiResponse<RelationReponse> acceptFriend(@PathVariable String relationId) {
-        return ApiResponse.<RelationReponse>builder()
+    public ApiResponse<RelationResponse> acceptFriend(@PathVariable String relationId) {
+        return ApiResponse.<RelationResponse>builder()
                 .result(relationService.updateRelationStatus(relationId, RelationStatus.ACCEPTED))
                 .build();
     }
-    @PostMapping("/block")
-    public ApiResponse<RelationReponse> blockUser(@RequestBody RelationRequest relation) {
-        return ApiResponse.<RelationReponse>builder()
-                .result(relationService.createRelation(relation, RelationStatus.BLOCKED))
+    @PostMapping("/block/{targetUserId}")
+    public ApiResponse<RelationResponse> blockUser(@PathVariable String targetUserId) {
+        return ApiResponse.<RelationResponse>builder()
+                .result(relationService.blockUser(targetUserId))
                 .build();
     }
 
-    @PutMapping("/unblock/{targetUserId}")
-    public ApiResponse<RelationReponse> unblockUser(@PathVariable String targetUserId) {
-        return ApiResponse.<RelationReponse>builder()
-                .result(relationService.updateRelationWithTarget(targetUserId, RelationStatus.NONE))
-                .build();
+    @PostMapping("/unblock/{targetUserId}")
+    public ApiResponse<String> unblockUser(@PathVariable String targetUserId) {
+        relationService.unblockUser(targetUserId);
+        return ApiResponse.<String>builder().result("Unblocked successfully").build();
     }
 
-    @PutMapping("/unfriend/{targetUserId}")
-    public ApiResponse<RelationReponse> unfriendUser(@PathVariable String targetUserId) {
-        return ApiResponse.<RelationReponse>builder()
-                .result(relationService.updateRelationWithTarget(targetUserId, RelationStatus.NONE))
-                .build();
+    @PostMapping("/unfriend/{targetUserId}")
+    public ApiResponse<String> unfriendUser(@PathVariable String targetUserId) {
+        relationService.unfriend(targetUserId);
+        return ApiResponse.<String>builder().result("Unfriended successfully").build();
     }
 
-    @PutMapping("/cancel/{targetUserId}")
-    public ApiResponse<RelationReponse> cancelFriendRequest(@PathVariable String targetUserId) {
-        return ApiResponse.<RelationReponse>builder()
-                .result(relationService.updateRelationWithTarget(targetUserId, RelationStatus.NONE))
-                .build();
+    @PostMapping("/cancel/{targetUserId}")
+    public ApiResponse<String> cancelFriendRequest(@PathVariable String targetUserId) {
+        relationService.cancelRequest(targetUserId);
+        return ApiResponse.<String>builder().result("Request cancelled successfully").build();
     }
 
     @GetMapping("/status/{targetUserId}")
@@ -70,8 +67,8 @@ public class RelationController {
                 .build();
     }
     @PutMapping("/refuse/{relationId}")
-    public ApiResponse<RelationReponse> refuseFriend(@PathVariable String relationId) {
-        return ApiResponse.<RelationReponse>builder()
+    public ApiResponse<RelationResponse> refuseFriend(@PathVariable String relationId) {
+        return ApiResponse.<RelationResponse>builder()
                 .result(relationService.updateRelationStatus(relationId, RelationStatus.REJECTED))
                 .build();
     }
@@ -82,14 +79,14 @@ public class RelationController {
                 .build();
     }
     @GetMapping("/my-friends")
-    public ApiResponse<List<RelationReponse>> getMyFriendList() {
-        return ApiResponse.<List<RelationReponse>>builder()
+    public ApiResponse<List<RelationResponse>> getMyFriendList() {
+        return ApiResponse.<List<RelationResponse>>builder()
                 .result(relationService.getMyFriendList())
                 .build();
     }
     @GetMapping("/my-friend-requests")
-    public ApiResponse<List<RelationReponse>> getMyFriendRequests() {
-        return ApiResponse.<List<RelationReponse>>builder()
+    public ApiResponse<List<RelationResponse>> getMyFriendRequests() {
+        return ApiResponse.<List<RelationResponse>>builder()
                 .result(relationService.getMyFriendRequests())
                 .build();
     }
@@ -100,8 +97,8 @@ public class RelationController {
                 .build();
     }
     @GetMapping("/contact")
-    public ApiResponse<PageResponse<RelationReponse>> getContactRelation(Pageable pageable) {
-        return ApiResponse.<PageResponse<RelationReponse>>builder()
+    public ApiResponse<PageResponse<RelationResponse>> getContactRelation(Pageable pageable) {
+        return ApiResponse.<PageResponse<RelationResponse>>builder()
                 .result(relationService.getListContactRelation(pageable))
                 .build();
     }

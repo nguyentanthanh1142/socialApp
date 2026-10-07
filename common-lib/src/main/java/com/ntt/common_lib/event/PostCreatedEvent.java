@@ -1,6 +1,7 @@
 package com.ntt.common_lib.event;
 
 import com.ntt.common_lib.dto.FileResponse;
+import com.ntt.common_lib.enums.PostPrivacy;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -18,5 +19,5 @@ public class PostCreatedEvent {
     String content;
     Instant createdAt;
     List<FileResponse> files;
-
+    PostPrivacy privacy;
 }

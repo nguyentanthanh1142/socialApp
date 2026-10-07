@@ -5,6 +5,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.ntt.common_lib.dto.CachedPostDTO;
 import com.ntt.common_lib.enums.PostOwnerType;
 import com.ntt.common_lib.event.PostCreatedEvent;
+import com.ntt.common_lib.event.PostDeletedEvent;
+import com.ntt.common_lib.event.PostUpdatedEvent;
 import com.ntt.feed_service.cache.UserProfileCacheImpl;
 import com.ntt.feed_service.service.FeedCache;
 import lombok.AccessLevel;
@@ -29,6 +31,11 @@ public class PostEventListener {
     )
     public void handlePostCreated(PostCreatedEvent event) {
 
+        if(event.getUserId() == null || event.getPostId() == null) {
+            log.warn("Missing userId or postId in PostCreatedEvent: {}", event);
+            return;
+        }
+
         var author = userProfileCache.getAuthor(event.getUserId());
         if(author == null) {
             log.warn("Missing author cache for user {}", event.getUserId());
@@ -43,36 +50,53 @@ public class PostEventListener {
                 .postsOwnerType(PostOwnerType.USER)
                 .ownerId(event.getUserId())
                 .author(author)
+                .privacy(event.getPrivacy())
                 .build();
 
          feedCache.pushToFollowersFeed(event.getUserId(), cachedPostDTO);
+    }
+    @KafkaListener(
+            topics = "post-updated",
+            groupId = "feed-service",
+            containerFactory = "kafkaListenerContainerFactory"
+    )
+    public void handlePostUpdated(PostUpdatedEvent event) {
+        if(event.getUserId() == null || event.getPostId() == null) {
+            log.warn("Missing userId or postId in PostCreatedEvent: {}", event);
+            return;
+        }
 
-//        String postKey = POST_KEY_PREFIX + event.getPostId();
-//        redisTemplate.opsForHash().put(postKey, "userId", event.getUserId());
-//        redisTemplate.opsForHash().put(postKey, "content", event.getContent());
-//        redisTemplate.opsForHash().put(postKey, "createdAt", String.valueOf(event.getCreatedAt()));
-//
-//        try{
-//            String filesJson = objectMapper.writeValueAsString(event.getFiles());
-//            redisTemplate.opsForHash().put(postKey, "files", filesJson);
-//        } catch(JsonProcessingException e)
-//        {
-//            log.error("Error serializing files", e);
-//        }
-//
-//        List<String> followers = getFollowersSafe(event.getUserId());
-//        log.info("Follower: " + followers.toString());
-//
-//
-//        for (String followerId : followers) {
-//            String feedKey = FEED_KEY_PREFIX + followerId;
-//
-//            //This for Redis ZSET
-//            redisTemplate.opsForZSet().add(feedKey, event.getPostId(), event.getCreatedAt().toEpochMilli());
-//            long size = redisTemplate.opsForZSet().zCard(feedKey);
-//            if (size > 1000) {
-//                redisTemplate.opsForZSet().removeRange(feedKey, 0, size - 1001);
-//            }
-//        }
+        var author = userProfileCache.getAuthor(event.getUserId());
+        if(author == null) {
+            log.warn("Missing author cache for user {}", event.getUserId());
+            return;
+        }
+
+        CachedPostDTO cachedPostDTO = CachedPostDTO.builder()
+                .id(event.getPostId())
+                .createdAt(event.getCreatedAt())
+                .files(event.getFiles())
+                .content(event.getContent())
+                .postsOwnerType(PostOwnerType.USER)
+                .ownerId(event.getUserId())
+                .author(author)
+                .privacy(event.getPrivacy())
+                .build();
+
+        feedCache.updateCachedPost(cachedPostDTO);
+    }
+    @KafkaListener(
+            topics = "post-deleted",
+            groupId = "feed-service",
+            containerFactory = "kafkaListenerContainerFactory"
+    )
+    public void handlePostDeleted(PostDeletedEvent event) {
+        if(event.getUserId() == null || event.getPostId() == null) {
+            log.warn("Missing userId or postId in PostDeletedEvent: {}", event);
+            return;
+        }
+
+        feedCache.removePostFromFeed(event.getUserId(), event.getPostId());
+        log.info("Successfully removed deleted post {} from Redis feeds", event.getPostId());
     }
 }

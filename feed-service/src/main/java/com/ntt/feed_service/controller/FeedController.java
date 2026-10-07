@@ -34,13 +34,6 @@ public class FeedController {
                 .result(feedService.getMyFeeds(checkpoint, size))
                 .build();
     }
-//    ApiResponse<PageResponse<FeedResponse>> getMyFeed(
-//            @RequestParam(defaultValue = "0") int page,
-//            @RequestParam(defaultValue = "20") int size) {
-//        return ApiResponse.<PageResponse<FeedResponse>>builder()
-//                .result(feedService.getMyFeed(page,size))
-//                .build();
-//    }
 
     @PostMapping("/read")
     ApiResponse<Void> readFeed(@RequestBody List<String> postIds)
