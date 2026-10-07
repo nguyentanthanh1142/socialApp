@@ -1,7 +1,6 @@
-package com.ntt.common_lib.dto;
+package com.ntt.common_lib.event;
 
-
-import com.ntt.common_lib.enums.PostOwnerType;
+import com.ntt.common_lib.dto.FileResponse;
 import com.ntt.common_lib.enums.PostPrivacy;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -14,14 +13,11 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class CachedPostDTO {
-    String id;
+public class PostUpdatedEvent {
+    String postId;
+    String userId;
     String content;
-    PostOwnerType postsOwnerType; // USER | GROUP
-    String ownerId;
-    AuthorDTO author;
-    GroupDTO group;
-    List<FileResponse> files;
     Instant createdAt;
+    List<FileResponse> files;
     PostPrivacy privacy;
 }

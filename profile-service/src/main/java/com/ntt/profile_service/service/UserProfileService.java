@@ -3,6 +3,7 @@ package com.ntt.profile_service.service;
 import com.ntt.common_lib.dto.FileResponse;
 import com.ntt.common_lib.dto.UserProfileDTO;
 import com.ntt.common_lib.enums.FileOwnerType;
+import com.ntt.common_lib.event.RecoveryFallbackUsernameEvent;
 import com.ntt.common_lib.event.chat.UserAvatarUpdatedEvent;
 import com.ntt.profile_service.cache.UserProfileCacheImpl;
 import com.ntt.profile_service.dto.request.*;
@@ -78,7 +79,7 @@ public class UserProfileService {
         userProfile = userProfileRepository.save(userProfile);
 
         syncUserProfileToCache(userProfile);
-        return userProfileMapper.toUserProfileResponse(userProfileRepository.save(userProfile));
+        return userProfileMapper.toUserProfileResponse(userProfile);
     }
 
     @Transactional(readOnly = true)
@@ -119,7 +120,6 @@ public class UserProfileService {
                 return userProfileRepository.save(profile);
             });
 
-            // 3. Sync Cache & Send Event (NẰM NGOÀI TRANSACTION)
             syncUserProfileToCache(userProfile);
 
             UserAvatarUpdatedEvent event = UserAvatarUpdatedEvent.builder()
@@ -177,7 +177,7 @@ public class UserProfileService {
 
     @Transactional(readOnly = true)
     public List<UserProfileResponse> getProfilesByIds(List<String> userIds) {
-        List<UserProfile> userProfiles = userProfileRepository.findAllById(userIds);
+        List<UserProfile> userProfiles = userProfileRepository.findByUserIdIn(userIds);
         return userProfiles.stream().map(userProfileMapper::toUserProfileResponse).collect(Collectors.toList());
     }
 
@@ -212,9 +212,10 @@ public class UserProfileService {
 
         UserProfile userProfile = userProfileRepository.findByUserId(userId)
                 .orElseGet(() -> {
-                    log.info("Profile not found for userId: {}. Creating new profile for onboarding.", userId);
+                    log.info("Kafka down, no username, generating fallback username {}", userId);
                     return UserProfile.builder()
                             .userId(userId)
+                            .username(generateFallbackUserName(userId))
                             .build();
                 });
 
@@ -223,16 +224,51 @@ public class UserProfileService {
 
         syncUserProfileToCache(userProfile);
 
-        log.info("Calling identity-service to complete onboarding for userId: {}", userId);
         try {
-            var response = identityClient.completeOnboarding();
-            log.info("Identity-service onboarding response: {}", response);
+            identityClient.completeOnboarding();
         } catch (Exception e) {
             log.error("Failed to call identity-service completeOnboarding", e);
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
         }
 
         return userProfileMapper.toUserProfileResponse(userProfile);
+    }
+
+    @Transactional
+    public void createProfileFromEvent(String userId, String username)
+    {
+        UserProfile profile = userProfileRepository.findByUserId(userId)
+                .orElseGet(() -> {
+                    UserProfile newProfile = UserProfile.builder()
+                            .userId(userId)
+                            .username(username)
+                            .build();
+                       return userProfileRepository.save(newProfile);
+
+                });
+        if(profile.getUsername() == null || profile.getUsername().isEmpty())
+        {
+            profile.setUsername(username);
+            userProfileRepository.save(profile);
+            log.info("Successfully updated/created username for userId: {} with username: {}", userId, username);
+        }
+        else {
+            if(profile.getUsername().equals(generateFallbackUserName(userId)))
+            {
+                profile.setUsername(username);
+                userProfileRepository.save(profile);
+
+                RecoveryFallbackUsernameEvent recoveryFallbackUsernameEvent = RecoveryFallbackUsernameEvent.builder()
+                        .userId(userId)
+                        .username(username)
+                        .build();
+                kafkaTemplate.send("recovery-fallback-username-topic", recoveryFallbackUsernameEvent);
+                log.info("Recovered fallback username event for userid: {}", userId);
+            }
+            else {
+                log.info("Profile already has a username for userId: {}, skipping update.", userId);
+            }
+        }
     }
 
     private void syncUserProfileToCache(UserProfile userProfile) {
@@ -250,5 +286,10 @@ public class UserProfileService {
 
     private String getCurrentUserId() {
         return SecurityContextHolder.getContext().getAuthentication().getName();
+    }
+
+    private String generateFallbackUserName(String userId)
+    {
+        return "user_" + userId.substring(0, Math.min(userId.length(), 8));
     }
 }

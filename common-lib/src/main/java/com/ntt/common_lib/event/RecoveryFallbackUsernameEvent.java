@@ -1,18 +1,14 @@
-package com.ntt.relation_service.entity;
+package com.ntt.common_lib.event;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-@Setter
-@Getter
-@Builder
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ParticipantInfo {
+public class RecoveryFallbackUsernameEvent {
     String userId;
     String username;
-    String firstName;
-    String lastName;
-    String avatarUrl;
 }

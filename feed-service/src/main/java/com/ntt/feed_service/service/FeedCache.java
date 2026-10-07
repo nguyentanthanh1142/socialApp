@@ -1,6 +1,7 @@
 package com.ntt.feed_service.service;
 
 import com.ntt.common_lib.dto.CachedPostDTO;
+import com.ntt.common_lib.enums.PostPrivacy;
 import com.ntt.feed_service.repository.httpClient.RelationClient;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -8,6 +9,7 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -29,15 +31,26 @@ public class FeedCache {
         String postKey = POST_KEY_PREFIX + cachedPostDTO.getId();
         cachedPostDTORedisTemplate.opsForValue().set(postKey, cachedPostDTO);
 
-        List<String> followers = getFollowers(userId);
-        double score = cachedPostDTO.getCreatedAt().toEpochMilli();
+        List<String> targetUsers = new ArrayList<>();
+        targetUsers.add(userId);
 
-        List<String> targetUsers = new java.util.ArrayList<>(followers);
-        if (!targetUsers.contains(userId)) {
+        if(cachedPostDTO.getPrivacy().equals(PostPrivacy.PUBLIC))
+        {
+            List<String> followers = getFollowers(userId);
+            targetUsers.addAll(followers);
+        } else if (cachedPostDTO.getPrivacy().equals(PostPrivacy.FRIENDS)) {
+            List<String> followers = getFollowers(userId);
+            targetUsers.addAll(followers);
+        } else if (cachedPostDTO.getPrivacy().equals(PostPrivacy.PRIVATE)) {
+            targetUsers.clear();
             targetUsers.add(userId);
         }
 
-        for(String follower : targetUsers) {
+        double score = cachedPostDTO.getCreatedAt().toEpochMilli();
+
+        List<String> uniqueTargetUsers = targetUsers.stream().distinct().toList();
+
+        for(String follower : uniqueTargetUsers) {
             String feedKey = FEED_KEY_PREFIX + follower;
             redisTemplate.opsForZSet().add(feedKey, cachedPostDTO.getId(), score);
 
@@ -48,7 +61,36 @@ public class FeedCache {
         }
     }
 
+    public void updateCachedPost(CachedPostDTO cachedPostDTO)
+    {
+        String postKey = POST_KEY_PREFIX + cachedPostDTO.getId();
+        cachedPostDTORedisTemplate.opsForValue().set(postKey, cachedPostDTO);
 
+        if (cachedPostDTO.getPrivacy() != null && cachedPostDTO.getPrivacy().equals(PostPrivacy.PRIVATE)) {
+            List<String> followers = getFollowers(cachedPostDTO.getOwnerId());
+            for (String follower : followers) {
+                String feedKey = FEED_KEY_PREFIX + follower;
+                redisTemplate.opsForZSet().remove(feedKey, cachedPostDTO.getId());
+            }
+        }
+    }
+
+    public void removePostFromFeed(String userId, String postId) {
+        String postKey = POST_KEY_PREFIX + postId;
+        cachedPostDTORedisTemplate.delete(postKey);
+
+        List<String> targetUsers = new ArrayList<>();
+        targetUsers.add(userId);
+        List<String> followers = getFollowers(userId);
+        targetUsers.addAll(followers);
+
+        List<String> uniqueTargetUsers = targetUsers.stream().distinct().toList();
+
+        for (String targetUser : uniqueTargetUsers) {
+            String feedKey = FEED_KEY_PREFIX + targetUser;
+            redisTemplate.opsForZSet().remove(feedKey, postId);
+        }
+    }
 
     private List<String> getFollowers(String userId) {
         try{

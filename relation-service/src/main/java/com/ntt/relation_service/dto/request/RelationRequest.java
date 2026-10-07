@@ -15,10 +15,7 @@ import java.util.List;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class RelationRequest {
-    RelationStatus status; // e.g., "pending", "accepted", "blocked"
-
     @Size(min = 1)
     @NotNull
     List<String> participantIds;
-
 }

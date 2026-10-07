@@ -2,7 +2,7 @@ package com.ntt.relation_service.service;
 
 import com.ntt.common_lib.dto.PageResponse;
 import com.ntt.relation_service.dto.request.RelationRequest;
-import com.ntt.relation_service.dto.response.RelationReponse;
+import com.ntt.relation_service.dto.response.RelationResponse;
 import com.ntt.relation_service.dto.response.RelationStatusResponse;
 import com.ntt.relation_service.dto.response.SuggestionResponse;
 import com.ntt.relation_service.dto.response.UserProfileResponse;
@@ -40,12 +40,14 @@ public class RelationService {
     RelationRepository relationRepository;
     ProfileClient profileClient;
 
-    public RelationReponse createRelation(RelationRequest request, RelationStatus status) {
+    public RelationResponse createRelation(RelationRequest request, RelationStatus status) {
 
         String userId = getCurrentUserId();
         String targetId = request.getParticipantIds().getFirst();
 
-        log.info("DEBUG -> userId (from Token): {}, targetId (from Request): {}", userId, targetId);
+        if (userId.equals(targetId)) {
+            throw new AppException(ErrorCode.INVALID_REQUEST);
+        }
 
         var profilesResponse = profileClient.getProfiles(List.of(userId, targetId));
 
@@ -61,32 +63,50 @@ public class RelationService {
         var userInfo = profileMap.get(userId);
         var targetInfo = profileMap.get(targetId);
 
-        List<String> sortedUserIds = List.of(userId, targetId).stream().sorted().toList();
-        String userIdHash = generateConversationHash(sortedUserIds);
+        String userIdHash = generateConversationHash(userId, targetId);
 
-        var relation = relationRepository.findByParticipantsHash(userIdHash).orElseGet(() ->
-        {
-            List<ParticipantInfo> participantInfos = List.of(
-                    mapToParticipant(userInfo),
-                    mapToParticipant(targetInfo)
-            );
+        Optional<Relation> existingRelation = relationRepository.findByParticipantsHash(userIdHash);
 
-            Relation newRelation = Relation.builder()
-                    .ownerId(userId) // Lưu người khởi tạo yêu cầu
-                    .createdDate(Instant.now())
-                    .modifiedDate(Instant.now())
-                    .participants(participantInfos)
-                    .participantsHash(userIdHash)
-                    .status(status)
-                    .build();
+        Relation relation;
+        if (existingRelation.isPresent()) {
+            relation = existingRelation.get();
+            RelationStatus currentStatus = relation.getStatus();
+            if (currentStatus == RelationStatus.ACCEPTED) {
+                throw new AppException(ErrorCode.ALREADY_FRIENDS);
+            } else if (currentStatus.equals(RelationStatus.BLOCKED)) {
+                throw new AppException(ErrorCode.ACTION_NOT_ALLOWED);
+            } else if (currentStatus.equals(RelationStatus.PENDING)) {
+                if (userId.equals(relation.getOwnerId())) {
+                    return toRelationReponse(relation);
+                } else {
+                    relation.setStatus(RelationStatus.ACCEPTED);
+                    relation.setAcceptedDate(Instant.now());
+                    relation.setModifiedDate(Instant.now());
+                    relation = relationRepository.save(relation);
+                    return toRelationReponse(relation);
+                }
+            }
+        }
 
-            return relationRepository.save(newRelation);
-        });
+        List<ParticipantInfo> participantInfos = List.of(
+                mapToParticipant(userInfo),
+                mapToParticipant(targetInfo)
+        );
 
+        Relation newRelation = Relation.builder()
+                .ownerId(userId)
+                .createdDate(Instant.now())
+                .modifiedDate(Instant.now())
+                .participants(participantInfos)
+                .participantsHash(userIdHash)
+                .status(status)
+                .build();
+
+        relation = relationRepository.save(newRelation);
         return toRelationReponse(relation);
     }
 
-    public RelationReponse updateRelationStatus(String relationId, RelationStatus status) {
+    public RelationResponse updateRelationStatus(String relationId, RelationStatus status) {
         String userId = getCurrentUserId();
         Relation relation = relationRepository.findByParticipantsHash(relationId)
                 .orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
@@ -105,13 +125,7 @@ public class RelationService {
         return relationMapper.toRelationReponse(relationRepository.save(relation));
     }
 
-    public List<RelationReponse> getMyRelation() {
-        String userId = getCurrentUserId();
-        List<Relation> relations = relationRepository.findAllByParticipantIdsContains(userId);
-        return relations.stream().map(this::toRelationReponse).collect(Collectors.toList());
-    }
-
-    public List<RelationReponse> getMyFriendList() {
+    public List<RelationResponse> getMyFriendList() {
         String userId = getCurrentUserId();
         List<Relation> relations = relationRepository.findAllByParticipantIdsContainsAndStatus(userId, RelationStatus.ACCEPTED);
         return relations.stream().map(this::toRelationReponse).collect(Collectors.toList());
@@ -121,16 +135,14 @@ public class RelationService {
         return getRelationshipStatus(getCurrentUserId(), targetId);
     }
 
-    public RelationReponse updateRelationWithTarget(String targetUserId, RelationStatus status) {
+    public RelationResponse updateRelationWithTarget(String targetUserId, RelationStatus status) {
         String userId = getCurrentUserId();
-        String relationHash = generateConversationHash(
-                List.of(userId, targetUserId).stream().sorted().toList()
-        );
+        String relationHash = generateConversationHash(userId, targetUserId);
         return updateRelationStatus(relationHash, status);
     }
 
     public RelationStatusResponse getRelationshipStatus(String viewerId, String targetId) {
-        String relationHash = generateConversationHash(List.of(viewerId, targetId));
+        String relationHash = generateConversationHash(viewerId, targetId);
 
         return relationRepository.findByParticipantsHash(relationHash)
                 .map(relation -> toRelationStatusResponse(relation, viewerId, targetId))
@@ -175,7 +187,7 @@ public class RelationService {
         return getOnboardingSuggestions(myRelationIds);
     }
 
-    public List<RelationReponse> getMyFriendRequests() {
+    public List<RelationResponse> getMyFriendRequests() {
         String userId = getCurrentUserId();
 
         return getRelationsByStatus(RelationStatus.PENDING).stream()
@@ -197,21 +209,103 @@ public class RelationService {
                 .collect(Collectors.toList());
     }
 
-    private RelationReponse toRelationReponse(Relation relation) {
+    public void unfriend(String targetUserId) {
+        String userId = getCurrentUserId();
+        String relationHash = generateConversationHash(userId, targetUserId);
+
+        Relation relation = relationRepository.findByParticipantsHash(relationHash)
+                .orElseThrow(() -> new AppException(ErrorCode.RELATIONSHIP_NOT_FOUND));
+
+        if (relation.getStatus() != RelationStatus.ACCEPTED) {
+            throw new AppException(ErrorCode.RELATIONSHIP_NOT_FOUND);
+        }
+
+        relationRepository.delete(relation);
+    }
+
+    public void cancelRequest(String targetUserId) {
+        String userId = getCurrentUserId();
+        String relationHash = generateConversationHash(userId, targetUserId);
+
+        Relation relation = relationRepository.findByParticipantsHash(relationHash)
+                .orElseThrow(() -> new AppException(ErrorCode.RELATIONSHIP_NOT_FOUND));
+
+        if (relation.getStatus() != RelationStatus.PENDING || !userId.equals(relation.getOwnerId())) {
+            throw new AppException(ErrorCode.RELATIONSHIP_NOT_FOUND);
+        }
+
+        relationRepository.delete(relation);
+    }
+
+    public RelationResponse blockUser(String targetUserId) {
+        String userId = getCurrentUserId();
+        String relationHash = generateConversationHash(userId, targetUserId);
+
+        var profilesResponse = profileClient.getProfiles(List.of(userId, targetUserId));
+        if (profilesResponse == null || profilesResponse.getResult() == null || profilesResponse.getResult().size() < 2) {
+            throw new AppException(ErrorCode.RELATIONSHIP_NOT_FOUND);
+        }
+
+        Map<String, UserProfileResponse> profileMap = profilesResponse.getResult().stream()
+                .collect(Collectors.toMap(UserProfileResponse::getUserId, profile -> profile));
+
+        var userInfo = profileMap.get(userId);
+        var targetInfo = profileMap.get(targetUserId);
+
+        Relation relation = relationRepository.findByParticipantsHash(relationHash).orElseGet(() -> {
+            List<ParticipantInfo> participantInfos = List.of(
+                    mapToParticipant(userInfo),
+                    mapToParticipant(targetInfo)
+            );
+
+            return Relation.builder()
+                    .ownerId(userId)
+                    .createdDate(Instant.now())
+                    .modifiedDate(Instant.now())
+                    .participants(participantInfos)
+                    .participantsHash(relationHash)
+                    .status(RelationStatus.BLOCKED)
+                    .build();
+        });
+
+        relation.setStatus(RelationStatus.BLOCKED);
+        relation.setOwnerId(userId);
+        relation.setModifiedDate(Instant.now());
+
+        return toRelationReponse(relationRepository.save(relation));
+    }
+
+    public void unblockUser(String targetUserId) {
+        String userId = getCurrentUserId();
+        String relationHash = generateConversationHash(userId, targetUserId);
+
+        Relation relation = relationRepository.findByParticipantsHash(relationHash)
+                .orElseThrow(() -> new AppException(ErrorCode.RELATIONSHIP_NOT_FOUND));
+
+        if (relation.getStatus() != RelationStatus.BLOCKED || !userId.equals(relation.getOwnerId())) {
+            throw new AppException(ErrorCode.RELATIONSHIP_NOT_FOUND);
+        }
+
+        relationRepository.delete(relation);
+    }
+
+    private RelationResponse toRelationReponse(Relation relation) {
         String currentUserId = getCurrentUserId();
-        RelationReponse response = relationMapper.toRelationReponse(relation);
+        RelationResponse response = relationMapper.toRelationReponse(relation);
 
         response.getParticipants().stream()
                 .filter(participantInfo -> !participantInfo.getUserId().equals(currentUserId))
                 .findFirst().ifPresent(participantInfo -> {
+                    String fullName = buildFullName(participantInfo.getFirstName(), participantInfo.getLastName(), participantInfo.getUsername());
+                    response.setConversationName(fullName);
                     response.setConversationName(participantInfo.getUsername());
-                    response.setConversationAvatar(participantInfo.getAvatar());
+                    response.setConversationAvatar(participantInfo.getAvatarUrl());
                 });
 
         return response;
     }
 
-    public PageResponse<RelationReponse> getListContactRelation(Pageable pageable) {
+    public PageResponse<RelationResponse> getListContactRelation(Pageable pageable) {
         String userId = getCurrentUserId();
 
         if (!pageable.getSort().isSorted()) {
@@ -235,14 +329,15 @@ public class RelationService {
 
         var relationResponseList = relations.stream().map(this::toRelationReponse).toList();
 
-        return PageResponse.<RelationReponse>builder()
+        return PageResponse.<RelationResponse>builder()
                 .hasNext(hasNext)
                 .data(relationResponseList)
                 .build();
     }
 
-    private String generateConversationHash(List<String> userIds) {
-        return String.join("-", userIds);
+    private String generateConversationHash(String userA, String userB) {
+        List<String> sortedIds = List.of(userA, userB).stream().sorted().toList();
+        return String.join("-", sortedIds);
     }
 
     private String getCurrentUserId() {
@@ -257,14 +352,13 @@ public class RelationService {
         return ParticipantInfo.builder()
                 .userId(profile.getUserId())
                 .username(profile.getUsername())
-                .firstname(profile.getFirstName())
-                .lastname(profile.getLastName())
-                .avatar(profile.getAvatarUrl())
+                .firstName(profile.getFirstName())
+                .lastName(profile.getLastName())
+                .avatarUrl(profile.getAvatarUrl())
                 .build();
     }
 
     private List<SuggestionResponse> getFOFSuggestions(Set<String> myFriendIds, Set<String> myRelationIds) {
-        // Đã sửa RelationStatus.ACCEPTED.name() -> RelationStatus.ACCEPTED
         List<Relation> friendsRelations = relationRepository.findAllByParticipantIdsInAndStatus(
                 new ArrayList<>(myFriendIds),
                 RelationStatus.ACCEPTED

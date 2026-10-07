@@ -5,6 +5,8 @@ import com.ntt.common_lib.enums.FileOwnerType;
 import com.ntt.common_lib.enums.PostAction;
 import com.ntt.common_lib.enums.PostPrivacy;
 import com.ntt.common_lib.event.PostCreatedEvent;
+import com.ntt.common_lib.event.PostDeletedEvent;
+import com.ntt.common_lib.event.PostUpdatedEvent;
 import com.ntt.post_service.dto.PageResponse;
 import com.ntt.post_service.dto.request.PostRequest;
 import com.ntt.post_service.dto.request.PostUpdateRequest;
@@ -50,7 +52,7 @@ public class PostService {
     ProfileClient profileClient;
     DateTimeFormatter dateTimeFormatter;
     FileClient fileClient;
-    KafkaTemplate<String, PostCreatedEvent> kafkaTemplate;
+    KafkaTemplate<String, Object> kafkaTemplate;
     LikeService likeService;
     RedisTemplate<String, Object> redisTemplate;
 
@@ -76,6 +78,7 @@ public class PostService {
                 .userId(userId)
                 .content(request.getContent())
                 .createdAt(post.getCreateDate())
+                .privacy(request.getPrivacy())
                 .files(postImages)
                 .build();
 
@@ -140,10 +143,31 @@ public class PostService {
         if (request.getPrivacy() != null) {
             post.setPrivacy(request.getPrivacy());
         }
+        post.setModifiedDate(Instant.now());
+
+        post = postRepository.save(post);
+
         List<FileResponse> postImages = new ArrayList<>();
         if (request.getFiles() != null && request.getFiles().length > 0) {
             postImages = fileClient.uploadMedia(request.getFiles(), FileOwnerType.POST, post.getId()).getResult();
+        } else {
+            try {
+                postImages = fileClient.getFilesByReferenceId(post.getId(), FileOwnerType.POST).getResult();
+            } catch (Exception e) {
+                log.error("Failed to fetch existing files for updated postId={}: {}", post.getId(), e.getMessage());
+            }
         }
+
+        PostUpdatedEvent updatedEvent = PostUpdatedEvent.builder()
+                .postId(post.getId())
+                .userId(userId)
+                .content(post.getContent())
+                .createdAt(post.getCreateDate())
+                .privacy(post.getPrivacy())
+                .files(postImages) // Truyền đúng danh sách file (mới hoặc cũ được giữ lại)
+                .build();
+
+        kafkaTemplate.send("post-updated", updatedEvent);
 
         var response = postMapper.ToPostResponse(post);
         response.setFiles(postImages);
@@ -173,6 +197,13 @@ public class PostService {
         post.setModifiedDate(Instant.now());
 
         postRepository.save(post);
+
+        PostDeletedEvent deletedEvent = PostDeletedEvent.builder()
+                .postId(post.getId())
+                .userId(userId)
+                .build();
+
+        kafkaTemplate.send("post-deleted", deletedEvent);
     }
 
     public PostResponse getPost(String postId) {

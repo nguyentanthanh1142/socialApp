@@ -1,10 +1,10 @@
 package com.ntt.relation_service.dto.response;
 
 import com.ntt.relation_service.entity.ParticipantInfo;
+import com.ntt.relation_service.enums.ConversationType;
+import com.ntt.relation_service.enums.RelationStatus;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.MongoId;
 
 import java.time.Instant;
 import java.util.List;
@@ -14,10 +14,11 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class RelationReponse {
+public class RelationResponse {
 
     String id;
-    String status;    //GROUP, DIRECT
+    ConversationType type;
+    RelationStatus status;
     String participantsHash;
     String conversationAvatar;
     String conversationName;

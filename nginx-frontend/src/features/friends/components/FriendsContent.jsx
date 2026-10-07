@@ -4,10 +4,12 @@ import {
   Typography,
   CircularProgress,
   Button,
+  Grid,
 } from "@mui/material";
 import { Link } from "react-router-dom";
 import FriendRequestCard from "./FriendRequestCard";
-import SuggestionCard from "./SuggestionCard";
+import FriendSuggestionCard from "./FriendSuggestionCard";
+import FriendCard from "./FriendCard";
 
 function FriendsContent({
   loading,
@@ -18,6 +20,10 @@ function FriendsContent({
   onConfirm,
   onDelete,
   onPending,
+  onDismissSuggestion,
+  onUnfriend,
+  onBlock,
+  currentUserId,
 }) {
   const showRequests = activeTab === "overview" || activeTab === "requests";
   const showSuggestions = activeTab === "overview" || activeTab === "suggestions";
@@ -71,7 +77,7 @@ function FriendsContent({
           }}
         >
           {(activeTab === "overview" ? friends.slice(0, 8) : friends).map((req) => (
-            <Box key={req.id}>
+            <Box key={req.id || req.participantsHash || req.targetUserId}>
               <FriendRequestCard
                 req={{
                   ...req,
@@ -136,9 +142,20 @@ function FriendsContent({
             gap: 2,
           }}
         >
-          {(activeTab === "overview" ? suggestions.slice(0, 10) : suggestions).map((req) => (
-            <Box key={req.id}>
-              <SuggestionCard req={req} onPending={onPending} />
+          {(activeTab === "overview" ? suggestions.slice(0, 10) : suggestions).map((sug) => (
+            <Box key={sug.userId || sug.id}>
+              <FriendSuggestionCard
+                suggestion={{
+                  ...sug,
+                  userId: sug.userId || sug.id,
+                  fullName: sug.fullName || sug.conversationName || sug.name || sug.username || "User",
+                  avatarUrl: sug.avatarUrl || sug.avatar || "",
+                  mutualFriendsCount: sug.mutualFriendsCount ?? sug.mutualFriends ?? 0,
+                  mutualFriendNames: sug.mutualFriendNames || [],
+                }}
+                onAddFriend={onPending}
+                onDismiss={onDismissSuggestion}
+              />
             </Box>
           ))}
         </Box>
@@ -156,34 +173,21 @@ function FriendsContent({
 
       {friendsList.length === 0 ? (
         <Typography sx={{ color: "text.secondary", py: 2 }}>
-          You have no friends in your list yet. Send friend requests from suggestions!
+          You have no friends in your list yet. Connect with people from suggestions!
         </Typography>
       ) : (
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: {
-              xs: "1fr",
-              sm: "repeat(2, minmax(0, 1fr))",
-              md: "repeat(3, minmax(0, 1fr))",
-              lg: "repeat(4, minmax(0, 1fr))",
-            },
-            gap: 2,
-          }}
-        >
+        <Grid container spacing={2}>
           {friendsList.map((friend) => (
-            <Box key={friend.id}>
-              <FriendRequestCard
-                req={{
-                  ...friend,
-                  conversationName: friend.conversationName || friend.name || [friend.firstname, friend.lastname].filter(Boolean).join(" ") || "Friend",
-                  avatar: friend.avatar || "",
-                  status: "FRIENDS",
-                }}
+            <Grid item xs={12} md={6} key={friend.id || friend.participantsHash}>
+              <FriendCard
+                relation={friend}
+                currentUserId={currentUserId}
+                onUnfriend={onUnfriend}
+                onBlock={onBlock}
               />
-            </Box>
+            </Grid>
           ))}
-        </Box>
+        </Grid>
       )}
     </Box>
   );

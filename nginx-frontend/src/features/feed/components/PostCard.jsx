@@ -83,40 +83,40 @@ export default function PostCard({
   const mediaList =
     currentPost.files?.length > 0
       ? currentPost.files
-          .map((file) => {
-            if (typeof file === "string") {
-              const isVid =
-                /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(file) ||
-                file.includes("/video/upload/");
-              return { url: file, type: isVid ? "video" : "image" };
-            }
-            const url =
-              file.url ||
-              file.preview ||
-              (file.file ? URL.createObjectURL(file.file) : null);
-            const rawFile = file.file || (file instanceof File ? file : null);
-            const mimeType = rawFile?.type || file.type || "";
+        .map((file) => {
+          if (typeof file === "string") {
             const isVid =
-              file.type === "video" ||
-              mimeType.startsWith("video/") ||
-              (url &&
-                (url.startsWith("blob:") ||
-                  url.includes("/video/upload/") ||
-                  /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(url)));
-
-            return {
-              url,
-              type: isVid ? "video" : "image",
-              ...file,
-            };
-          })
-          .filter((item) => item.url)
-      : (currentPost.images || []).map((url) => {
+              /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(file) ||
+              file.includes("/video/upload/");
+            return { url: file, type: isVid ? "video" : "image" };
+          }
+          const url =
+            file.url ||
+            file.preview ||
+            (file.file ? URL.createObjectURL(file.file) : null);
+          const rawFile = file.file || (file instanceof File ? file : null);
+          const mimeType = rawFile?.type || file.type || "";
           const isVid =
-            /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(url) ||
-            url.includes("/video/upload/");
-          return { url, type: isVid ? "video" : "image" };
-        });
+            file.type === "video" ||
+            mimeType.startsWith("video/") ||
+            (url &&
+              (url.startsWith("blob:") ||
+                url.includes("/video/upload/") ||
+                /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(url)));
+
+          return {
+            url,
+            type: isVid ? "video" : "image",
+            ...file,
+          };
+        })
+        .filter((item) => item.url)
+      : (currentPost.images || []).map((url) => {
+        const isVid =
+          /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(url) ||
+          url.includes("/video/upload/");
+        return { url, type: isVid ? "video" : "image" };
+      });
 
   const handleAuthorClick = () => {
     const target =
@@ -253,7 +253,7 @@ export default function PostCard({
   // Edit modal save
   const handleSaveEdit = async (updatedData) => {
     setEditLoading(true);
-    try {
+    ; try {
       const res = await updatePost(currentPost.postId, updatedData);
       const serverResult = res?.data?.result || updatedData;
       const merged = {

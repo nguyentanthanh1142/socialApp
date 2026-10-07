@@ -18,9 +18,10 @@ public enum ErrorCode {
     ALREADY_FOLLOWED(90401, "You are already following this user", HttpStatus.BAD_REQUEST),
     CANNOT_FOLLOW_SELF(90402, "You cannot perform relationship actions on yourself", HttpStatus.BAD_REQUEST),
     USER_BLOCKED(90403, "Cannot perform action because user is blocked", HttpStatus.BAD_REQUEST),
+    ALREADY_FRIENDS(90404, "You are already friends with this user", HttpStatus.BAD_REQUEST),
+    ACTION_NOT_ALLOWED(90405, "Action not allowed due to current relationship status", HttpStatus.BAD_REQUEST),
     ;
 
-    // Đã đưa int code lên vị trí ĐẦU TIÊN
     ErrorCode(int code, String message, HttpStatusCode statusCode) {
         this.code = code;
         this.message = message;

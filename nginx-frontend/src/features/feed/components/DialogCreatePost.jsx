@@ -107,7 +107,7 @@ export default function DialogCreatePost({
 
   return (
     <>
-      <Box display="flex" alignItems="center" gap={1} width="100%">
+      <Box display="flex" alignItems="center" gap={1} width="100%" mb={2}>
         <Avatar alt={displayName} src={avatarSrc} />
         <Button
           onClick={onOpen}
@@ -119,7 +119,6 @@ export default function DialogCreatePost({
         </Button>
       </Box>
 
-      {/* Dialog */}
       <Dialog
         open={open}
         onClose={onClose}
@@ -155,18 +154,17 @@ export default function DialogCreatePost({
             </Box>
           </Stack>
 
-          {/* Ô nhập nội dung (có thể thay thế TextField bằng EmojiInput nếu muốn tích hợp emoji) */}
           <TextField
             multiline
             fullWidth
             minRows={4}
+            maxRows={10}
             placeholder="What's on your mind?"
             variant="outlined"
             value={newPostContent}
             onChange={(e) => setNewPostContent(e.target.value)}
           />
 
-          {/* 📸 Hiển thị ảnh ngay dưới text */}
           {selectedImages.length > 0 && (
             <Box mt={2}>
               <ImageList cols={3} gap={8}>
@@ -202,7 +200,6 @@ export default function DialogCreatePost({
             </Box>
           )}
 
-          {/* 📹 Hiển thị video ngay dưới ảnh */}
           {selectedVideos.length > 0 && (
             <Box mt={2}>
               {selectedVideos.map((vid, index) => (
@@ -231,9 +228,7 @@ export default function DialogCreatePost({
             </Box>
           )}
 
-          {/* 📎 Nút thêm ảnh và video */}
           <Box mt={2} display="flex" gap={2} justifyContent="flex-start">
-            {/* Nút Add Image */}
             <input
               accept="image/*"
               id="upload-image"
@@ -252,7 +247,6 @@ export default function DialogCreatePost({
               </Button>
             </label>
 
-            {/* Nút Add Video */}
             <input
               accept="video/*"
               id="upload-video"

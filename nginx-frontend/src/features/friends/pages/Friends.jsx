@@ -8,8 +8,10 @@ import {
     acceptFriend,
     deleteFriendRequest,
     sendFriendsRequest,
+    unfriendUser,
+    blockUser,
 } from "../services/friendService";
-import { isAuthenticated } from "../../auth/services/authenticationService";
+import { isAuthenticated, getCurrentUserId } from "../../auth/services/authenticationService";
 import Scene from "../../../components/Scene";
 import FriendSideMenu from "../components/FriendSideMenu";
 import FriendsContent from "../components/FriendsContent";
@@ -155,6 +157,36 @@ export default function Friends() {
         }
     }, [friendRequests]);
 
+    const handleUnfriend = useCallback(async (targetId) => {
+        setFriendsList((prev) => prev.filter((item) => (item.participantsHash || item.id) !== targetId));
+        try {
+            await unfriendUser(targetId);
+            showSnackbar("Unfriended successfully.", "success");
+        } catch (err) {
+            console.error("Failed to unfriend:", err);
+            showSnackbar("Failed to unfriend user.", "error");
+            loadFriendsData();
+        }
+    }, [loadFriendsData]);
+
+    const handleBlock = useCallback(async (targetId) => {
+        setFriendsList((prev) => prev.filter((item) => (item.participantsHash || item.id) !== targetId));
+        try {
+            await blockUser(targetId);
+            showSnackbar("User blocked.", "success");
+        } catch (err) {
+            console.error("Failed to block user:", err);
+            showSnackbar("Failed to block user.", "error");
+            loadFriendsData();
+        }
+    }, [loadFriendsData]);
+
+    const handleDismissSuggestion = useCallback((userId) => {
+        setSuggestion((prev) => prev.filter((item) => (item.userId || item.id) !== userId));
+    }, []);
+
+    const currentUserId = getCurrentUserId();
+
     return (
         <Scene sideMenu={<FriendSideMenu />}>
             <Box
@@ -204,6 +236,10 @@ export default function Friends() {
                     onConfirm={handleConfirm}
                     onDelete={handleDelete}
                     onPending={handlePending}
+                    onDismissSuggestion={handleDismissSuggestion}
+                    onUnfriend={handleUnfriend}
+                    onBlock={handleBlock}
+                    currentUserId={currentUserId}
                 />
             </Box>
         </Scene>

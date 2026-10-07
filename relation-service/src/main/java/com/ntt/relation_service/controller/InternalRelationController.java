@@ -17,7 +17,6 @@ public class InternalRelationController {
 
     RelationService relationService;
 
-
     @GetMapping("/internal/relation")
     public ApiResponse<RelationStatusResponse> getRelationshipStatus(
             @RequestParam("viewerId") String viewerId,

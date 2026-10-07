@@ -13,11 +13,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class PostCreatedEvent {
+public class PostDeletedEvent {
     String postId;
     String userId;
-    String content;
-    Instant createdAt;
-    List<FileResponse> files;
-    PostPrivacy privacy;
 }

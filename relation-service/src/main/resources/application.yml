@@ -11,13 +11,14 @@ spring:
       auto-index-creation: true
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9094}
+
     consumer:
       group-id: relation-service-group
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
-        spring.json.trusted.packages: "*"
+        spring.json.trusted.packages: com.ntt.common_lib.event,com.ntt.relation_service.dto.request,com.ntt.common_lib.dto
 app:
   services:
     profile:

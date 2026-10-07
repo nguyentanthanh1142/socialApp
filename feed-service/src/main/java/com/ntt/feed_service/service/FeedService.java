@@ -87,7 +87,14 @@ public class FeedService {
 
         List<CachedPostDTO> cachedPostDTOS = postIds.stream()
                 .map(postCacheService::getPost)
-                .filter(Objects::nonNull).toList();
+                .filter(Objects::nonNull)
+                .filter(post -> {
+                    if (post.getPrivacy() != null && post.getPrivacy().name().equals("PRIVATE")) {
+                        return post.getOwnerId().equals(userId);
+                    }
+                    return true;
+                })
+                .toList();
 
         List<FeedResponse> feeds = cachedPostDTOS.stream()
                 .map( post -> FeedResponse.builder()
