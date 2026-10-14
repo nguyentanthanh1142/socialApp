@@ -1,9 +1,10 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Box, Card, Dialog, Snackbar, Alert, Typography } from "@mui/material";
 import { isAuthenticated } from "../../auth/services/authenticationService";
 import Scene from "../../../components/Scene";
-import { getMyFeed } from "../services/feedService";
+// 💡 Bổ sung markReadPosts vào import từ feedService
+import { getMyFeed, markReadPosts } from "../services/feedService";
 import { createPost, likePost } from "../services/postService";
 import DraggableDialog from "../components/DialogCreatePost";
 import SideMenu from "../../../components/header/SideMenu";
@@ -24,9 +25,9 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [feedError, setFeedError] = useState(null);
   const [hasMore, setHasMore] = useState(true);
-  const observer = useRef();
+  const observer = useRef(null);
+  const isLoadingRef = useRef(false);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const lastPostElementRef = useRef();
   const [newPostContent, setNewPostContent] = useState("");
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
@@ -70,6 +71,7 @@ export default function Home() {
       liked: Boolean(post.liked),
       privacy: post.privacy || "PUBLIC",
       actions: post.actions || undefined,
+      isRead: Boolean(post.isRead),
     };
   };
 
@@ -113,6 +115,7 @@ export default function Home() {
       commentCount: 0,
       liked: false,
       privacy: privacy || "PUBLIC",
+      isRead: true,
     });
   };
 
@@ -169,10 +172,15 @@ export default function Home() {
     setPosts((prevPosts) => prevPosts.filter((p) => p.postId !== postId));
   };
 
-  const loadPosts = async (checkpoint) => {
-    if (loading) return;
+  // 🎯 ĐOẠN TỐI ƯU ĐÁNH DẤU ĐÃ ĐỌC TRONG loadPosts
+  const loadPosts = useCallback(async (checkpoint = null) => {
+    console.log("🚀 Đang gọi loadPosts với checkpoint truyền vào:", checkpoint);
+    console.log("📍 checkpointRef.current hiện tại là:", checkpointRef.current);
+    if (isLoadingRef.current) return;
+    isLoadingRef.current = true;
     setLoading(true);
     setFeedError(null);
+
     try {
       const response = await getMyFeed(checkpoint);
       const result = response?.data?.result || {};
@@ -180,46 +188,75 @@ export default function Home() {
 
       setPosts((prevPosts) => {
         const existingIds = new Set(prevPosts.map((p) => p.postId));
-        return [...prevPosts, ...incomingPosts.map(normalizePost).filter((p) => !existingIds.has(p.postId))];
+        const newPosts = incomingPosts
+          .map(normalizePost)
+          .filter((p) => !existingIds.has(p.postId));
+        return [...prevPosts, ...newPosts];
       });
 
-      if (result.nextCheckpoint) {
-        checkpointRef.current = result.nextCheckpoint;
+      // Cập nhật checkpoint mới cho lần cuộn tiếp theo
+      checkpointRef.current = result.nextCheckpoint ?? null;
+
+      const canLoadMore = Boolean(result.hasNext) && incomingPosts.length > 0;
+      setHasMore(canLoadMore);
+
+      // 💡 ĐÁNH DẤU ĐÃ ĐỌC: Bắn danh sách postId vừa load ngầm lên Backend
+      const newPostIds = incomingPosts
+        .map((p) => p.postId ?? p.id)
+        .filter(Boolean);
+
+      if (newPostIds.length > 0) {
+        markReadPosts(newPostIds).catch((err) =>
+          console.error("Failed to mark posts as read:", err)
+        );
       }
-      setHasMore(Boolean(result.hasMore));
+
     } catch (error) {
       console.error("Failed to load feed:", error);
       setFeedError("Unable to load feed. Please try again.");
       setHasMore(false);
     } finally {
+      isLoadingRef.current = false;
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (!isAuthenticated()) return;
     loadPosts(null);
-  }, []);
+  }, [loadPosts]);
 
   useEffect(() => {
-    if (!hasMore || loading) return;
-    if (observer.current) observer.current.disconnect();
+    return () => {
+      if (observer.current) observer.current.disconnect();
+    };
+  }, []);
 
-    observer.current = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting) {
-        if (checkpointRef.current) {
-          loadPosts(checkpointRef.current);
+  const lastPostElementRef = useCallback(
+    (node) => {
+      if (loading) return;
+      if (observer.current) observer.current.disconnect();
+
+      observer.current = new IntersectionObserver(
+        (entries) => {
+          if (entries[0].isIntersecting && hasMore && !isLoadingRef.current) {
+            loadPosts(checkpointRef.current);
+          }
+        },
+        {
+          rootMargin: "250px",
         }
-      }
-    });
+      );
 
-    if (lastPostElementRef.current) {
-      observer.current.observe(lastPostElementRef.current);
-    }
+      if (node) observer.current.observe(node);
+    },
+    [loading, hasMore, loadPosts]
+  );
 
-    return () => observer.current?.disconnect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [posts, loading, hasMore]);
+  const handleRetry = useCallback(() => {
+    setHasMore(true);
+    loadPosts(checkpointRef.current);
+  }, [loadPosts]);
 
   return (
     <Scene sideMenu={<SideMenu />}>
@@ -307,7 +344,7 @@ export default function Home() {
                   setPreviewOpen(true);
                 }}
                 lastPostElementRef={lastPostElementRef}
-                onRetry={() => loadPosts(checkpointRef.current)}
+                onRetry={handleRetry}
                 onCreatePost={() => setDialogOpen(true)}
                 onDeletePost={handleDeletePost}
                 onUpdatePost={handleUpdatePost}

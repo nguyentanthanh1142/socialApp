@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   Card,
@@ -7,10 +7,15 @@ import {
   Snackbar,
   Alert,
   Button,
+  Popover,
+  Divider,
 } from "@mui/material";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
+import ChatIcon from "@mui/icons-material/Chat";
+import PersonAddIcon from "@mui/icons-material/PersonAdd";
+import PersonIcon from "@mui/icons-material/Person";
 import { useNavigate } from "react-router-dom";
 import { getPostDisplayTime } from "../../../utils/dateUtils";
 import { useUser } from "../../../providers/UserProvider";
@@ -26,6 +31,204 @@ import PostActionMenu from "./PostActionMenu";
 import DeletePostDialog from "./DeletePostDialog";
 import EditPostDialog from "./EditPostDialog";
 
+// ─── Author Hover Card (Facebook-style) ─────────────────────────────────────
+function AuthorHoverCard({ currentPost, authorName, authorAvatar, onNavigate }) {
+  const [friendState, setFriendState] = useState("add"); // "add" | "sent" | "friend"
+
+  const coverUrl =
+    currentPost.coverUrl ||
+    currentPost.authorCover ||
+    null;
+
+  const bio = currentPost.bio || currentPost.authorBio || null;
+
+  const mutualText = currentPost.mutualFriendsCount
+    ? `${currentPost.mutualFriendsCount} bạn chung`
+    : "Người dùng Social Network";
+
+  const handleMessageClick = (e) => {
+    e.stopPropagation();
+    const targetId =
+      currentPost.userId || currentPost.authorId || currentPost.username;
+    if (targetId) {
+      onNavigate(`/chat?userId=${targetId}`);
+    } else {
+      onNavigate("/chat");
+    }
+  };
+
+  const handleFriendToggle = (e) => {
+    e.stopPropagation();
+    setFriendState((prev) => {
+      if (prev === "add") return "sent";
+      if (prev === "sent") return "add";
+      return "friend";
+    });
+  };
+
+  const handleCardClick = (e) => {
+    e.stopPropagation();
+    const target =
+      currentPost.username || currentPost.authorUsername || currentPost.userId;
+    if (target) onNavigate(`/u/${target}`);
+  };
+
+  const friendLabel =
+    friendState === "add"
+      ? "Thêm bạn bè"
+      : friendState === "sent"
+      ? "Đã gửi lời mời"
+      : "Bạn bè";
+
+  const FriendIcon =
+    friendState === "friend" ? PersonIcon : PersonAddIcon;
+
+  return (
+    <Box
+      sx={{
+        width: 300,
+        borderRadius: 3,
+        overflow: "hidden",
+        bgcolor: "background.paper",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
+      }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {/* Cover Photo */}
+      <Box
+        sx={{
+          height: 105,
+          background: coverUrl
+            ? `url(${coverUrl}) center/cover no-repeat`
+            : "linear-gradient(135deg, #1877f2 0%, #42b7fd 50%, #a78bfa 100%)",
+          position: "relative",
+        }}
+      />
+
+      {/* Avatar overlapping cover */}
+      <Box sx={{ px: 2, pb: 0 }}>
+        <Avatar
+          src={authorAvatar}
+          alt={authorName}
+          onClick={handleCardClick}
+          sx={{
+            width: 64,
+            height: 64,
+            mt: "-32px",
+            border: "3px solid white",
+            cursor: "pointer",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.18)",
+            transition: "transform 0.2s",
+            "&:hover": { transform: "scale(1.07)" },
+          }}
+        >
+          {authorName?.[0]}
+        </Avatar>
+
+        {/* Author info */}
+        <Box sx={{ mt: 1, mb: 1.5 }}>
+          <Typography
+            fontWeight={700}
+            fontSize="1rem"
+            onClick={handleCardClick}
+            sx={{
+              cursor: "pointer",
+              lineHeight: 1.25,
+              "&:hover": { textDecoration: "underline" },
+            }}
+          >
+            {authorName}
+          </Typography>
+
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ display: "block", mt: 0.25 }}
+          >
+            {mutualText}
+          </Typography>
+
+          {bio && (
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{
+                mt: 0.75,
+                fontSize: "0.82rem",
+                lineHeight: 1.45,
+                display: "-webkit-box",
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden",
+              }}
+            >
+              {bio}
+            </Typography>
+          )}
+        </Box>
+
+        <Divider sx={{ mb: 1.5 }} />
+
+        {/* Action Buttons */}
+        <Box sx={{ display: "flex", gap: 1, pb: 2 }}>
+          <Button
+            variant="contained"
+            size="small"
+            startIcon={<ChatIcon sx={{ fontSize: 16 }} />}
+            onClick={handleMessageClick}
+            sx={{
+              flex: 1,
+              textTransform: "none",
+              fontWeight: 600,
+              fontSize: "0.82rem",
+              borderRadius: 2,
+              bgcolor: "#1877f2",
+              "&:hover": { bgcolor: "#166fe5" },
+              py: 0.75,
+            }}
+          >
+            Nhắn tin
+          </Button>
+
+          <Button
+            variant={friendState === "add" ? "contained" : "outlined"}
+            size="small"
+            startIcon={<FriendIcon sx={{ fontSize: 16 }} />}
+            onClick={handleFriendToggle}
+            sx={{
+              flex: 1,
+              textTransform: "none",
+              fontWeight: 600,
+              fontSize: "0.82rem",
+              borderRadius: 2,
+              ...(friendState === "add"
+                ? {
+                    bgcolor: "#e7f3ff",
+                    color: "#1877f2",
+                    boxShadow: "none",
+                    "&:hover": { bgcolor: "#d0e8ff" },
+                  }
+                : friendState === "sent"
+                ? {
+                    borderColor: "#ccc",
+                    color: "text.secondary",
+                  }
+                : {
+                    borderColor: "#1877f2",
+                    color: "#1877f2",
+                  }),
+              py: 0.75,
+            }}
+          >
+            {friendLabel}
+          </Button>
+        </Box>
+      </Box>
+    </Box>
+  );
+}
+
+// ─── Main PostCard Component ─────────────────────────────────────────────────
 export default function PostCard({
   post,
   isRead,
@@ -39,6 +242,7 @@ export default function PostCard({
   onReportPost,
   onSavePost,
   onSharePost,
+  fullWidth = false,
 }) {
   const navigate = useNavigate();
   const { currentUser } = useUser();
@@ -50,6 +254,38 @@ export default function PostCard({
   const [editLoading, setEditLoading] = useState(false);
   const [isHidden, setIsHidden] = useState(false);
   const [isDeleted, setIsDeleted] = useState(false);
+
+  // ── Hover Card state ─────────────────────────────────────────────────────
+  const [hoverAnchorEl, setHoverAnchorEl] = useState(null);
+  const hoverEnterTimerRef = useRef(null);
+  const hoverLeaveTimerRef = useRef(null);
+
+  const handleAuthorMouseEnter = (e) => {
+    clearTimeout(hoverLeaveTimerRef.current);
+    const target = e.currentTarget;
+    hoverEnterTimerRef.current = setTimeout(() => {
+      setHoverAnchorEl(target);
+    }, 270);
+  };
+
+  const handleAuthorMouseLeave = () => {
+    clearTimeout(hoverEnterTimerRef.current);
+    hoverLeaveTimerRef.current = setTimeout(() => {
+      setHoverAnchorEl(null);
+    }, 280);
+  };
+
+  const handlePopoverMouseEnter = () => {
+    clearTimeout(hoverLeaveTimerRef.current);
+  };
+
+  const handlePopoverMouseLeave = () => {
+    hoverLeaveTimerRef.current = setTimeout(() => {
+      setHoverAnchorEl(null);
+    }, 280);
+  };
+
+  const hoverOpen = Boolean(hoverAnchorEl);
 
   // Snackbar notification feedback
   const [snackbar, setSnackbar] = useState({
@@ -65,6 +301,14 @@ export default function PostCard({
   useEffect(() => {
     setCurrentPost(post);
   }, [post]);
+
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      clearTimeout(hoverEnterTimerRef.current);
+      clearTimeout(hoverLeaveTimerRef.current);
+    };
+  }, []);
 
   const authorName = currentPost.name || currentPost.authorName || "User";
   const authorAvatar = currentPost.avatarUrl || currentPost.avatar || "";
@@ -318,7 +562,7 @@ export default function PostCard({
         className="post-card"
         sx={{
           width: "100%",
-          maxWidth: 580,
+          maxWidth: fullWidth ? "100%" : 580,
           p: 3,
           mb: 2.5,
           borderRadius: 3,
@@ -347,6 +591,8 @@ export default function PostCard({
               src={authorAvatar}
               alt={authorName}
               onClick={handleAuthorClick}
+              onMouseEnter={handleAuthorMouseEnter}
+              onMouseLeave={handleAuthorMouseLeave}
               sx={{
                 width: 42,
                 height: 42,
@@ -362,11 +608,14 @@ export default function PostCard({
                 fontWeight={700}
                 fontSize="0.95rem"
                 onClick={handleAuthorClick}
+                onMouseEnter={handleAuthorMouseEnter}
+                onMouseLeave={handleAuthorMouseLeave}
                 noWrap
                 sx={{
                   cursor: "pointer",
                   lineHeight: 1.3,
                   mb: 0.25,
+                  display: "inline-block",
                   "&:hover": { textDecoration: "underline" },
                 }}
               >
@@ -571,6 +820,39 @@ export default function PostCard({
           </Box>
         </Box>
       </Card>
+
+      {/* ── Author Hover Card Popover ─────────────────────────────────────── */}
+      <Popover
+        open={hoverOpen}
+        anchorEl={hoverAnchorEl}
+        onClose={() => setHoverAnchorEl(null)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+        transformOrigin={{ vertical: "top", horizontal: "left" }}
+        disableRestoreFocus
+        sx={{
+          pointerEvents: "none",
+          "& .MuiPopover-paper": {
+            pointerEvents: "auto",
+            borderRadius: 3,
+            overflow: "hidden",
+            mt: 0.5,
+            boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
+          },
+        }}
+        slotProps={{
+          paper: {
+            onMouseEnter: handlePopoverMouseEnter,
+            onMouseLeave: handlePopoverMouseLeave,
+          },
+        }}
+      >
+        <AuthorHoverCard
+          currentPost={currentPost}
+          authorName={authorName}
+          authorAvatar={authorAvatar}
+          onNavigate={navigate}
+        />
+      </Popover>
 
       {/* Delete Confirmation Modal */}
       <DeletePostDialog

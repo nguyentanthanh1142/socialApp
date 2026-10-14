@@ -2,8 +2,8 @@ package com.ntt.feed_service.configuration;
 
 import feign.RequestInterceptor;
 import feign.RequestTemplate;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -11,12 +11,10 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 @Component
 @Log4j2
+@RequiredArgsConstructor
 public class AuthenticationRequestInterceptor implements RequestInterceptor {
 
-    @Autowired
-    private ServiceTokenGenerator serviceTokenGenerator;
-
-    private String serviceToken;
+    private final ServiceTokenGenerator serviceTokenGenerator;
 
     @Override
     public void apply(RequestTemplate requestTemplate) {
@@ -30,7 +28,7 @@ public class AuthenticationRequestInterceptor implements RequestInterceptor {
                 return;
             }
         }
-        serviceToken = serviceTokenGenerator.generateServiceToken();
+        String serviceToken = serviceTokenGenerator.generateServiceToken();
         log.info("authHeader from SERVICE_TOKEN: {}", serviceToken);
             requestTemplate.header("Authorization", "Bearer " + serviceToken);
     }

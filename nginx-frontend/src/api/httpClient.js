@@ -4,7 +4,7 @@ import { getToken, removeToken } from "../storage/localStorageService";
 
 const httpClient = axios.create({
   baseURL: CONFIG.API_GATEWAY,
-  timeout: 30000,
+  timeout: 5000,
   headers: {
     "Content-Type": "application/json",
   },
@@ -43,7 +43,7 @@ httpClient.interceptors.response.use(
 
 export const axiosPublicClient = axios.create({
   baseURL: CONFIG.API_GATEWAY,
-  timeout: 30000,
+  timeout: 5000,
   headers: {
     "Content-Type": "application/json",
   },

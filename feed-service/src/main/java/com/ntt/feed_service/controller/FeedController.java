@@ -3,6 +3,7 @@ package com.ntt.feed_service.controller;
 
 import com.ntt.common_lib.dto.ApiResponse;
 import com.ntt.common_lib.dto.PageResponse;
+import com.ntt.feed_service.dto.response.FeedPageResponse;
 import com.ntt.feed_service.dto.response.FeedResponse;
 import com.ntt.feed_service.service.FeedService;
 import lombok.AccessLevel;
@@ -26,11 +27,11 @@ public class FeedController {
 
 
     @GetMapping("/my-feed")
-    ApiResponse<PageResponse<FeedResponse>> getMyFeed(
+    ApiResponse<FeedPageResponse<FeedResponse>> getMyFeed(
             @RequestParam(required = false) Double checkpoint,
             @RequestParam(defaultValue = "20") int size) {
 
-        return ApiResponse.<PageResponse<FeedResponse>>builder()
+        return ApiResponse.<FeedPageResponse<FeedResponse>>builder()
                 .result(feedService.getMyFeeds(checkpoint, size))
                 .build();
     }

@@ -33,7 +33,6 @@ springdoc:
     path: /swagger-ui.html
 app:
   services:
-    token: eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJudHQuY29tIiwic3ViIjoiZmVlZC1zZXJ2aWNlIiwiYXVkIjoicmVsYXRpb24tc2VydmljZSIsImV4cCI6MTc1ODc4MDAwMCwiaWF0IjoxNzU4Nzc2NDAwLCJqdGkiOiI3YzJmOGFmMS0zZDViLTQxYzYtODEyYi0zZTYwYTJiYjVmNWMiLCJzY29wZSI6IlJPTEVfSU5URVJOQUwgU0VSVklDRV9DQUxMIn0.MbS_aPYZYVgV9-S7PdX-Vt2uCSVQm1vR-3rI68StWx7-7vxNmkGP51semSovDQhR-wrqZJFlg7xKMzqo86mZ7w
     relation:
       url: ${RELATION_SERVICE_URL:http://localhost:8086/relation}
     profile:
@@ -41,6 +40,4 @@ app:
     post:
       url: ${POST_SERVICE_URL:http://localhost:8083/post}
 jwt:
-  signerKey: ${JWT_SIGNER_KEY:K25adN3cmQsGmXDPQCpIbluXGC5cTdXwOU1TSOkm/h9Cj6FBuMExdcvkkxTzIRsM}
-  valid-duration: 3600 #seconds
-  refresh-duration: 36000  #seconds
+  signerKey: ${JWT_SIGNER_KEY}

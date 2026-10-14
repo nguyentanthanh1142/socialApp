@@ -23,10 +23,9 @@ public class ServiceTokenGenerator {
     private String cachedToken;
     private Instant cachedExpiresAt;
 
-    public String generateServiceToken() {
+    public synchronized String generateServiceToken() {
         try {
             Instant now = Instant.now();
-
             if (cachedToken != null && cachedExpiresAt != null && now.isBefore(cachedExpiresAt.minusSeconds(60))) {
                 return cachedToken;
             }
@@ -36,7 +35,7 @@ public class ServiceTokenGenerator {
                     .subject("feed-service")
                     .audience("relation-service")
                     .issueTime(Date.from(now))
-                    .expirationTime(Date.from(now.plusSeconds(300))) // token 1h
+                    .expirationTime(Date.from(now.plusSeconds(300)))
                     .jwtID(UUID.randomUUID().toString())
                     .claim("scope", "ROLE_SERVICE")
                     .build();

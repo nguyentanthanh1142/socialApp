@@ -22,9 +22,9 @@ export const getMyFeed = async (checkpoint = null) =>
     "getMyFeed",
     () =>
       httpClient.get(API.MY_FEED, {
-        params: { checkpoint, size: 3 },
+        params: { checkpoint, size: 10 },
       }),
-    () => getMockFeedByCheckpoint(checkpoint, 3)
+    () => getMockFeedByCheckpoint(checkpoint, 10)
   );
 
 export const markReadPosts = async (postIds) =>

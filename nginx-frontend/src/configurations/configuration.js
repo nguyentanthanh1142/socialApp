@@ -1,18 +1,19 @@
 export const CONFIG = {
-  API_GATEWAY:
-    window._env_?.REACT_APP_API_GATEWAY || "http://localhost:8888/api/v1",
-  SOCKET_URL:
-    window._env_?.REACT_APP_SOCKET_URL ||
-    process.env.REACT_APP_SOCKET_URL ||
-    "http://localhost:8888",
+  API_GATEWAY: import.meta.env.VITE_API_GATEWAY || "http://localhost:8888/api/v1",
+  SOCKET_URL: import.meta.env.VITE_SOCKET_URL || "",
+  CLIENT_ID: import.meta.env.VITE_CLIENT_ID || "",
+  AUTH_REDIRECT_URL:
+    import.meta.env.VITE_AUTH_REDIRECT_URL ||
+    "http://localhost:3000/authenticated",
+  USE_MOCK: import.meta.env.VITE_USE_MOCK === "true",
 };
 
 export const OAuthConfig = {
   clientId:
-    window._env_?.REACT_APP_CLIENT_ID ||
+    import.meta.env.REACT_APP_CLIENT_ID ||
     "681874681914-2v5tnop8tehclnvfmasmnou3qqn5b45v.apps.googleusercontent.com",
   redirectUri:
-    window._env_?.REACT_APP_AUTH_REDIRECT_URL || "http://localhost:3000/authenticated",
+    import.meta.env.REACT_APP_AUTH_REDIRECT_URL || "http://localhost:3000/authenticated",
   authUri: "https://accounts.google.com/o/oauth2/auth",
 };
 
@@ -46,6 +47,7 @@ export const API = {
   REFUSE_FRIEND: "/relation/refuse",
   MY_FRIENDS: "/relation/my-friends",
   FRIENDS_SUGGESTION: "/relation/friends-suggestion",
+  DISMISS_SUGGESTION: (targetUserId) => `/relation/dismiss-suggestion/${targetUserId}`,
   MY_FEED: "/feed/my-feed",
   MARK_READ_POST: "/feed/read",
   UPDATE_CHECKPOINT: "/feed/checkpoint",

@@ -21,6 +21,7 @@ export default function FeedList({
   onReportPost,
   onSavePost,
   onSharePost,
+  fullWidth = false,
 }) {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", gap: "10px" }}>
@@ -58,8 +59,12 @@ export default function FeedList({
         return (
           <Box
             key={post.postId}
-            ref={isLast ? lastPostElementRef : null} // 👈 Đưa ref ra bọc bên ngoài bài viết cuối cùng tại đây
-            sx={{ width: "100%", display: "flex", justifyContent: "center" }}
+            ref={isLast ? lastPostElementRef : null}
+            sx={{
+              width: "100%",
+              display: "flex",
+              justifyContent: fullWidth ? "flex-start" : "center",
+            }}
           >
             <PostCard
               post={post}
@@ -74,6 +79,7 @@ export default function FeedList({
               onReportPost={onReportPost}
               onSavePost={onSavePost}
               onSharePost={onSharePost}
+              fullWidth={fullWidth}
             />
           </Box>
         );
