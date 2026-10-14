@@ -20,16 +20,28 @@ import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Component
 @RequiredArgsConstructor
 @Slf4j
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class SocketIOHandler {
-        SocketIOServer server;
-        IdentityService identityService;
-        WebSocketSessionService webSocketSessionService;
-        UserPresenceService userPresenceService;
+    SocketIOServer server;
+    IdentityService identityService;
+    WebSocketSessionService webSocketSessionService;
+    UserPresenceService userPresenceService;
+
+    private final ExecutorService socketWorkerPool = Executors.newFixedThreadPool(
+            Math.max(4, Runtime.getRuntime().availableProcessors() * 2),
+            r -> {
+                Thread t = new Thread(r);
+                t.setName("socket-io-worker-" + t.getId());
+                t.setDaemon(true);
+                return t;
+            }
+    );
 
     @OnConnect
     public void clientConnected(SocketIOClient client) {
@@ -42,110 +54,130 @@ public class SocketIOHandler {
             client.disconnect();
             return;
         }
-        var introspectResponse = identityService.introspect(IntrospectRequest.builder()
-                .token(token).build());
+        socketWorkerPool.submit(() -> {
+            try {
+                var introspectResponse = identityService.introspect(IntrospectRequest.builder()
+                        .token(token).build());
 
-        if (!introspectResponse.isValid()) {
-            log.warn("Invalid token for client: {}", client.getSessionId());
-            client.disconnect();
+                if (!introspectResponse.isValid()) {
+                    log.warn("Invalid token for client: {}", client.getSessionId());
+                    client.disconnect();
+                    return;
+                }
+
+                String userId = introspectResponse.getUserId();
+                String newSocketId = client.getSessionId().toString();
+
+                log.info("Client connected: user={}, device={}, socket={}", userId, deviceId, newSocketId);
+
+                WebSocketSession existing = webSocketSessionService.findByUserIdAndDeviceId(userId, deviceId);
+
+                if (existing != null) {
+                    String oldSocketId = existing.getSocketSessionId();
+                    log.info("Found old session for device → cleaning up old socket: {}", oldSocketId);
+
+                    webSocketSessionService.deleteSession(oldSocketId);
+
+                    userPresenceService.handleUserDisconnect(userId, oldSocketId);
+                }
+
+                WebSocketSession webSocketSession = WebSocketSession.builder()
+                        .socketSessionId(newSocketId)
+                        .userId(userId)
+                        .deviceId(deviceId)
+                        .tabId(tabId)
+                        .createdAt(Instant.now())
+                        .build();
+
+                webSocketSessionService.createWebSocketSession(webSocketSession);
+                log.info("WebSocket session created: {}", webSocketSession.getId());
+
+                boolean justOnline = userPresenceService.handleUserConnect(userId, newSocketId);
+
+                if (justOnline) {
+                    server.getBroadcastOperations().sendEvent("user_presence_changed", Map.of(
+                            "userId", userId,
+                            "status", "ONLINE",
+                            "lastSeen", ""
+                    ));
+                }
+            } catch (Exception e) {
+                log.error("Error during socket connection for client: {}", client.getSessionId(), e);
+                client.disconnect();
+            }
+        });
+    }
+
+    @OnDisconnect
+    public void clientDisconnected(SocketIOClient client) {
+        String socketSessionId = client.getSessionId().toString();
+        log.info("Client disConnected: {}", socketSessionId);
+
+        socketWorkerPool.submit(() -> {
+            try {
+                var session = webSocketSessionService.findBySocketSessionId(socketSessionId);
+                webSocketSessionService.deleteSession(socketSessionId);
+                if (session != null) {
+                    String userId = session.getUserId();
+                    boolean justOffline = userPresenceService.handleUserDisconnect(userId, socketSessionId);
+                    if (justOffline) {
+                        log.info("User {} is fully disconnected", userId);
+                        var presence = userPresenceService.getUserPresence(userId);
+                        server.getBroadcastOperations().sendEvent("user_presence_changed", presence);
+                    }
+                }
+            } catch (Exception e) {
+                log.error("Error during socket disconnection", e);
+            }
+        });
+    }
+
+
+    @OnEvent("typing_start")
+    public void onTypingStart(SocketIOClient client, Map<String, Object> data) {
+        String conversationId = (String) data.get("conversationId");
+        Boolean isTyping = (Boolean) data.get("isTyping");
+
+        if (conversationId == null) {
             return;
         }
 
-        String userId = introspectResponse.getUserId();
-        String newSocketId = client.getSessionId().toString();
+        log.info("User typing event in conversation {}: isTyping={}", conversationId, isTyping);
 
-        log.info("Client connected: user={}, device={}, socket={}", userId, deviceId, newSocketId);
-
-        WebSocketSession existing = webSocketSessionService.findByUserIdAndDeviceId(userId, deviceId);
-
-        if (existing != null) {
-            String oldSocketId = existing.getSocketSessionId();
-            log.info("Found old session for device → cleaning up old socket: {}", oldSocketId);
-
-            webSocketSessionService.deleteSession(oldSocketId);
-
-            userPresenceService.handleUserDisconnect(userId, oldSocketId);
-        }
-
-        WebSocketSession webSocketSession = WebSocketSession.builder()
-                .socketSessionId(newSocketId)
-                .userId(userId)
-                .deviceId(deviceId)
-                .tabId(tabId)
-                .createdAt(Instant.now())
-                .build();
-
-        webSocketSessionService.createWebSocketSession(webSocketSession);
-        log.info("WebSocket session created: {}", webSocketSession.getId());
-
-        boolean justOnline = userPresenceService.handleUserConnect(userId, newSocketId);
-
-        if (justOnline) {
-            server.getBroadcastOperations().sendEvent("user_presence_changed", Map.of(
-                    "userId", userId,
-                    "status", "ONLINE",
-                    "lastSeen", ""
-            ));
+        for (SocketIOClient c : server.getRoomOperations(conversationId).getClients()) {
+            if (!c.getSessionId().equals(client.getSessionId())) {
+                c.sendEvent("user_typing", Map.of(
+                        "conversationId", conversationId,
+                        "isTyping", isTyping != null ? isTyping : false
+                ));
+            }
         }
     }
-        @OnDisconnect
-        public void clientDisconnected(SocketIOClient client) {
-            String socketSessionId = client.getSessionId().toString();
-            log.info("Client disConnected: {}", socketSessionId);
-            var session = webSocketSessionService.findBySocketSessionId(socketSessionId);
-            webSocketSessionService.deleteSession(client.getSessionId().toString());
 
-            if(session != null){
-                String userId = session.getUserId();
-                boolean justOfflie = userPresenceService.handleUserDisconnect(userId,socketSessionId);
-                if(justOfflie){
-                    log.info("User {} is disconnected", userId);
-                    var presence = userPresenceService.getUserPresence(userId);
-                    server.getBroadcastOperations().sendEvent("user_presence_changed", presence);
-                }
-            }
+    @OnEvent("join_room")
+    public void onJoinRoom(SocketIOClient client, java.util.Map<String, Object> data) {
+        String conversationId = (String) data.get("conversationId");
+        String userId = client.get("userId"); // Lấy từ memory, không cần query DB
+
+        if (conversationId != null && userId != null) {
+            // if (!conversationService.isMember(userId, conversationId)) return;
+
+            client.joinRoom(conversationId);
+            log.info("Client {} (user: {}) joined room: {}", client.getSessionId(), userId, conversationId);
         }
+    }
 
-        @OnEvent("typing_start")
-        public void onTypingStart(SocketIOClient client, Map<String, Object> data) {
-            String conversationId = (String) data.get("conversationId");
-            Boolean isTyping = (Boolean) data.get("isTyping");
+    @PostConstruct
+    public void startServer() {
+        server.addListeners(this);
+        server.start();
+        log.info("SocketIO Server started");
+    }
 
-            if (conversationId == null) {
-                return;
-            }
-
-            log.info("User typing event in conversation {}: isTyping={}", conversationId, isTyping);
-
-            for (SocketIOClient c : server.getRoomOperations(conversationId).getClients()) {
-                if (!c.getSessionId().equals(client.getSessionId())) {
-                    c.sendEvent("user_typing", Map.of(
-                            "conversationId", conversationId,
-                            "isTyping", isTyping != null ? isTyping : false
-                    ));
-                }
-            }
-        }
-
-        @OnEvent("join_room")
-        public void onJoinRoom(SocketIOClient client, Map<String, Object> data) {
-            String conversationId = (String) data.get("conversationId");
-            log.info("User joining room: {}", conversationId);
-            if (conversationId != null) {
-                client.joinRoom(conversationId);
-                log.info("Client {} joined room: {}", client.getSessionId(), conversationId);
-            }
-        }
-
-        @PostConstruct
-        public void startServer() {
-            server.addListeners(this);
-            server.start();
-            log.info("SocketIO Server started");
-        }
-        @PreDestroy
-        public void destroy() {
-            server.stop();
-            log.info("SocketIO Server stopped");
-        }
+    @PreDestroy
+    public void destroy() {
+        server.stop();
+        socketWorkerPool.shutdown();
+        log.info("SocketIO Server stopped");
+    }
 }

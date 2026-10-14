@@ -12,8 +12,8 @@ import java.time.LocalDate;
  @FieldDefaults(level = AccessLevel.PRIVATE)
  public class UserProfileResponse {
      String id;
-     String lastname;
-     String firstname;
+     String lastName;
+     String firstName;
      LocalDate birthday;
      String city;
      String username;

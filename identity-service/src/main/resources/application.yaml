@@ -30,10 +30,9 @@ outbound:
     redirect-url: ${AUTH_REDIRECT_URL:http://localhost:3000/authenticated}
 
 jwt:
-  signerKey: ${JWT_SIGNER_KEY:K25adN3cmQsGmXDPQCpIbluXGC5cTdXwOU1TSOkm/h9Cj6FBuMExdcvkkxTzIRsM}
+  signerKey: ${JWT_SIGNER_KEY}
   valid-duration: 3600
   refresh-duration: 36000
-
 app:
   services:
     profile: ${PROFILE_SERVICE_URL:http://localhost:8081/profile}
@@ -61,3 +60,6 @@ management:
   endpoint:
     health:
       show-details: always
+logging:
+  level:
+    com.ntt.common_web: DEBUG

@@ -252,10 +252,8 @@ public class AuthenticationService {
                 .redirectUri(redirectUrl)
                 .build());
 
-        log.info("Outbound Authentication response: {}", response);
 
         var userInfo = outboundUserClient.exchangeToken("json", response.getAccessToken());
-        log.info("User Info: {}", userInfo);
 
         User user = userRepository.findByEmail(userInfo.getEmail()).orElse(null);
 

@@ -16,7 +16,6 @@ public class AuthenticationRequestInterceptor implements RequestInterceptor {
 
     @Override
     public void apply(RequestTemplate requestTemplate) {
-        log.info("[Feign Interceptor] Bắt đầu xử lý gán token cho request gọi đi: {}", requestTemplate.url());
 
         ServletRequestAttributes attributes =
                 (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
@@ -29,7 +28,6 @@ public class AuthenticationRequestInterceptor implements RequestInterceptor {
 
         String authHeader = request.getHeader("Authorization");
         if (StringUtils.hasText(authHeader)) {
-            log.info("[Feign Interceptor] Phát hiện Authorization Header có sẵn từ request gốc. Đang chuyển tiếp...");
             requestTemplate.header("Authorization", authHeader);
             return;
         }

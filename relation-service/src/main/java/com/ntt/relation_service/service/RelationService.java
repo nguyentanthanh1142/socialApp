@@ -10,6 +10,7 @@ import com.ntt.relation_service.entity.ParticipantInfo;
 import com.ntt.relation_service.entity.Relation;
 import com.ntt.relation_service.enums.RelationAction;
 import com.ntt.relation_service.enums.RelationStatus;
+import com.ntt.relation_service.enums.RelationType;
 import com.ntt.relation_service.exception.AppException;
 import com.ntt.relation_service.exception.ErrorCode;
 import com.ntt.relation_service.mapper.RelationMapper;
@@ -49,19 +50,10 @@ public class RelationService {
             throw new AppException(ErrorCode.INVALID_REQUEST);
         }
 
-        var profilesResponse = profileClient.getProfiles(List.of(userId, targetId));
+        Map<String, ParticipantInfo> participantMap = fetchParticipantInfos(userId, targetId);
 
-        log.info("DEBUG -> Fetched profiles count: {}",
-                (profilesResponse != null && profilesResponse.getResult() != null) ? profilesResponse.getResult().size() : 0);
-        if (profilesResponse == null || profilesResponse.getResult() == null || profilesResponse.getResult().size() < 2) {
-            throw new AppException(ErrorCode.RELATIONSHIP_NOT_FOUND);
-        }
-
-        Map<String, UserProfileResponse> profileMap = profilesResponse.getResult().stream()
-                .collect(Collectors.toMap(UserProfileResponse::getUserId, profile -> profile));
-
-        var userInfo = profileMap.get(userId);
-        var targetInfo = profileMap.get(targetId);
+        var userInfo = participantMap.get(userId);
+        var targetInfo = participantMap.get(targetId);
 
         String userIdHash = generateConversationHash(userId, targetId);
 
@@ -77,21 +69,18 @@ public class RelationService {
                 throw new AppException(ErrorCode.ACTION_NOT_ALLOWED);
             } else if (currentStatus.equals(RelationStatus.PENDING)) {
                 if (userId.equals(relation.getOwnerId())) {
-                    return toRelationReponse(relation);
+                    return toRelationResponse(relation);
                 } else {
                     relation.setStatus(RelationStatus.ACCEPTED);
                     relation.setAcceptedDate(Instant.now());
                     relation.setModifiedDate(Instant.now());
                     relation = relationRepository.save(relation);
-                    return toRelationReponse(relation);
+                    return toRelationResponse(relation);
                 }
             }
         }
 
-        List<ParticipantInfo> participantInfos = List.of(
-                mapToParticipant(userInfo),
-                mapToParticipant(targetInfo)
-        );
+        List<ParticipantInfo> participantInfos = List.of(userInfo, targetInfo);
 
         Relation newRelation = Relation.builder()
                 .ownerId(userId)
@@ -100,35 +89,51 @@ public class RelationService {
                 .participants(participantInfos)
                 .participantsHash(userIdHash)
                 .status(status)
+                .type(RelationType.FRIEND)
                 .build();
 
         relation = relationRepository.save(newRelation);
-        return toRelationReponse(relation);
+        return toRelationResponse(relation);
     }
 
     public RelationResponse updateRelationStatus(String relationId, RelationStatus status) {
         String userId = getCurrentUserId();
-        Relation relation = relationRepository.findByParticipantsHash(relationId)
+
+        Relation relation = relationRepository.findById(relationId)
                 .orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
+
+        if (status == RelationStatus.ACCEPTED || status == RelationStatus.REJECTED) {
+            if (relation.getStatus() != RelationStatus.PENDING) {
+                throw new AppException(ErrorCode.ACTION_NOT_ALLOWED);
+            }
+            if (userId.equals(relation.getOwnerId())) {
+                throw new AppException(ErrorCode.ACTION_NOT_ALLOWED);
+            }
+        }
 
         boolean isParticipant = relation.getParticipants().stream().anyMatch(participant -> participant.getUserId().equals(userId));
         if (!isParticipant) {
             throw new AppException(ErrorCode.UNAUTHENTICATED);
         }
+
+        if (relation.getType().equals(RelationType.FRIEND)) {
+            if (status == RelationStatus.ACCEPTED) {
+                relation.setAcceptedDate(Instant.now());
+            }
+        }
+//        else if (relation.getType() == RelationType.FOLLOW) {
+//
+//        }
+
         relation.setStatus(status);
         relation.setModifiedDate(Instant.now());
-
-        if (status == RelationStatus.ACCEPTED) {
-            relation.setAcceptedDate(Instant.now());
-        }
-
-        return relationMapper.toRelationReponse(relationRepository.save(relation));
+        return relationMapper.toRelationResponse(relationRepository.save(relation));
     }
 
     public List<RelationResponse> getMyFriendList() {
         String userId = getCurrentUserId();
         List<Relation> relations = relationRepository.findAllByParticipantIdsContainsAndStatus(userId, RelationStatus.ACCEPTED);
-        return relations.stream().map(this::toRelationReponse).collect(Collectors.toList());
+        return relations.stream().map(this::toRelationResponse).toList();
     }
 
     public RelationStatusResponse getRelationshipStatusForCurrentUser(String targetId) {
@@ -194,7 +199,7 @@ public class RelationService {
                 .filter(r -> r.getParticipants() != null
                         && !r.getParticipants().isEmpty()
                         && !r.getParticipants().getFirst().getUserId().equals(userId))
-                .map(this::toRelationReponse)
+                .map(this::toRelationResponse)
                 .toList();
     }
 
@@ -241,22 +246,12 @@ public class RelationService {
         String userId = getCurrentUserId();
         String relationHash = generateConversationHash(userId, targetUserId);
 
-        var profilesResponse = profileClient.getProfiles(List.of(userId, targetUserId));
-        if (profilesResponse == null || profilesResponse.getResult() == null || profilesResponse.getResult().size() < 2) {
-            throw new AppException(ErrorCode.RELATIONSHIP_NOT_FOUND);
-        }
-
-        Map<String, UserProfileResponse> profileMap = profilesResponse.getResult().stream()
-                .collect(Collectors.toMap(UserProfileResponse::getUserId, profile -> profile));
-
-        var userInfo = profileMap.get(userId);
-        var targetInfo = profileMap.get(targetUserId);
+        Map<String, ParticipantInfo> participantMap = fetchParticipantInfos(userId, targetUserId);
+        var userInfo = participantMap.get(userId);
+        var targetInfo = participantMap.get(targetUserId);
 
         Relation relation = relationRepository.findByParticipantsHash(relationHash).orElseGet(() -> {
-            List<ParticipantInfo> participantInfos = List.of(
-                    mapToParticipant(userInfo),
-                    mapToParticipant(targetInfo)
-            );
+            List<ParticipantInfo> participantInfos = List.of(userInfo, targetInfo);
 
             return Relation.builder()
                     .ownerId(userId)
@@ -265,6 +260,7 @@ public class RelationService {
                     .participants(participantInfos)
                     .participantsHash(relationHash)
                     .status(RelationStatus.BLOCKED)
+                    .type(RelationType.FRIEND)
                     .build();
         });
 
@@ -272,7 +268,7 @@ public class RelationService {
         relation.setOwnerId(userId);
         relation.setModifiedDate(Instant.now());
 
-        return toRelationReponse(relationRepository.save(relation));
+        return toRelationResponse(relationRepository.save(relation));
     }
 
     public void unblockUser(String targetUserId) {
@@ -289,16 +285,52 @@ public class RelationService {
         relationRepository.delete(relation);
     }
 
-    private RelationResponse toRelationReponse(Relation relation) {
+    public void dismissSuggestion(String targetUserId) {
+        String userId = getCurrentUserId();
+
+        if (userId.equals(targetUserId)) {
+            throw new AppException(ErrorCode.INVALID_REQUEST);
+        }
+
+        String relationHash = generateConversationHash(userId, targetUserId);
+
+        Relation relation = relationRepository.findByParticipantsHash(relationHash)
+                .orElseGet(() -> {
+                    Map<String, ParticipantInfo> participantMap = fetchParticipantInfos(userId, targetUserId);
+                    return Relation.builder()
+                            .ownerId(userId)
+                            .createdDate(Instant.now())
+                            .modifiedDate(Instant.now())
+                            .participants(List.of(participantMap.get(userId), participantMap.get(targetUserId)))
+                            .participantsHash(relationHash)
+                            .status(RelationStatus.DISMISSED)
+                            .type(RelationType.FRIEND)
+                            .build();
+                });
+
+        if (relation.getStatus() == RelationStatus.ACCEPTED || relation.getStatus() == RelationStatus.BLOCKED) {
+            throw new AppException(ErrorCode.ACTION_NOT_ALLOWED);
+        }
+
+        relation.setStatus(RelationStatus.DISMISSED);
+        relation.setOwnerId(userId);
+        relation.setModifiedDate(Instant.now());
+
+        relationRepository.save(relation);
+    }
+
+    private RelationResponse toRelationResponse(Relation relation) {
         String currentUserId = getCurrentUserId();
-        RelationResponse response = relationMapper.toRelationReponse(relation);
+        RelationResponse response = relationMapper.toRelationResponse(relation);
+
+        response.setStatus(relation.getStatus());
+        response.setType(relation.getType());
 
         response.getParticipants().stream()
                 .filter(participantInfo -> !participantInfo.getUserId().equals(currentUserId))
                 .findFirst().ifPresent(participantInfo -> {
                     String fullName = buildFullName(participantInfo.getFirstName(), participantInfo.getLastName(), participantInfo.getUsername());
                     response.setConversationName(fullName);
-                    response.setConversationName(participantInfo.getUsername());
                     response.setConversationAvatar(participantInfo.getAvatarUrl());
                 });
 
@@ -327,7 +359,7 @@ public class RelationService {
             relations = relations.subList(0, pageable.getPageSize());
         }
 
-        var relationResponseList = relations.stream().map(this::toRelationReponse).toList();
+        var relationResponseList = relations.stream().map(this::toRelationResponse).toList();
 
         return PageResponse.<RelationResponse>builder()
                 .hasNext(hasNext)
@@ -406,14 +438,19 @@ public class RelationService {
                         .filter(Objects::nonNull)
                         .filter(u -> !myRelationIds.contains(u.getUserId()))
                         .limit(20)
-                        .map(profile -> SuggestionResponse.builder()
-                                .userId(profile.getUserId())
-                                .username(profile.getUsername())
-                                .fullName(buildFullName(profile.getFirstName(), profile.getLastName(), profile.getUsername()))
-                                .avatarUrl(profile.getAvatarUrl())
-                                .mutualFriendsCount(0)
-                                .headline("Gợi ý kết bạn")
-                                .build())
+                        .map(profile -> {
+                            String reason = "Gợi ý dành cho bạn";
+
+                            return SuggestionResponse.builder()
+                                    .userId(profile.getUserId())
+                                    .username(profile.getUsername())
+                                    .fullName(buildFullName(profile.getFirstName(), profile.getLastName(), profile.getUsername()))
+                                    .avatarUrl(profile.getAvatarUrl())
+                                    .mutualFriendsCount(0)
+                                    .headline("Gợi ý kết bạn")
+                                    .suggestionReason(reason)
+                                    .build();
+                        })
                         .toList();
             }
         } catch (Exception e) {
@@ -459,5 +496,22 @@ public class RelationService {
             default:
                 return List.of(RelationAction.SEND_REQUEST, RelationAction.BLOCK);
         }
+    }
+
+    private Map<String, ParticipantInfo> fetchParticipantInfos(String userId, String targetId) {
+        var response = profileClient.getProfiles(List.of(userId, targetId));
+        if (response == null || response.getResult() == null) {
+            throw new AppException(ErrorCode.RELATIONSHIP_NOT_FOUND);
+        }
+        Map<String, ParticipantInfo> result = new HashMap<>();
+        for (UserProfileResponse p : response.getResult()) {
+            result.putIfAbsent(p.getUserId(), mapToParticipant(p));
+        }
+        if (!result.containsKey(userId) || !result.containsKey(targetId)) {
+            log.warn("Profile thiếu: userId={} hoặc targetId={} (result size={})",
+                    userId, targetId, response.getResult().size());
+            throw new AppException(ErrorCode.RELATIONSHIP_NOT_FOUND);
+        }
+        return result;
     }
 }

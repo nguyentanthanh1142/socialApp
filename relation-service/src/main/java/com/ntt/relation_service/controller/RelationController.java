@@ -72,6 +72,13 @@ public class RelationController {
                 .result(relationService.updateRelationStatus(relationId, RelationStatus.REJECTED))
                 .build();
     }
+    @DeleteMapping("/dismiss-suggestion/{targetUserId}")
+    public ApiResponse<String> dismissSuggestion(@PathVariable String targetUserId) {
+        relationService.dismissSuggestion(targetUserId);
+        return ApiResponse.<String>builder()
+                .result("Suggestion dismissed successfully")
+                .build();
+    }
     @GetMapping("/friends-suggestion")
     public ApiResponse<List<SuggestionResponse>> suggestFriends() {
         return ApiResponse.<List<SuggestionResponse>>builder()

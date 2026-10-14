@@ -1,7 +1,7 @@
 package com.ntt.relation_service.dto.response;
 
 import com.ntt.relation_service.entity.ParticipantInfo;
-import com.ntt.relation_service.enums.ConversationType;
+import com.ntt.relation_service.enums.RelationType;
 import com.ntt.relation_service.enums.RelationStatus;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -17,7 +17,7 @@ import java.util.List;
 public class RelationResponse {
 
     String id;
-    ConversationType type;
+    RelationType type;
     RelationStatus status;
     String participantsHash;
     String conversationAvatar;
@@ -25,4 +25,5 @@ public class RelationResponse {
     List<ParticipantInfo> participants;
     Instant createdDate;
     Instant modifiedDate;
+    Instant acceptedDate;
 }

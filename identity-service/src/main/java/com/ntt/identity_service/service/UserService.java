@@ -49,10 +49,6 @@ public class UserService {
     UserMapper userMapper;
     PasswordEncoder passwordEncoder;
 
-    @NonFinal
-    @Value("${app.verify.url}")
-    protected String verifyEmailUrl;
-
     public User createUser(UserCreationRequest request) {
         User user = userMapper.toUser(request);
         user.setPassword(passwordEncoder.encode(request.getPassword()));

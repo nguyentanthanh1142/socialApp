@@ -13,9 +13,4 @@ public class FeignConfiguration {
     public Encoder feignEncoder(ObjectFactory<HttpMessageConverters> messageConverters) {
         return new SpringFormEncoder(new SpringEncoder(messageConverters));
     }
-
-    @Bean
-    public RequestInterceptor requestInterceptor() {
-        return new AuthenticationRequestInterceptor();
-    }
 }

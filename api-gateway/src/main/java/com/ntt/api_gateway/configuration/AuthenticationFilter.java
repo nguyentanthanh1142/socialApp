@@ -37,7 +37,6 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
     @NonFinal
     String[] publicEndpoints = {
             "/identity/auth/.*", "/identity/users/registration",
-            "/notification/email/send",
             "/file/media/download/.*",
             "/admin/login",
             "/admin/css/.*",
@@ -46,7 +45,8 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
 
             "/.*/v3/api-docs.*",
             "/.*/swagger-ui/.*",
-            "/.*/swagger-ui.html"
+            "/.*/swagger-ui.html",
+            "/socket.io/.*"
     };
 
     @Value("${app.api-prefix}")
@@ -55,7 +55,6 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-        log.info("Authentication Filter");
         if (isPublicEndpoint(exchange.getRequest())) {
             return chain.filter(exchange);
         }
@@ -67,15 +66,14 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
             String bearerToken = authHeader.getFirst();
             if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
                 token = bearerToken.replace("Bearer ", "");
-                log.info("token from header: " + token);
             }
         }
 
-        if (token == null && exchange.getRequest().getCookies().containsKey("ADMIN_TOKEN")) {
+        String path = exchange.getRequest().getURI().getPath();
+        if (token == null && path.startsWith(appApiPrefix + "/admin")) {
             var cookie = exchange.getRequest().getCookies().getFirst("ADMIN_TOKEN");
             if (cookie != null) {
                 token = cookie.getValue();
-                log.info("token from cookie: " + token);
             }
         }
 
@@ -83,12 +81,15 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
             return unauthenticated(exchange.getResponse());
         }
 
-        return identityService.introspect(token).flatMap(introspectResponse -> {
-            if (introspectResponse.getResult().isValid()) {
-                return chain.filter(exchange);
-            }
-            return unauthenticated(exchange.getResponse());
-        }).onErrorResume(throwable -> unauthenticated(exchange.getResponse()));
+        return identityService.introspect(token)
+                .map(res -> res.getResult() != null && res.getResult().isValid())
+                .onErrorResume(e -> {
+                    log.warn("introspect failed: {}", e.getMessage());
+                    return Mono.just(false);
+                })
+                .flatMap(valid -> Boolean.TRUE.equals(valid)
+                        ? chain.filter(exchange)
+                        : unauthenticated(exchange.getResponse()));
     }
 
     @Override

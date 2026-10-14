@@ -1,5 +1,6 @@
 package com.ntt.relation_service.entity;
 import com.ntt.relation_service.enums.RelationStatus;
+import com.ntt.relation_service.enums.RelationType;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.mongodb.core.index.Indexed;
@@ -23,6 +24,7 @@ public class Relation {
     String id;
     String ownerId;
     RelationStatus status;
+    RelationType type;
     @Indexed(unique = true)
     String participantsHash;
     List<ParticipantInfo> participants;

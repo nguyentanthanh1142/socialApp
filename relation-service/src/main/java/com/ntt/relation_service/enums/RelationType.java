@@ -1,6 +1,7 @@
 package com.ntt.relation_service.enums;
 
-public enum ConversationType {
-    DIRECT,
-    GROUP
+public enum RelationType {
+    FRIEND,
+    FOLLOW,
+    BLOCK
 }

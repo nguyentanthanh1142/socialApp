@@ -27,16 +27,16 @@ import java.time.LocalDate;
 @Node("user_profile")
 public class UserProfile {
     @Id
-    @GeneratedValue(generatorClass = UUIDStringGenerator.class)
-    String id;
-    @Property("userId")
     String userId;
+
     String username;
     String firstName;
     String lastName;
 
-    String avatarUrl;
-    String coverUrl;
+    @Builder.Default
+    String avatarUrl = "";
+    @Builder.Default
+    String coverUrl = "";
     String bio;
 
     String currentCity;
@@ -45,6 +45,8 @@ public class UserProfile {
 
     String preferredTheme;
     LocalDate birthday;
+
+
 
     @CreatedDate
     Instant createdAt;

@@ -3,6 +3,8 @@ server:
 
 app:
   api-prefix: /api/v1
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
   services:
     identity-service: ${IDENTITY_SERVICE_URL:http://localhost:8080/identity}
 spring:
@@ -10,22 +12,6 @@ spring:
     name: api-gateway
   cloud:
     gateway:
-      globalcors:
-        cors-configurations:
-          '[/**]':
-            allowed-origins:
-              - "http://localhost:3000"
-              - "https://social.thanhbuilds.me"
-            allowed-methods:
-              - GET
-              - POST
-              - PUT
-              - DELETE
-              - OPTIONS
-              - PATCH
-            allowed-headers: "*"
-            allow-credentials: true
-            max-age: 3600
       routes:
         - id: identity_service
           uri: http://localhost:8080
@@ -90,6 +76,18 @@ spring:
           uri: http://localhost:8090
           predicates:
             - Path=${app.api-prefix}/admin/**
+          filters:
+            - StripPrefix=2
+
+        - id: socket_io_service
+          uri: ws://socket-service:8999
+          predicates:
+            - Path=/socket.io/**
+
+        - id: socket_service_api
+          uri: http://socket-service:8089
+          predicates:
+            - Path=${app.api-prefix}/ws/**
           filters:
             - StripPrefix=2
   webflux:

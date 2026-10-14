@@ -6,4 +6,5 @@ public enum RelationStatus {
     REJECTED,
     BLOCKED,
     NONE,
+    DISMISSED
 }

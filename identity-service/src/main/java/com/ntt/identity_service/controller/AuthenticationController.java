@@ -2,6 +2,7 @@ package com.ntt.identity_service.controller;
 
 import java.io.IOException;
 import java.text.ParseException;
+import java.time.Duration;
 
 import com.ntt.common_lib.dto.ApiResponse;
 import com.ntt.identity_service.dto.response.UserResponse;
@@ -22,6 +23,7 @@ import com.ntt.identity_service.service.AuthenticationService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import reactor.core.publisher.Mono;
 
 @RestController
 @RequestMapping("/auth")
@@ -107,5 +109,10 @@ public class AuthenticationController {
         return ApiResponse.<UserResponse>builder()
                 .result(authenticationService.createUser(request))
                 .build();
+    }
+    @GetMapping("/test-delay")
+    public Mono<String> testDelay() {
+        return Mono.delay(Duration.ofSeconds(15))
+                .map(v -> "Delayed response");
     }
 }
