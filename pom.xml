@@ -21,9 +21,10 @@
         <module>api-gateway</module>
         <module>post-service</module>
         <module>common-lib</module>
+        <module>common-web</module>
         <module>file-service</module>
         <module>chat-service</module>
-<!--        <module>notification-service</module>-->
+        <module>notification-service</module>
         <module>relation-service</module>
         <module>profile-service</module>
         <module>feed-service</module>
