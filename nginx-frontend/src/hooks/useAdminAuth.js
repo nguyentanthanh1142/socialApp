@@ -51,11 +51,9 @@ export const useAdminAuth = () => {
 
   useEffect(() => {
     const controller = new AbortController();
-    console.log("🚀 [useAdminAuth] Mount Component -> Khởi tạo AbortController");
     refresh(controller.signal);
 
     return () => {
-      console.log("🧹 [useAdminAuth] Cleanup -> Gọi controller.abort()");
       controller.abort();
     };
   }, [refresh]);

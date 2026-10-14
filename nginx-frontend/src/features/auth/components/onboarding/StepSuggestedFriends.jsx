@@ -9,6 +9,7 @@ import {
     Card,
     CardContent,
     Skeleton,
+    Popover,
 } from "@mui/material";
 import { getFriendsSuggestion, sendBatchFriendRequests } from "../../../friends/services/friendService";
 import { getAvatarUrl } from "../../../../utils/avatarUtils";
@@ -18,6 +19,9 @@ export default function StepSuggestedFriends({ onSkip, onNext, onGetNextHandler 
     const [loading, setLoading] = useState(true);
     const [selectedIds, setSelectedIds] = useState(new Set());
     const [error, setError] = useState(null);
+    const [anchorEl, setAnchorEl] = useState(null);
+    const [hoveredUser, setHoveredUser] = useState(null);
+    const popoverCloseTimeout = useRef(null);
     const abortRef = useRef(null);
 
     useEffect(() => {
@@ -54,6 +58,36 @@ export default function StepSuggestedFriends({ onSkip, onNext, onGetNextHandler 
         });
     };
 
+    const handleCardMouseEnter = (event, user) => {
+        if (popoverCloseTimeout.current) {
+            clearTimeout(popoverCloseTimeout.current);
+            popoverCloseTimeout.current = null;
+        }
+        setAnchorEl(event.currentTarget);
+        setHoveredUser(user);
+    };
+
+    const handleCardMouseLeave = () => {
+        popoverCloseTimeout.current = setTimeout(() => {
+            setAnchorEl(null);
+            setHoveredUser(null);
+        }, 200);
+    };
+
+    const handlePopoverMouseEnter = () => {
+        if (popoverCloseTimeout.current) {
+            clearTimeout(popoverCloseTimeout.current);
+            popoverCloseTimeout.current = null;
+        }
+    };
+
+    const handlePopoverMouseLeave = () => {
+        popoverCloseTimeout.current = setTimeout(() => {
+            setAnchorEl(null);
+            setHoveredUser(null);
+        }, 200);
+    };
+
     const handleNext = async () => {
         if (selectedIds.size > 0) {
             try {
@@ -65,7 +99,6 @@ export default function StepSuggestedFriends({ onSkip, onNext, onGetNextHandler 
         onNext();
     };
 
-    // Expose handleNext to parent via callback
     useEffect(() => {
         if (onGetNextHandler) {
             onGetNextHandler(handleNext);
@@ -79,19 +112,34 @@ export default function StepSuggestedFriends({ onSkip, onNext, onGetNextHandler 
                     <Typography variant="body2" color="text.secondary" mb={2}>
                         Finding people you may know...
                     </Typography>
-                    <Grid container spacing={2}>
+                    <Box
+                        sx={{
+                            display: "grid",
+                            gridTemplateColumns: "repeat(2, 1fr)",
+                            gap: 1.5,
+                            pr: 1.5,
+                            pl: 0.5,
+                            py: 0.5,
+                        }}
+                    >
                         {[1, 2, 3, 4].map((item) => (
-                            <Grid item xs={6} sm={6} key={item}>
-                                <Card sx={{ borderRadius: 3 }}>
-                                    <CardContent sx={{ textAlign: "center" }}>
-                                        <Skeleton variant="circular" width={56} height={56} sx={{ mx: "auto", mb: 1 }} />
-                                        <Skeleton variant="text" width="80%" sx={{ mx: "auto" }} />
-                                        <Skeleton variant="text" width="60%" sx={{ mx: "auto" }} />
-                                    </CardContent>
-                                </Card>
-                            </Grid>
+                            <Card
+                                key={item}
+                                sx={{
+                                    borderRadius: "12px",
+                                    border: "1px solid",
+                                    borderColor: "divider",
+                                }}
+                            >
+                                <CardContent sx={{ textAlign: "center", p: 2, "&:last-child": { pb: 2 } }}>
+                                    <Skeleton variant="circular" width={56} height={56} sx={{ mx: "auto", mb: 1.5 }} />
+                                    <Skeleton variant="text" width="80%" sx={{ mx: "auto", mb: 0.5 }} />
+                                    <Skeleton variant="text" width="60%" sx={{ mx: "auto", mb: 1.5 }} />
+                                    <Skeleton variant="rounded" height={32} sx={{ borderRadius: "8px" }} />
+                                </CardContent>
+                            </Card>
                         ))}
-                    </Grid>
+                    </Box>
                 </Box>
             </Fade>
         );
@@ -119,104 +167,160 @@ export default function StepSuggestedFriends({ onSkip, onNext, onGetNextHandler 
                     Friend suggestions ({suggestions.length})
                 </Typography>
 
-                {/* Container hỗ trợ cuộn với thanh scroll tinh chỉnh gọn gàng */}
                 <Box
                     sx={{
-                        maxHeight: "360px",
+                        maxHeight: "400px",
                         overflowY: "auto",
-                        px: 0.5, // Padding 2 bên cân bằng
+                        overflowX: "hidden",
+                        pr: 1.5,
+                        pl: 0.5,
                         py: 0.5,
-                        mr: -0.5, // Tạo khoảng trống sát lề cho thanh cuộn
                         "&::-webkit-scrollbar": {
-                            width: "5px",
+                            width: "6px",
                         },
                         "&::-webkit-scrollbar-track": {
-                            background: "transparent",
+                            background: (theme) =>
+                                theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.05)" : "#f1f1f1",
+                            borderRadius: "4px",
                         },
                         "&::-webkit-scrollbar-thumb": {
-                            background: "rgba(0, 0, 0, 0.15)",
-                            borderRadius: "10px",
+                            background: (theme) =>
+                                theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.2)" : "#c1c1c1",
+                            borderRadius: "4px",
                             "&:hover": {
-                                background: "rgba(0, 0, 0, 0.3)",
+                                background: (theme) =>
+                                    theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.35)" : "#a8a8a8",
                             },
                         },
                     }}
                 >
-                    <Grid container spacing={1.5}>
+                    <Box
+                        sx={{
+                            display: "grid",
+                            gridTemplateColumns: "repeat(2, 1fr)",
+                            gap: 1.5,
+                        }}
+                    >
                         {suggestions.map((user, index) => (
-                            <Grid item xs={6} key={user.userId || user.id || index}>
-                                <Card
-                                    variant="outlined"
+                            <Card
+                                key={user.userId || user.id || index}
+                                variant="outlined"
+                                onMouseEnter={(e) => handleCardMouseEnter(e, user)}
+                                onMouseLeave={handleCardMouseLeave}
+                                sx={{
+                                    height: "100%",
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    justifyContent: "space-between",
+                                    bgcolor: "background.paper",
+                                    borderColor: "divider",
+                                    borderRadius: "12px",
+                                    transition: "all 0.2s ease",
+                                    "&:hover": {
+                                        boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                                        borderColor: "primary.light",
+                                    },
+                                }}
+                            >
+                                <CardContent sx={{ textAlign: "center", p: 2, "&:last-child": { pb: 2 } }}>
+                                    <Avatar
+                                        src={getAvatarUrl(user.avatarUrl, user.gender) || undefined}
+                                        sx={{
+                                            width: 56,
+                                            height: 56,
+                                            mx: "auto",
+                                            mb: 1.5,
+                                            bgcolor: "primary.main",
+                                            fontSize: "1.2rem",
+                                        }}
+                                    >
+                                        {!user.avatarUrl && !user.gender && (user.fullName?.[0]?.toUpperCase() || "?")}
+                                    </Avatar>
+                                    <Typography
+                                        variant="body2"
+                                        fontWeight={600}
+                                        fontSize="0.9rem"
+                                        noWrap
+                                        sx={{
+                                            mb: 0.5,
+                                            overflow: "hidden",
+                                            textOverflow: "ellipsis",
+                                        }}
+                                    >
+                                        {user.fullName || "Unknown"}
+                                    </Typography>
+                                    <Typography
+                                        variant="caption"
+                                        fontSize="0.75rem"
+                                        color="text.secondary"
+                                        sx={{ display: "block", mb: 1.5 }}
+                                    >
+                                        Suggested for you
+                                    </Typography>
+                                    <Button
+                                        variant={selectedIds.has(user.id) ? "outlined" : "contained"}
+                                        size="small"
+                                        fullWidth
+                                        onClick={() => handleToggleFriend(user.id)}
+                                        sx={{
+                                            textTransform: "none",
+                                            borderRadius: "8px",
+                                            fontWeight: 600,
+                                            fontSize: "0.8rem",
+                                            boxShadow: "none",
+                                        }}
+                                    >
+                                        {selectedIds.has(user.id) ? "Request sent" : "Add Friend"}
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </Box>
+                    <Popover
+                        open={Boolean(anchorEl)}
+                        anchorEl={anchorEl}
+                        onClose={() => { setAnchorEl(null); setHoveredUser(null); }}
+                        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+                        transformOrigin={{ vertical: 'top', horizontal: 'center' }}
+                        PaperProps={{
+                            sx: { p: 2, pointerEvents: 'auto' },
+                            onMouseEnter: handlePopoverMouseEnter,
+                            onMouseLeave: handlePopoverMouseLeave,
+                        }}
+                    >
+                        {hoveredUser && (
+                            <>
+                                <Avatar
+                                    src={getAvatarUrl(hoveredUser.avatarUrl, hoveredUser.gender) || undefined}
                                     sx={{
-                                        height: "100%",
-                                        display: "flex",
-                                        flexDirection: "column",
-                                        justifyContent: "space-between",
-                                        bgcolor: "background.paper",
-                                        borderColor: "divider",
-                                        borderRadius: "12px",
-                                        transition: "all 0.2s ease",
-                                        "&:hover": {
-                                            boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                                            borderColor: "primary.light",
-                                        },
+                                        width: 80,
+                                        height: 80,
+                                        mb: 1.5,
+                                        mx: 'auto',
+                                        border: 2,
+                                        borderColor: 'divider',
                                     }}
                                 >
-                                    <CardContent sx={{ textAlign: "center", p: 2, "&:last-child": { pb: 2 } }}>
-                                        <Avatar
-                                            src={getAvatarUrl(user.avatarUrl, user.gender) || undefined}
-                                            sx={{
-                                                width: 56,
-                                                height: 56,
-                                                mx: "auto",
-                                                mb: 1.5,
-                                                bgcolor: "primary.main",
-                                                fontSize: "1.2rem",
-                                            }}
-                                        >
-                                            {!user.avatarUrl && !user.gender && (user.fullName?.[0]?.toUpperCase() || "?")}
-                                        </Avatar>
-                                        <Typography
-                                            variant="body2"
-                                            fontWeight={600}
-                                            fontSize="0.9rem"
-                                            noWrap
-                                            sx={{
-                                                mb: 0.5,
-                                                overflow: "hidden",
-                                                textOverflow: "ellipsis",
-                                            }}
-                                        >
-                                            {user.fullName || "Unknown"}
-                                        </Typography>
-                                        <Typography
-                                            variant="caption"
-                                            fontSize="0.75rem"
-                                            color="text.secondary"
-                                            sx={{ display: "block", mb: 1.5 }}
-                                        >
-                                            Suggested for you
-                                        </Typography>
-                                        <Button
-                                            variant={selectedIds.has(user.id) ? "outlined" : "contained"}
-                                            size="small"
-                                            fullWidth
-                                            onClick={() => handleToggleFriend(user.id)}
-                                            sx={{
-                                                textTransform: "none",
-                                                borderRadius: "8px",
-                                                fontWeight: 600,
-                                                fontSize: "0.8rem",
-                                                boxShadow: "none",
-                                            }}
-                                        >
-                                            {selectedIds.has(user.id) ? "Request sent" : "Add Friend"}
-                                        </Button>
-                                    </CardContent>
-                                </Card>
-                            </Grid>
-                        ))}
-                    </Grid>
+                                    {!hoveredUser.avatarUrl && !hoveredUser.gender && (hoveredUser.fullName?.[0]?.toUpperCase() || '?')}
+                                </Avatar>
+                                <Typography variant="subtitle1" fontWeight={600} sx={{ textAlign: 'center', mb: 0.5 }}>
+                                    {hoveredUser.fullName || 'Unknown'}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', mb: 1 }}>
+                                    {hoveredUser.mutualFriendsCount ? `${hoveredUser.mutualFriendsCount} bạn chung` : 'Gợi ý cho bạn'}
+                                </Typography>
+                                <Button
+                                    variant={selectedIds.has(hoveredUser.id) ? "outlined" : "contained"}
+                                    size="small"
+                                    fullWidth
+                                    onClick={(e) => { e.stopPropagation(); handleToggleFriend(hoveredUser.id); }}
+                                    sx={{ textTransform: 'none' }}
+                                >
+                                    {selectedIds.has(hoveredUser.id) ? 'Request sent' : 'Add Friend'}
+                                </Button>
+                            </>
+                        )}
+                    </Popover>
                 </Box>
             </Box>
         </Fade>

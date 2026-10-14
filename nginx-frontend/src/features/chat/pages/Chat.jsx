@@ -4,7 +4,7 @@ import Scene from "../../../components/Scene";
 import SideMenu from "../../../components/header/SideMenu";
 import ConversationList from "../components/ConversationList";
 import ChatWindow from "../components/ChatWindow";
-import { useChat } from "../../../providers/ChatProvider"; // Sử dụng Global Provider
+import { useChat } from "../../../providers/ChatProvider";
 import usePageTitle from "../../../hooks/usePageTitle";
 
 export default function Chat() {
@@ -18,8 +18,8 @@ export default function Chat() {
   const [error, setError] = useState(null);
 
   const {
-    conversations,
-    messagesMap,
+    conversations = [],
+    messagesMap = {},
     loadMessages,
     startConversation,
     sendMessage,

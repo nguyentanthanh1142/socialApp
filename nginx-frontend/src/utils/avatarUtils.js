@@ -17,19 +17,16 @@ const DEFAULT_AVATARS = {
  * @returns {string} The avatar URL to display
  */
 export const getAvatarUrl = (avatarUrl, gender) => {
-  // If avatarUrl exists and is not empty, use it
   if (avatarUrl && avatarUrl.trim() !== '') {
     return avatarUrl;
   }
 
-  // Determine gender-based fallback
   const normalizedGender = gender?.toLowerCase();
 
   if (normalizedGender === 'female' || normalizedGender === 'f') {
     return DEFAULT_AVATARS.FEMALE;
   }
 
-  // Default to male for any other case (including male, no gender, or unknown)
   return DEFAULT_AVATARS.MALE;
 };
 

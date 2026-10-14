@@ -134,7 +134,7 @@ Xác thực thông tin tài khoản người dùng và cấp JWT Access Token.
   "code": 1000,
   "message": "Authentication successful",
   "result": {
-    "token": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ1c3JfOTkxMiIsImlzcyI6InNvY2lhbC1hcHAiLCJleHAiOjE3NTg1MTc0ODl9...",
+    "token": "........................",
     "authenticated": true,
     "isFirstLogin": true
   }

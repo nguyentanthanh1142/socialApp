@@ -301,19 +301,34 @@ function StepSuggestedFriends({ onSkip, onNext, onGetNextHandler }) {
           <Typography variant="body2" color="text.secondary" mb={2}>
             Finding people you may know...
           </Typography>
-          <Grid container spacing={2}>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, 1fr)',
+              gap: 1.5,
+              pr: 1.5,
+              pl: 0.5,
+              py: 0.5,
+            }}
+          >
             {[1, 2, 3, 4].map((item) => (
-              <Grid item xs={6} sm={4} key={item}>
-                <Card sx={{ borderRadius: 2 }}>
-                  <CardContent sx={{ textAlign: "center" }}>
-                    <Skeleton variant="circular" width={60} height={60} sx={{ mx: "auto", mb: 1 }} />
-                    <Skeleton variant="text" width="80%" sx={{ mx: "auto" }} />
-                    <Skeleton variant="text" width="60%" sx={{ mx: "auto" }} />
-                  </CardContent>
-                </Card>
-              </Grid>
+              <Card
+                key={item}
+                sx={{
+                  borderRadius: '12px',
+                  border: '1px solid',
+                  borderColor: 'divider',
+                }}
+              >
+                <CardContent sx={{ textAlign: "center", p: 2, '&:last-child': { pb: 2 } }}>
+                  <Skeleton variant="circular" width={56} height={56} sx={{ mx: "auto", mb: 1.5 }} />
+                  <Skeleton variant="text" width="80%" sx={{ mx: "auto", mb: 0.5 }} />
+                  <Skeleton variant="text" width="60%" sx={{ mx: "auto", mb: 1.5 }} />
+                  <Skeleton variant="rounded" height={32} sx={{ borderRadius: '8px' }} />
+                </CardContent>
+              </Card>
             ))}
-          </Grid>
+          </Box>
         </Box>
       </Fade>
     );
@@ -342,94 +357,109 @@ function StepSuggestedFriends({ onSkip, onNext, onGetNextHandler }) {
         </Typography>
         <Box
           sx={{
-            maxHeight: '420px',
+            maxHeight: '400px',
             overflowY: 'auto',
-            paddingRight: '12px',
-            paddingBottom: '8px',
+            overflowX: 'hidden',
+            pr: 1.5, // Tạo khoảng cách đệm 12px rõ ràng giữa card và thanh cuộn
+            pl: 0.5,
+            py: 0.5,
             '&::-webkit-scrollbar': {
               width: '6px',
             },
             '&::-webkit-scrollbar-track': {
-              background: '#f1f1f1',
-              borderRadius: '3px',
+              background: (theme) =>
+                theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : '#f1f1f1',
+              borderRadius: '4px',
             },
             '&::-webkit-scrollbar-thumb': {
-              background: '#c1c1c1',
-              borderRadius: '3px',
+              background: (theme) =>
+                theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.2)' : '#c1c1c1',
+              borderRadius: '4px',
               '&:hover': {
-                background: '#a8a8a8',
+                background: (theme) =>
+                  theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.35)' : '#a8a8a8',
               },
             },
           }}
         >
-          <Grid container spacing={2}>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, 1fr)',
+              gap: 1.5,
+            }}
+          >
             {suggestions.map((user, index) => (
-              <Grid item xs={6} key={user.userId || user.id || index}>
-                <Card
-                  sx={{
-                    bgcolor: 'background.paper',
-                    border: '1px solid #eaeeef',
-                    borderRadius: '12px',
-                    transition: 'all 0.2s ease',
-                    '&:hover': {
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                    },
-                  }}
-                >
-                  <CardContent sx={{ textAlign: 'center', p: 2 }}>
-                    <Avatar
-                      src={getAvatarUrl(user.avatarUrl, user.gender) || undefined}
-                      sx={{
-                        width: 56,
-                        height: 56,
-                        mx: 'auto',
-                        mb: 1.5,
-                        bgcolor: 'primary.main',
-                        fontSize: '1.2rem',
-                      }}
-                    >
-                      {!user.avatarUrl && !user.gender && (user.fullName?.[0]?.toUpperCase() || '?')}
-                    </Avatar>
-                    <Typography
-                      variant="body2"
-                      fontWeight={600}
-                      fontSize="0.95rem"
-                      noWrap
-                      sx={{
-                        mb: 0.5,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                      }}
-                    >
-                      {user.fullName || 'Unknown'}
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      fontSize="0.8rem"
-                      color="text.secondary"
-                      sx={{ display: 'block', mb: 1.5 }}
-                    >
-                      Suggested for you
-                    </Typography>
-                    <Button
-                      variant={selectedIds.has(user.id) ? 'outlined' : 'contained'}
-                      size="small"
-                      fullWidth
-                      onClick={() => handleToggleFriend(user.id)}
-                      sx={{
-                        textTransform: 'none',
-                        borderRadius: '8px',
-                        fontWeight: 600,
-                        fontSize: '0.85rem',
-                      }}
-                    >
-                      {selectedIds.has(user.id) ? 'Request sent' : 'Add Friend'}
-                    </Button>
-                  </CardContent>
-                </Card>
-              </Grid>
+              <Card
+                key={user.userId || user.id || index}
+                sx={{
+                  bgcolor: 'background.paper',
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: '12px',
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                  },
+                }}
+              >
+                <CardContent sx={{ textAlign: 'center', p: 2, '&:last-child': { pb: 2 } }}>
+                  <Avatar
+                    src={getAvatarUrl(user.avatarUrl, user.gender) || undefined}
+                    sx={{
+                      width: 56,
+                      height: 56,
+                      mx: 'auto',
+                      mb: 1.5,
+                      bgcolor: 'primary.main',
+                      fontSize: '1.2rem',
+                    }}
+                  >
+                    {!user.avatarUrl && !user.gender && (user.fullName?.[0]?.toUpperCase() || '?')}
+                  </Avatar>
+                  <Typography
+                    variant="body2"
+                    fontWeight={600}
+                    fontSize="0.95rem"
+                    noWrap
+                    sx={{
+                      mb: 0.5,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}
+                  >
+                    {user.fullName || 'Unknown'}
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    fontSize="0.8rem"
+                    color="text.secondary"
+                    sx={{ display: 'block', mb: 1.5 }}
+                  >
+                    Suggested for you
+                  </Typography>
+                  <Button
+                    variant={selectedIds.has(user.id) ? 'outlined' : 'contained'}
+                    size="small"
+                    fullWidth
+                    onClick={() => handleToggleFriend(user.id)}
+                    sx={{
+                      textTransform: 'none',
+                      borderRadius: '8px',
+                      fontWeight: 600,
+                      fontSize: '0.85rem',
+                    }}
+                  >
+                    {selectedIds.has(user.id) ? 'Request sent' : 'Add Friend'}
+                  </Button>
+                </CardContent>
+              </Card>
             ))}
-          </Grid>
+          </Box>
         </Box>
       </Box>
     </Fade>

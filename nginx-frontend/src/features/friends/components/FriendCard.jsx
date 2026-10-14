@@ -27,7 +27,7 @@ export default function FriendCard({
   onBlock,
 }) {
   const navigate = useNavigate();
-  const { startConversation } = useChat();
+  const { startConversation = () => {} } = useChat();
 
   if (!relation) return null;
 

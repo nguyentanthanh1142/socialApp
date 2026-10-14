@@ -6,7 +6,7 @@ import { getCurrentUserId } from "../../auth/services/authenticationService";
 
 const normalizeContact = (item) => {
   const currentUserId = getCurrentUserId();
-  
+
   // Tìm người còn lại trong mảng participants (để lấy tên/avatar hiển thị nếu cần)
   const targetParticipant = item.participants?.find(
     (p) => String(p.userId) !== String(currentUserId)
@@ -14,7 +14,7 @@ const normalizeContact = (item) => {
 
   return {
     ...item,
-    id: item.id, 
+    id: item.id,
     conversationId: item.id,
     conversationName:
       item.conversationName ||
@@ -30,11 +30,11 @@ const normalizeContact = (item) => {
 
 export function useFriendChat() {
   const {
-    messagesMap,
-    loadMessages,
-    markConversationOpened,
-    markConversationClosed,
-    startConversation,
+    messagesMap = {},
+    loadMessages = () => {},
+    markConversationOpened = () => {},
+    markConversationClosed = () => {},
+    startConversation = () => {},
   } = useChat();
 
   const [contacts, setContacts] = useState([]);
@@ -122,7 +122,7 @@ export function useFriendChat() {
   const openChatBox = useCallback(
     async (contactItem) => {
       const currentUserId = getCurrentUserId();
-      
+
       const targetParticipant = contactItem.participants?.find(
         (p) => String(p.userId) !== String(currentUserId)
       );
@@ -133,7 +133,7 @@ export function useFriendChat() {
       // NẾU BẠN BIẾT CHẮC contactItem.id HIỆN TẠI LÀ RELATION ID, HÃY DÙNG targetUserId ĐỂ GỌI LẤY CONVERSATION ID CHUẨN:
       if (targetUserId) {
         try {
-          const newConv = await startConversation(targetUserId); 
+          const newConv = await startConversation(targetUserId);
           // newConv trả về từ startConversation chắc chắn là object Conversation xịn của Chat Service
           if (newConv?.id) {
             actualConversationId = newConv.id;

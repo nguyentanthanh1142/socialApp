@@ -27,7 +27,6 @@ const StyledBadge = styled(Badge)(({ theme }) => ({
 }));
 
 export const FriendListItem = ({ conversation, onClick, lastElementRef }) => {
-  // Tách biệt hoàn toàn logic lấy trạng thái online thông qua custom hook
   const { isOnline } = useFriendPresence(conversation);
 
   return (

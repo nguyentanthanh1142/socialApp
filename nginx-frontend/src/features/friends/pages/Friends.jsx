@@ -10,6 +10,7 @@ import {
     sendFriendsRequest,
     unfriendUser,
     blockUser,
+    dismissSugestion,
 } from "../services/friendService";
 import { isAuthenticated, getCurrentUserId } from "../../auth/services/authenticationService";
 import Scene from "../../../components/Scene";
@@ -29,7 +30,7 @@ export default function Friends() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const activeTab = searchParams.get("tab") || "overview";
-    
+
     // Gom nhóm Snackbar state để quản lý dễ hơn
     const [snackbar, setSnackbar] = useState({
         open: false,
@@ -102,11 +103,9 @@ export default function Friends() {
         }
     }, [navigate, loadFriendsData]);
 
-    // Xử lý chấp nhận lời mời kết bạn
     const handleConfirm = useCallback(async (request) => {
         const targetId = request.participantsHash || request.id;
-        
-        // Optimistic Update: Xóa ngay khỏi danh sách chờ để UI mượt mà
+
         setFriendRequests((prev) => prev.filter((item) => (item.participantsHash || item.id) !== targetId));
 
         try {
@@ -115,13 +114,11 @@ export default function Friends() {
             loadFriendsData();
         } catch (err) {
             console.error("Failed to accept friend request:", err);
-            // Rollback state nếu lỗi API
             setFriendRequests((prev) => [request, ...prev]);
             showSnackbar("Failed to accept friend request.", "error");
         }
     }, [loadFriendsData]);
 
-    // Xử lý gửi lời mời kết bạn từ danh sách gợi ý
     const handlePending = useCallback(async (id) => {
         const removedSuggestion = suggestions.find((item) => item.userId === id);
         setSuggestion((prev) => prev.filter((item) => item.userId !== id));
@@ -142,7 +139,7 @@ export default function Friends() {
     const handleDelete = useCallback(async (id) => {
         const targetId = id; // Dựa vào ID truyền từ component con
         const removedRequest = friendRequests.find((item) => (item.participantsHash || item.id) === targetId);
-        
+
         setFriendRequests((prev) => prev.filter((item) => (item.participantsHash || item.id) !== targetId));
 
         try {
@@ -181,9 +178,22 @@ export default function Friends() {
         }
     }, [loadFriendsData]);
 
-    const handleDismissSuggestion = useCallback((userId) => {
+    const handleDismissSuggestion = useCallback(async (userId) => {
+        const dismissedItem = suggestions.find((item) => (item.userId || item.id) === userId);
+
         setSuggestion((prev) => prev.filter((item) => (item.userId || item.id) !== userId));
-    }, []);
+
+        try {
+            await dismissSugestion(userId);
+            showSnackbar("Suggestion removed.", "success");
+        } catch (err) {
+            console.error("Failed to dismiss suggestion:", err);
+            if (dismissedItem) {
+                setSuggestion((prev) => [dismissedItem, ...prev]);
+            }
+            showSnackbar("Failed to dismiss suggestion.", "error");
+        }
+    }, [suggestions]);
 
     const currentUserId = getCurrentUserId();
 

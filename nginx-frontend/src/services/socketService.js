@@ -13,7 +13,6 @@ const resolveSocketUrl = () => {
   if (CONFIG.SOCKET_URL && !String(CONFIG.SOCKET_URL).startsWith("$")) {
     return CONFIG.SOCKET_URL;
   }
-  // Same-origin via Nginx /socket.io proxy in production
   return window.location.origin;
 };
 
@@ -29,8 +28,8 @@ export const createSocket = ({ token, deviceId, tabId } = {}) => {
   console.log("🔌 [SOCKET] Connecting to URL:", socketUrl);
 
   socketInstance = io(socketUrl, {
-    transports: ["websocket"],
-    autoConnect: true, // ĐỔI THÀNH true ĐỂ NÓ TỰ ĐỘNG KẾT NỐI LUÔN!
+    transports: ["polling", "websocket"],
+    // autoConnect: true, // ĐỔI THÀNH true ĐỂ NÓ TỰ ĐỘNG KẾT NỐI LUÔN!
     query: {
       token: authToken,
       deviceId: deviceId || getDeviceId(),
@@ -38,7 +37,6 @@ export const createSocket = ({ token, deviceId, tabId } = {}) => {
     },
   });
 
-  // Thêm log để bắt sự kiện kết nối thành công hay thất bại ngay tại đây
   socketInstance.on("connect", () => {
     console.log("✅ [SOCKET] Connected successfully! ID:", socketInstance.id);
   });

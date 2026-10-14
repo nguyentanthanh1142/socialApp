@@ -15,6 +15,7 @@ import {
   Tabs,
   Tab,
   Dialog,
+  Grid,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -22,6 +23,15 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 import EditIcon from "@mui/icons-material/Edit";
 import ArticleIcon from "@mui/icons-material/Article";
+import CollectionsIcon from "@mui/icons-material/Collections";
+import PersonIcon from "@mui/icons-material/Person";
+import LocationCityIcon from "@mui/icons-material/LocationCity";
+import LocationOnIcon from "@mui/icons-material/LocationOn";
+import EmailIcon from "@mui/icons-material/Email";
+import CakeIcon from "@mui/icons-material/Cake";
+import WcIcon from "@mui/icons-material/Wc";
+import SaveIcon from "@mui/icons-material/Save";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import dayjs from "dayjs";
 import {
   getMyInfo,
@@ -57,6 +67,7 @@ export default function Profile() {
   const [snackbarSeverity, setSnackbarSeverity] = useState("success");
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [updateLoading, setUpdateLoading] = useState(false);
 
   const profileTitle = loading
     ? "Loading Profile..."
@@ -236,6 +247,7 @@ export default function Profile() {
   };
 
   const handleUpdate = async () => {
+    setUpdateLoading(true);
     try {
       const profileData = {
         firstname,
@@ -256,6 +268,8 @@ export default function Profile() {
       setSnackbarMessage("Update failed. Please try again.");
       setSnackbarSeverity("error");
       setSnackbarOpen(true);
+    } finally {
+      setUpdateLoading(false);
     }
   };
 
@@ -356,7 +370,7 @@ export default function Profile() {
           </Alert>
         </Box>
       ) : userDetails ? (
-        <Box sx={{ maxWidth: 980, width: "100%", mx: "auto", pb: 5, px: { xs: 0, sm: 2 } }}>
+        <Box sx={{ maxWidth: 1100, width: "100%", mx: "auto", pb: 5, px: { xs: 0, sm: 2 } }}>
           <ProfileCoverLayout
             coverUrl={userDetails.coverUrl}
             avatarUrl={getAvatarUrl(userDetails.avatarUrl || userDetails.avatar, userDetails.gender)}
@@ -435,46 +449,417 @@ export default function Profile() {
           />
 
           <Card sx={{ boxShadow: 1, borderRadius: 3, overflow: "hidden", mb: 3, border: "1px solid", borderColor: "divider" }}>
-            <Tabs value={tabValue} onChange={handleTabChange} centered sx={{ bgcolor: "#fff" }}>
+            <Tabs
+              value={tabValue}
+              onChange={handleTabChange}
+              variant="scrollable"
+              scrollButtons="auto"
+              sx={{ bgcolor: "#fff", px: 1 }}
+            >
               <Tab icon={<ArticleIcon />} iconPosition="start" label="My Posts" />
+              <Tab icon={<CollectionsIcon />} iconPosition="start" label="Photos" />
               <Tab icon={<EditIcon />} iconPosition="start" label="Edit Profile" />
             </Tabs>
           </Card>
 
-          {tabValue === 0 && (
-            <FeedList
-              posts={userPosts}
-              loading={isFetching}
-              feedError={null}
-              readPosts={[]}
-              onLike={handleLikePost}
-              onOpenComments={handleOpenComments}
-              onImageClick={handleImageClick}
-              lastPostElementRef={lastElementRef}
-              onDeletePost={(postId) =>
-                setUserPosts((prev) => prev.filter((p) => p.postId !== postId))
-              }
-              onUpdatePost={(up) =>
-                setUserPosts((prev) =>
-                  prev.map((p) => (p.postId === up.postId ? { ...p, ...up } : p))
-                )
-              }
-              onPrivacyChange={(postId, privacy) =>
-                setUserPosts((prev) =>
-                  prev.map((p) => (p.postId === postId ? { ...p, privacy } : p))
-                )
-              }
-            />
-          )}
+          {tabValue === 0 && (() => {
+            // ── Trích ảnh xem trước cho sidebar ──
+            const sidebarPhotos = userPosts.flatMap((post) => {
+              const files = post.files || [];
+              const images = post.images || [];
+              const fromFiles = files
+                .filter((f) => {
+                  const url = typeof f === "string" ? f : f.url || "";
+                  const type = typeof f === "string" ? "" : f.type || "";
+                  return type !== "video" && !/\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(url);
+                })
+                .map((f) => (typeof f === "string" ? f : f.url));
+              const fromImages = images.filter(
+                (url) => !/\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(url)
+              );
+              return [...new Set([...fromFiles, ...fromImages])].filter(Boolean);
+            }).slice(0, 9);
 
-          {tabValue === 1 && (
-            <Card sx={{ p: 4, boxShadow: 3, borderRadius: 2 }}>
-              <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ mb: 3 }}>
-                Edit Personal Profile
-              </Typography>
+            const infoRows = [
+              {
+                icon: <LocationOnIcon sx={{ color: "text.secondary", fontSize: 20 }} />,
+                label: userDetails?.city || userDetails?.currentCity || null,
+                placeholder: "Thêm thành phố",
+              },
+              {
+                icon: <CakeIcon sx={{ color: "text.secondary", fontSize: 20 }} />,
+                label: userDetails?.birthday
+                  ? dayjs(userDetails.birthday).format("DD/MM/YYYY")
+                  : null,
+                placeholder: "Thêm ngày sinh",
+              },
+              {
+                icon: <EmailIcon sx={{ color: "text.secondary", fontSize: 20 }} />,
+                label: userDetails?.email || null,
+                placeholder: "Thêm email",
+              },
+              {
+                icon: <WcIcon sx={{ color: "text.secondary", fontSize: 20 }} />,
+                label: userDetails?.gender
+                  ? userDetails.gender === "MALE"
+                    ? "Nam"
+                    : userDetails.gender === "FEMALE"
+                    ? "Nữ"
+                    : userDetails.gender
+                  : null,
+                placeholder: "Thêm giới tính",
+              },
+            ];
 
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
-                <Box sx={{ display: "flex", gap: 2, flexDirection: { xs: "column", sm: "row" } }}>
+            return (
+              <Grid container spacing={2.5} alignItems="flex-start">
+                {/* ── Cột trái: Sidebar ── */}
+                <Grid item xs={12} md={4}>
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+
+                    {/* Card Giới thiệu */}
+                    <Card
+                      sx={{
+                        borderRadius: 3,
+                        boxShadow: "0 2px 10px rgba(0,0,0,0.07)",
+                        border: "1px solid",
+                        borderColor: "divider",
+                        p: 2.5,
+                      }}
+                    >
+                      <Typography fontWeight={700} fontSize="1.05rem" mb={2}>
+                        Giới thiệu
+                      </Typography>
+
+                      <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                        {infoRows.map((row, idx) => (
+                          <Box
+                            key={idx}
+                            sx={{ display: "flex", alignItems: "center", gap: 1.25 }}
+                          >
+                            {row.icon}
+                            {row.label ? (
+                              <Typography variant="body2" sx={{ lineHeight: 1.4 }}>
+                                {row.label}
+                              </Typography>
+                            ) : (
+                              <Typography
+                                variant="body2"
+                                color="text.disabled"
+                                sx={{
+                                  fontStyle: "italic",
+                                  cursor: "pointer",
+                                  "&:hover": { textDecoration: "underline" },
+                                }}
+                                onClick={() => setTabValue(2)}
+                              >
+                                {row.placeholder}
+                              </Typography>
+                            )}
+                          </Box>
+                        ))}
+                      </Box>
+
+                      <Divider sx={{ my: 2 }} />
+                      <Button
+                        fullWidth
+                        variant="outlined"
+                        size="small"
+                        startIcon={<EditIcon />}
+                        onClick={() => setTabValue(2)}
+                        sx={{
+                          textTransform: "none",
+                          fontWeight: 600,
+                          borderRadius: 2,
+                          borderColor: "divider",
+                          color: "text.primary",
+                          "&:hover": { bgcolor: "action.hover", borderColor: "text.secondary" },
+                        }}
+                      >
+                        Chỉnh sửa thông tin
+                      </Button>
+                    </Card>
+
+                    {/* Card Ảnh xem trước */}
+                    <Card
+                      sx={{
+                        borderRadius: 3,
+                        boxShadow: "0 2px 10px rgba(0,0,0,0.07)",
+                        border: "1px solid",
+                        borderColor: "divider",
+                        p: 2.5,
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          mb: 1.5,
+                        }}
+                      >
+                        <Typography fontWeight={700} fontSize="1.05rem">
+                          Ảnh
+                        </Typography>
+                        <Button
+                          size="small"
+                          endIcon={<ChevronRightIcon />}
+                          onClick={() => setTabValue(1)}
+                          sx={{
+                            textTransform: "none",
+                            fontWeight: 600,
+                            color: "primary.main",
+                            fontSize: "0.8rem",
+                          }}
+                        >
+                          Xem tất cả
+                        </Button>
+                      </Box>
+
+                      {sidebarPhotos.length === 0 ? (
+                        <Box
+                          sx={{
+                            py: 3,
+                            textAlign: "center",
+                            border: "1px dashed",
+                            borderColor: "divider",
+                            borderRadius: 2,
+                          }}
+                        >
+                          <CollectionsIcon sx={{ fontSize: 36, color: "text.disabled", mb: 0.5 }} />
+                          <Typography variant="caption" color="text.disabled" display="block">
+                            Chưa có ảnh nào
+                          </Typography>
+                        </Box>
+                      ) : (
+                        <Box
+                          sx={{
+                            display: "grid",
+                            gridTemplateColumns: "repeat(3, 1fr)",
+                            gap: 0.75,
+                          }}
+                        >
+                          {sidebarPhotos.map((url, idx) => (
+                            <Box
+                              key={idx}
+                              onClick={() => handleImageClick(sidebarPhotos, idx)}
+                              sx={{
+                                aspectRatio: "1 / 1",
+                                borderRadius: 1.5,
+                                overflow: "hidden",
+                                cursor: "pointer",
+                                position: "relative",
+                                "&:hover img": { transform: "scale(1.08)", opacity: 0.85 },
+                              }}
+                            >
+                              <Box
+                                component="img"
+                                src={url}
+                                alt={`photo-${idx}`}
+                                sx={{
+                                  width: "100%",
+                                  height: "100%",
+                                  objectFit: "cover",
+                                  display: "block",
+                                  transition: "transform 0.3s ease, opacity 0.3s ease",
+                                }}
+                              />
+                            </Box>
+                          ))}
+                        </Box>
+                      )}
+                    </Card>
+                  </Box>
+                </Grid>
+
+                {/* ── Cột phải: Feed ── */}
+                <Grid item xs={12} md={8}>
+                  <Box
+                    sx={{
+                      "& .post-card": {
+                        maxWidth: "100% !important",
+                        width: "100% !important",
+                      },
+                    }}
+                  >
+                    <FeedList
+                      posts={userPosts}
+                      loading={isFetching}
+                      feedError={null}
+                      readPosts={[]}
+                      fullWidth
+                      onLike={handleLikePost}
+                      onOpenComments={handleOpenComments}
+                      onImageClick={handleImageClick}
+                      lastPostElementRef={lastElementRef}
+                      onDeletePost={(postId) =>
+                        setUserPosts((prev) => prev.filter((p) => p.postId !== postId))
+                      }
+                      onUpdatePost={(up) =>
+                        setUserPosts((prev) =>
+                          prev.map((p) => (p.postId === up.postId ? { ...p, ...up } : p))
+                        )
+                      }
+                      onPrivacyChange={(postId, privacy) =>
+                        setUserPosts((prev) =>
+                          prev.map((p) => (p.postId === postId ? { ...p, privacy } : p))
+                        )
+                      }
+                    />
+                  </Box>
+                </Grid>
+              </Grid>
+            );
+          })()}
+
+          {/* ── Photos Tab ──────────────────────────────────────────────── */}
+          {tabValue === 1 && (() => {
+            const allPhotos = userPosts.flatMap((post) => {
+              const files = post.files || [];
+              const images = post.images || [];
+              const fromFiles = files
+                .filter((f) => {
+                  const url = typeof f === "string" ? f : f.url || "";
+                  const type = typeof f === "string" ? "" : f.type || "";
+                  return type !== "video" && !/\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(url);
+                })
+                .map((f) => (typeof f === "string" ? f : f.url));
+              const fromImages = images.filter(
+                (url) => !/\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(url)
+              );
+              const merged = [...new Set([...fromFiles, ...fromImages])].filter(Boolean);
+              return merged.map((url) => ({ url, postId: post.postId }));
+            });
+
+            return allPhotos.length === 0 ? (
+              <Card
+                sx={{
+                  p: 6,
+                  textAlign: "center",
+                  borderRadius: 3,
+                  border: "1px dashed",
+                  borderColor: "divider",
+                  boxShadow: 0,
+                }}
+              >
+                <CollectionsIcon sx={{ fontSize: 56, color: "text.disabled", mb: 1.5 }} />
+                <Typography variant="h6" color="text.secondary" fontWeight={600}>
+                  No photos yet
+                </Typography>
+                <Typography variant="body2" color="text.disabled" mt={0.5}>
+                  Photos from your posts will appear here.
+                </Typography>
+              </Card>
+            ) : (
+              <Box>
+                <Typography
+                  variant="subtitle1"
+                  fontWeight={700}
+                  sx={{ mb: 2, color: "text.secondary", letterSpacing: 0.3 }}
+                >
+                  {allPhotos.length} photo{allPhotos.length !== 1 ? "s" : ""}
+                </Typography>
+                <Box
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns: {
+                      xs: "repeat(2, 1fr)",
+                      sm: "repeat(3, 1fr)",
+                      md: "repeat(4, 1fr)",
+                    },
+                    gap: 1.25,
+                  }}
+                >
+                  {allPhotos.map((photo, idx) => (
+                    <Box
+                      key={`${photo.postId}-${idx}`}
+                      onClick={() => handleImageClick(allPhotos.map((p) => p.url), idx)}
+                      sx={{
+                        aspectRatio: "1 / 1",
+                        borderRadius: 2.5,
+                        overflow: "hidden",
+                        cursor: "pointer",
+                        position: "relative",
+                        bgcolor: "grey.100",
+                        "&:hover .photo-overlay": { opacity: 1 },
+                        "&:hover img": { transform: "scale(1.07)" },
+                      }}
+                    >
+                      <Box
+                        component="img"
+                        src={photo.url}
+                        alt={`Photo ${idx + 1}`}
+                        sx={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                          display: "block",
+                          transition: "transform 0.35s ease",
+                        }}
+                      />
+                      <Box
+                        className="photo-overlay"
+                        sx={{
+                          position: "absolute",
+                          inset: 0,
+                          bgcolor: "rgba(0,0,0,0.28)",
+                          opacity: 0,
+                          transition: "opacity 0.25s ease",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <CollectionsIcon sx={{ color: "white", fontSize: 30, opacity: 0.9 }} />
+                      </Box>
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            );
+          })()}
+
+          {/* ── Edit Profile Tab ─────────────────────────────────────────── */}
+          {tabValue === 2 && (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+              {/* ── Card 1: Basic Information ── */}
+              <Card
+                sx={{
+                  borderRadius: 3,
+                  boxShadow: "0 2px 12px rgba(0,0,0,0.07)",
+                  border: "1px solid",
+                  borderColor: "divider",
+                  overflow: "visible",
+                }}
+              >
+                <Box
+                  sx={{
+                    px: 3,
+                    pt: 2.5,
+                    pb: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    borderBottom: "1px solid",
+                    borderColor: "divider",
+                  }}
+                >
+                  <PersonIcon sx={{ color: "primary.main", fontSize: 22 }} />
+                  <Typography fontWeight={700} fontSize="0.95rem" color="primary.main">
+                    Basic Information
+                  </Typography>
+                </Box>
+
+                <Box
+                  sx={{
+                    px: 3,
+                    pt: 3,
+                    pb: 3,
+                    display: "grid",
+                    gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+                    gap: 2.5,
+                  }}
+                >
                   <TextField
                     label="First Name"
                     variant="outlined"
@@ -482,6 +867,12 @@ export default function Profile() {
                     size="small"
                     value={firstname}
                     onChange={(e) => setFirstName(e.target.value)}
+                    InputProps={{
+                      startAdornment: (
+                        <PersonIcon sx={{ color: "text.disabled", fontSize: 18, mr: 0.75 }} />
+                      ),
+                    }}
+                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
                   />
                   <TextField
                     label="Last Name"
@@ -490,49 +881,144 @@ export default function Profile() {
                     size="small"
                     value={lastname}
                     onChange={(e) => setLastName(e.target.value)}
+                    InputProps={{
+                      startAdornment: (
+                        <PersonIcon sx={{ color: "text.disabled", fontSize: 18, mr: 0.75 }} />
+                      ),
+                    }}
+                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
                   />
                 </Box>
+              </Card>
 
-                <TextField
-                  label="Email"
-                  variant="outlined"
-                  fullWidth
-                  size="small"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-
-                <TextField
-                  label="Current City"
-                  variant="outlined"
-                  fullWidth
-                  size="small"
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                />
-
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                  <DatePicker
-                    label="Birthday"
-                    value={birthday}
-                    onChange={(newValue) => setDob(newValue)}
-                    slotProps={{ textField: { size: "small", fullWidth: true } }}
-                  />
-                </LocalizationProvider>
-
-                <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={handleUpdate}
-                    sx={{ px: 4, py: 1, fontWeight: "bold" }}
-                  >
-                    Save Changes
-                  </Button>
+              {/* ── Card 2: Contact & Details ── */}
+              <Card
+                sx={{
+                  borderRadius: 3,
+                  boxShadow: "0 2px 12px rgba(0,0,0,0.07)",
+                  border: "1px solid",
+                  borderColor: "divider",
+                  overflow: "visible",
+                }}
+              >
+                <Box
+                  sx={{
+                    px: 3,
+                    pt: 2.5,
+                    pb: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    borderBottom: "1px solid",
+                    borderColor: "divider",
+                  }}
+                >
+                  <EmailIcon sx={{ color: "primary.main", fontSize: 22 }} />
+                  <Typography fontWeight={700} fontSize="0.95rem" color="primary.main">
+                    Contact &amp; Details
+                  </Typography>
                 </Box>
+
+                <Box
+                  sx={{
+                    px: 3,
+                    pt: 3,
+                    pb: 3,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 2.5,
+                  }}
+                >
+                  <TextField
+                    label="Email"
+                    variant="outlined"
+                    fullWidth
+                    size="small"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    InputProps={{
+                      startAdornment: (
+                        <EmailIcon sx={{ color: "text.disabled", fontSize: 18, mr: 0.75 }} />
+                      ),
+                    }}
+                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
+                  />
+
+                  <TextField
+                    label="Current City"
+                    variant="outlined"
+                    fullWidth
+                    size="small"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    InputProps={{
+                      startAdornment: (
+                        <LocationCityIcon sx={{ color: "text.disabled", fontSize: 18, mr: 0.75 }} />
+                      ),
+                    }}
+                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
+                  />
+
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DatePicker
+                      label="Birthday"
+                      value={birthday}
+                      onChange={(newValue) => setDob(newValue)}
+                      slotProps={{
+                        textField: {
+                          size: "small",
+                          fullWidth: true,
+                          InputProps: {
+                            startAdornment: (
+                              <CakeIcon sx={{ color: "text.disabled", fontSize: 18, mr: 0.75 }} />
+                            ),
+                          },
+                          sx: { "& .MuiOutlinedInput-root": { borderRadius: 2 } },
+                        },
+                      }}
+                    />
+                  </LocalizationProvider>
+                </Box>
+              </Card>
+
+              {/* ── Save Button Row ── */}
+              <Box sx={{ display: "flex", justifyContent: "flex-end", pt: 0.5 }}>
+                <Button
+                  variant="contained"
+                  size="large"
+                  onClick={handleUpdate}
+                  disabled={updateLoading}
+                  startIcon={
+                    updateLoading ? (
+                      <CircularProgress size={18} sx={{ color: "inherit" }} />
+                    ) : (
+                      <SaveIcon />
+                    )
+                  }
+                  sx={{
+                    px: 4,
+                    py: 1.25,
+                    fontWeight: 700,
+                    fontSize: "0.92rem",
+                    borderRadius: 2.5,
+                    textTransform: "none",
+                    background: "linear-gradient(135deg, #1877f2 0%, #42a5f5 100%)",
+                    boxShadow: "0 4px 14px rgba(24,119,242,0.35)",
+                    transition: "all 0.2s ease",
+                    "&:hover": {
+                      background: "linear-gradient(135deg, #166fe5 0%, #1e88e5 100%)",
+                      boxShadow: "0 6px 20px rgba(24,119,242,0.45)",
+                      transform: "translateY(-1px)",
+                    },
+                    "&:active": { transform: "translateY(0px)" },
+                    "&.Mui-disabled": { opacity: 0.7 },
+                  }}
+                >
+                  {updateLoading ? "Saving..." : "Save Changes"}
+                </Button>
               </Box>
-            </Card>
+            </Box>
           )}
         </Box>
       ) : null}

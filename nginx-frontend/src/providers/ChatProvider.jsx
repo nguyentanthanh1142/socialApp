@@ -1,5 +1,4 @@
 import {
-  createContext,
   useCallback,
   useContext,
   useEffect,
@@ -16,8 +15,7 @@ import {
 } from "../features/chat/services/chatService";
 import { isAuthenticated } from "../features/auth/services/authenticationService";
 import { AuthContext } from "../context/AuthContext";
-
-export const ChatContext = createContext(null);
+import { ChatContext } from "../context/ChatContext"; // Import đúng từ file ChatContext.jsx vừa tạo
 
 const filterUnique = (list) => {
   const uniqueMap = new Map();
@@ -36,7 +34,7 @@ export const ChatProvider = ({ children }) => {
 
   const [messagesMap, setMessagesMap] = useState({});
   const [conversations, setConversations] = useState([]);
-  
+
   // Khởi tạo openedConversationIds từ localStorage
   const [openedConversationIds, setOpenedConversationIds] = useState(() => {
     try {
@@ -66,12 +64,11 @@ export const ChatProvider = ({ children }) => {
     conversationsRef.current = conversations;
   }, [conversations]);
 
-  // Hàm join phòng an toàn (SocketProvider của bạn sẽ tự chặn nếu chưa kết nối, nên ta dùng setInterval thử lại cho đến khi thành công hoặc socket connected)
+  // Hàm join phòng an toàn
   useEffect(() => {
     const joinAllOpenedRooms = () => {
       const currentOpened = openedIdsRef.current;
       if (currentOpened && currentOpened.length > 0) {
-        console.log("🔄 [SOCKET] Re-joining rooms:", currentOpened);
         currentOpened.forEach((conversationId) => {
           if (conversationId) {
             emit("join_room", { conversationId });
@@ -80,13 +77,10 @@ export const ChatProvider = ({ children }) => {
       }
     };
 
-    // Lắng nghe sự kiện connect từ SocketProvider
     const unsubscribeConnect = subscribe("connect", () => {
-      console.log("🔌 [SOCKET] Connected event received, triggering room re-join...");
       joinAllOpenedRooms();
     });
 
-    // Phòng hờ trường hợp socket đã connect trước khi component mount, ta thử kiểm tra sau 1s và 2s
     const timer = setTimeout(() => {
       joinAllOpenedRooms();
     }, 1000);
@@ -338,7 +332,6 @@ export const ChatProvider = ({ children }) => {
     return await sendMessageToConversation(conversationId, content);
   }, [sendMessageToConversation]);
 
-  // Đăng ký nhận tin nhắn chat
   useEffect(() => {
     const unsubscribe = subscribe("chat_message", handleIncomingMessage);
     return () => {
@@ -423,5 +416,3 @@ export const useChat = () => {
   }
   return context;
 };
-
-export const useChatContext = useChat;

@@ -16,7 +16,7 @@ import CloseIcon from "@mui/icons-material/Close";
 
 import EmojiInput from "./EmojiInput";
 
-import { useChat } from "../providers/ChatProvider"; // Chỉ cần dùng useChat là đủ
+import { useChat } from "../providers/ChatProvider";
 import { getAvatarUrl } from "../utils/avatarUtils";
 import { formatLocaleTime } from "../utils/dateUtils";
 
@@ -28,11 +28,11 @@ export default function ChatBox({ conversation, onClose, onMinimize }) {
   const typingTimeoutRef = useRef(null);
 
   const {
-    messagesMap,
+    messagesMap = {},
     loadMessages,
-    sendMessageToConversation: sendMessage,
-    typingMap,
-    sendTyping, // Lấy hàm sendTyping từ ChatProvider
+    sendMessage,
+    typingMap = {},
+    sendTyping,
   } = useChat();
 
   const [error, setError] = useState(null);
@@ -99,7 +99,7 @@ export default function ChatBox({ conversation, onClose, onMinimize }) {
     if (!message.trim()) return;
     try {
       setError(null);
-      
+
       // Khi gửi tin nhắn thì hủy timeout đang đếm ngược và báo dừng gõ ngay lập tức
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
       if (sendTyping) {

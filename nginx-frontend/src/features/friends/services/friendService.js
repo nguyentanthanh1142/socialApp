@@ -3,9 +3,9 @@ import { API } from "../../../configurations/configuration";
 import { getCurrentUserId } from "../../auth/services/authenticationService";
 
 export function buildParticipantsHash(targetUserId) {
-  const currentUserId = getCurrentUserId();
-  if (!currentUserId || !targetUserId) return null;
-  return [String(currentUserId), String(targetUserId)].sort().join("-");
+    const currentUserId = getCurrentUserId();
+    if (!currentUserId || !targetUserId) return null;
+    return [String(currentUserId), String(targetUserId)].sort().join("-");
 }
 
 const executeApi = async (operation, request) => {
@@ -17,28 +17,28 @@ const executeApi = async (operation, request) => {
     }
 };
 
-export const getMyFriendsList = async () => 
+export const getMyFriendsList = async () =>
     executeApi("getMyFriendsList", () => httpClient.get(API.MY_FRIENDS));
 
-export const getMyFriendRequest = async () => 
+export const getMyFriendRequest = async () =>
     executeApi("getMyFriendRequest", () => httpClient.get(API.MY_FRIEND_REQUESTS));
 
-export const getFriendsSuggestion = async () => 
+export const getFriendsSuggestion = async () =>
     executeApi("getFriendsSuggestion", () => httpClient.get(API.FRIENDS_SUGGESTION));
 
-export const sendFriendsRequest = async (friendId) => 
+export const sendFriendsRequest = async (friendId) =>
     executeApi("sendFriendsRequest", () => httpClient.post(API.SEND_FRIEND_REQUEST, {
         status: "PENDING",
         participantIds: [friendId],
     }));
 
-export const acceptFriend = async (relationId) => 
+export const acceptFriend = async (relationId) =>
     executeApi("acceptFriend", () => httpClient.put(`${API.ACCEPT_FRIENDS}/${relationId}`, {}));
 
-export const deleteFriendRequest = async (id) => 
+export const deleteFriendRequest = async (id) =>
     executeApi("deleteFriendRequest", () => httpClient.delete(`${API.MY_FRIEND_REQUESTS}/${id}`));
 
-export const getListContactRelation = async ({ page = 0, size = 10 }) => 
+export const getListContactRelation = async ({ page = 0, size = 10 }) =>
     executeApi("getListContactRelation", () => httpClient.get(`${API.GET_LIST_CONTACT_RELATION}?page=${page}&size=${size}`));
 
 export const sendBatchFriendRequests = async (friendIds) =>
@@ -73,3 +73,5 @@ export const blockUser = async (targetUserId) =>
 
 export const unblockUser = async (targetUserId) =>
     executeApi("unblockUser", () => httpClient.put(API.UNBLOCK_USER(targetUserId), {}));
+
+export const dismissSugestion = async (targetUserId) => executeApi("dismissSugestion", () => httpClient.delete(API.DISMISS_SUGGESTION(targetUserId)));

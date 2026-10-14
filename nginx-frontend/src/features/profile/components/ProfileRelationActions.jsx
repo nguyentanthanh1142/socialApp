@@ -34,7 +34,7 @@ const btnSx = { borderRadius: 2, textTransform: "none", fontWeight: 600, px: 2 }
 
 export default function ProfileRelationActions({ targetUserId, onMessage, onStatusChange }) {
   const navigate = useNavigate();
-  const { startConversation } = useChat();
+  const { startConversation = () => {} } = useChat();
   const [statusData, setStatusData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [acting, setActing] = useState(false);
